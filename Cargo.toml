@@ -1,6 +1,16 @@
-[package]
-name = "gohobi_ticket_actix_backend"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
+[workspace]
+resolver = "2"
+members = [
+    ".",
+    "./migration",
+    "src/entities",
+    # "src/types",
+    # "src/test_utils",
+    # "src/services",
+    # "src/utils",
+    # "src/settings",
+    # "src/routes",
+    # "src/gohobi_ticket",
+    # "tests",
+]
+# default-members = ["src/gohobi_ticket"]
