@@ -1,0 +1,9 @@
+{
+  "rest-client.followredirect": false,
+  "[rust]": {
+    "editor.formatOnSave": true,
+  },
+  "cSpell.words": [
+    "iden"
+  ]
+}
