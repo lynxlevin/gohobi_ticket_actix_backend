@@ -14,3 +14,16 @@ members = [
     # "tests",
 ]
 # default-members = ["src/gohobi_ticket"]
+
+[workspace.dependencies]
+async-std = { version = "1", features = ["attributes", "tokio1"] }
+sea-orm = { version = "~1.0", features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "macros",
+    "with-chrono",
+    "with-json",
+    "with-uuid",
+] }
+serde = "^1.0.219"
+
