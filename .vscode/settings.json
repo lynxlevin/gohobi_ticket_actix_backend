@@ -4,6 +4,9 @@
     "editor.formatOnSave": true,
   },
   "cSpell.words": [
+    "actix",
+    "dotenvy",
+    "hmac",
     "iden",
     "serde"
   ]

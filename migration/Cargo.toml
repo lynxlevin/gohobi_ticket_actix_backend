@@ -9,7 +9,7 @@ name = "migration"
 path = "src/lib.rs"
 
 [dependencies]
-async-std = { workspace = true }
+async-std.workspace = true
 
 [dependencies.sea-orm-migration]
 version = "~1.0"

@@ -1,0 +1,15 @@
+[package]
+name = "user"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "user"
+path = "lib.rs"
+
+[dependencies]
+argon2.workspace = true
+base64.workspace = true
+pbkdf2.workspace = true
+serde.workspace = true
+sha2.workspace = true

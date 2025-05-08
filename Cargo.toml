@@ -4,19 +4,24 @@ members = [
     ".",
     "./migration",
     "src/entities",
-    # "src/types",
-    # "src/test_utils",
-    # "src/services",
-    # "src/utils",
-    # "src/settings",
-    # "src/routes",
+    "src/user",
+    "tests",
     # "src/gohobi_ticket",
-    # "tests",
 ]
 # default-members = ["src/gohobi_ticket"]
 
 [workspace.dependencies]
+actix-web = "4.10.2"
+argon2 = { version = "0.5.3", default-features = false, features = [
+    "password-hash",
+    "rand",
+    "std",
+] }
 async-std = { version = "1", features = ["attributes", "tokio1"] }
+base64 = { version = "0.22.1", default-features = false }
+chrono = "0.4.41"
+dotenvy = "0.15.7"
+pbkdf2 = { version = "0.12.2", default-features = false, features = ["hmac"] }
 sea-orm = { version = "~1.0", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
@@ -26,4 +31,5 @@ sea-orm = { version = "~1.0", features = [
     "with-uuid",
 ] }
 serde = "^1.0.219"
-
+sha2 = { version = "0.10.9", default-features = false }
+uuid = { version = "1.16.0", features = ["v7", "fast-rng"] }
