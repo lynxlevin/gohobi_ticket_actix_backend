@@ -1,0 +1,13 @@
+[package]
+name = "general"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "general"
+path = "lib.rs"
+
+[dependencies]
+config.workspace = true
+dotenvy.workspace = true
+serde.workspace = true

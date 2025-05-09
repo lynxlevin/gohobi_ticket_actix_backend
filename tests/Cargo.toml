@@ -1,0 +1,24 @@
+[package]
+name = "tests"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "tests"
+path = "lib.rs"
+
+[dependencies]
+entities = { path = "../src/entities" }
+general = { path = "../src/general" }
+migration = { path = "../migration" }
+user = { path = "../src/user" }
+
+actix-session.workspace = true
+actix-web.workspace = true
+chrono.workspace = true
+deadpool-redis.workspace = true
+sea-orm.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+actix-http = "3.10.0"

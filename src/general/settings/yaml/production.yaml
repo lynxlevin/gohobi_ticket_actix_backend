@@ -1,0 +1,9 @@
+application:
+  protocol: https
+  host: 0.0.0.0
+
+debug: false
+
+secret:
+  token_expiration: 30
+
