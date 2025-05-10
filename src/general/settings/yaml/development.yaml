@@ -1,9 +1,0 @@
-application:
-  protocol: http
-  host: 127.0.0.1
-
-debug: true
-
-secret:
-  token_expiration: 30
-
