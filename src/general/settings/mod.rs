@@ -10,18 +10,20 @@ pub fn get_settings(env_file_name: &str) -> Result<Settings, String> {
     dotenvy::from_filename(env_file_name)
         .map_err(|e| format!("Failed to fetch env file: {}", e.to_string()))?;
 
-    match Environment::try_from(env::var("APP_ENVIRONMENT").unwrap_or_else(|_| "production".into()))
-    {
+    let result = match Environment::try_from(
+        env::var("APP_ENVIRONMENT").unwrap_or_else(|_| "production".into()),
+    ) {
         Ok(env) => match env {
             Environment::Testing => get_development_settings(),
             Environment::Development => get_development_settings(),
             Environment::Production => get_production_settings(),
         },
         Err(e) => return Err(format!("Failed to parse APP_ENVIRONMENT: {}", e)),
-    }
+    };
+    result.map_err(|e| format!("Failed to get env variables: {}", e.to_string()))
 }
 
-fn get_development_settings() -> Result<Settings, String> {
+fn get_development_settings() -> Result<Settings, VarError> {
     let b = Settings::base_settings();
     merge_env(Settings {
         application: ApplicationSettings {
@@ -32,10 +34,9 @@ fn get_development_settings() -> Result<Settings, String> {
         debug: true,
         ..b
     })
-    .map_err(|e| format!("Failed to get env variables: {}", e.to_string()))
 }
 
-fn get_production_settings() -> Result<Settings, String> {
+fn get_production_settings() -> Result<Settings, VarError> {
     let b = Settings::base_settings();
     merge_env(Settings {
         application: ApplicationSettings {
@@ -46,7 +47,6 @@ fn get_production_settings() -> Result<Settings, String> {
         debug: false,
         ..b
     })
-    .map_err(|e| format!("Failed to get env variables: {}", e.to_string()))
 }
 
 fn merge_env(s: Settings) -> Result<Settings, VarError> {

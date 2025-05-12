@@ -1,5 +1,4 @@
-pub mod constants;
+pub mod error_responses;
 pub mod settings;
-pub mod types;
 
 pub use settings::get_settings;

@@ -8,5 +8,6 @@ name = "general"
 path = "lib.rs"
 
 [dependencies]
+actix-web.workspace = true
 dotenvy.workspace = true
 serde.workspace = true
