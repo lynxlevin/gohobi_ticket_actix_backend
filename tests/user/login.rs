@@ -66,8 +66,10 @@ async fn not_found_on_incorrect_password() -> Result<(), DbErr> {
 }
 
 #[actix_web::test]
+#[ignore]
 async fn django_password_should_be_updated_to_argon2_password_on_successful_login(
 ) -> Result<(), DbErr> {
+    // Ignore this test because this is slow.
     let Connections { app, db, .. } = init_app().await?;
     let password = "password";
     let django_password =

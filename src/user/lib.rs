@@ -1,8 +1,9 @@
 mod constants;
 mod models;
 pub mod password_util;
-mod routes;
 mod types;
+mod use_cases;
+mod web_adapters;
 
-pub use routes::auth_routes;
 pub use types::LoginRequest;
+pub use web_adapters::auth_routes;
