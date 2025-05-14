@@ -1,0 +1,22 @@
+# Users
+# Turn on debug to use these.
+
+###
+# @name login
+POST {{endpoint}}/api/users/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+# @name get_me
+GET {{endpoint}}/api/users/me
+
+
+###
+# @name logout
+POST {{endpoint}}/api/users/logout
+Content-Type: application/json
