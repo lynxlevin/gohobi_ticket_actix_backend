@@ -1,0 +1,16 @@
+[package]
+name = "gohobi_ticket"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "gohobi_ticket"
+path = "main.rs"
+
+[dependencies]
+general = { path = "../general" }
+server = { path = "../server" }
+
+actix-session.workspace = true
+actix-web.workspace = true
+env_logger.workspace = true
