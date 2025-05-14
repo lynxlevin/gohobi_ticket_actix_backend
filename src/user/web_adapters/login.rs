@@ -1,5 +1,6 @@
 use crate::{
     constants::{NOT_FOUND_MESSAGE, USER_EMAIL_KEY, USER_ID_KEY},
+    db_adapters::{UserMutation, UserQuery},
     types::{LoginRequest, UserVisible},
     use_cases::login::login_user,
 };
@@ -23,7 +24,16 @@ async fn login_user_endpoint(
     req_user: Json<LoginRequest>,
     session: actix_session::Session,
 ) -> HttpResponse {
-    match login_user(&db, &redis_pool, req_user.into_inner()).await {
+    let user_query = UserQuery { db: &db };
+    let user_mutation = UserMutation { db: &db };
+    match login_user(
+        &redis_pool,
+        req_user.into_inner(),
+        user_query,
+        user_mutation,
+    )
+    .await
+    {
         Ok(user) => match renew_session(session, user.id, user.email.clone()) {
             Ok(_) => HttpResponse::Ok().json(UserVisible {
                 id: user.id,

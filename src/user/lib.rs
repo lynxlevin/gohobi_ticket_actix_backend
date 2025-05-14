@@ -1,5 +1,5 @@
 mod constants;
-mod models;
+mod db_adapters;
 pub mod password_util;
 mod types;
 mod use_cases;

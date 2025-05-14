@@ -1,5 +1,5 @@
 use crate::{
-    models::{UserMutation, UserQuery},
+    db_adapters::{UserMutation, UserQuery},
     password_util::{self, PasswordType},
     types::LoginRequest,
 };
@@ -9,18 +9,18 @@ use deadpool_redis::{
 };
 use entities::users_user;
 use general::errors::use_case_errors::UseCaseError;
-use sea_orm::DbConn;
 
 pub async fn login_user(
-    db: &DbConn,
     redis_pool: &Pool,
     req: LoginRequest,
+    user_query: UserQuery<'_>,
+    user_mutation: UserMutation<'_>,
 ) -> Result<users_user::Model, UseCaseError> {
     // let conn = match redis_pool.get().await {
     //     Ok(ref mut conn) => conn,
     //     Err(_) => return Err(UseCaseError::InternalServerError),
     // };
-    let user = match UserQuery::find_active_by_email(&db, req.email.clone()).await {
+    let user = match user_query.find_active_by_email(req.email.clone()).await {
         Ok(user) => match user {
             Some(user) => user,
             None => return Err(UseCaseError::NotFound),
@@ -30,21 +30,16 @@ pub async fn login_user(
 
     match password_util::verify(&req.password, &user.password) {
         Ok(password_type) => match password_type {
-            PasswordType::Django => Ok(convert_to_argon2_password(db, user, &req.password).await),
+            PasswordType::Django => match user_mutation
+                .convert_to_argon2_password(user.clone(), &req.password)
+                .await
+            {
+                Ok(user) => Ok(user),
+                Err(_) => Ok(user),
+            },
             _ => Ok(user),
         },
         Err(_) => Err(UseCaseError::NotFound),
-    }
-}
-
-async fn convert_to_argon2_password(
-    db: &DbConn,
-    user: users_user::Model,
-    password: &str,
-) -> users_user::Model {
-    match UserMutation::convert_to_argon2_password(db, user.clone(), password).await {
-        Ok(user) => user,
-        Err(_) => user,
     }
 }
 

@@ -3,11 +3,13 @@ use sea_orm::{ActiveModelTrait, DbConn, IntoActiveModel, Set};
 
 use crate::password_util;
 
-pub struct UserMutation;
+pub struct UserMutation<'a> {
+    pub db: &'a DbConn,
+}
 
-impl UserMutation {
+impl UserMutation<'_> {
     pub async fn convert_to_argon2_password(
-        db: &DbConn,
+        self,
         user: users_user::Model,
         password: &str,
     ) -> Result<users_user::Model, String> {
@@ -17,6 +19,6 @@ impl UserMutation {
         };
         let mut user = user.into_active_model();
         user.password = Set(argon2_password);
-        user.update(db).await.map_err(|e| e.to_string())
+        user.update(self.db).await.map_err(|e| e.to_string())
     }
 }
