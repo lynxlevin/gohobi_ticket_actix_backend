@@ -6,15 +6,14 @@ use base64::{engine::Engine, prelude::BASE64_STANDARD};
 use pbkdf2::pbkdf2_hmac;
 use sha2::Sha256;
 
+use crate::constants::{ARGON2_START_WORD, DJANGO_START_WORD};
+
 #[derive(PartialEq, Debug)]
 pub enum PasswordType {
     Argon2,
     Django,
     Unknown,
 }
-
-const ARGON2_START_WORD: &str = "$argon2id$";
-const DJANGO_START_WORD: &str = "pbkdf2_sha256$";
 
 pub fn verify(password: &str, hashed_password: &str) -> Result<PasswordType, PasswordType> {
     if hashed_password.starts_with(ARGON2_START_WORD) {

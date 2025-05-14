@@ -9,13 +9,13 @@ use actix_web::{
     web::{scope, Data},
     App, Error,
 };
-use deadpool_redis::{CreatePoolError, Pool};
-use general::{get_settings, settings::types::Settings};
-use migration::{Migrator, MigratorTrait};
-use sea_orm::{ConnectionTrait, Database, DbBackend, DbConn, DbErr};
+use general::{
+    db::init_db,
+    redis::init_redis_pool,
+    settings::{get_test_settings, types::Settings},
+};
+use sea_orm::{DbConn, DbErr};
 use user::auth_routes;
-
-pub mod factory;
 
 pub struct Connections<
     S: Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>,
@@ -31,7 +31,7 @@ pub async fn init_app() -> Result<
     >,
     DbErr,
 > {
-    let settings = get_settings(".env.testing").expect("Error on getting settings.");
+    let settings = get_test_settings();
     let db = init_db(&settings)
         .await
         .expect("Error on getting DB connection.");
@@ -62,38 +62,6 @@ pub async fn init_app() -> Result<
     )
     .await;
     Ok(Connections { app, db, settings })
-}
-
-async fn init_db(settings: &Settings) -> Result<DbConn, DbErr> {
-    let database_url = &settings.database.url;
-    let db = Database::connect(database_url)
-        .await
-        .expect("Failed to open DB connection.");
-    let db_conn = match db.get_database_backend() {
-        DbBackend::MySql => {
-            let url = format!("{}", &database_url);
-            Database::connect(&url)
-                .await
-                .expect("Failed to open DB connection.")
-        }
-        DbBackend::Postgres => {
-            let url = format!("{}", &database_url);
-            Database::connect(&url)
-                .await
-                .expect("Failed to open DB connection.")
-        }
-        DbBackend::Sqlite => db,
-    };
-    Migrator::up(&db_conn, None).await.unwrap();
-    Ok(db_conn)
-}
-
-async fn init_redis_pool(settings: &Settings) -> Result<Pool, CreatePoolError> {
-    let redis_url = &settings.redis.url;
-    let cfg = deadpool_redis::Config::from_url(redis_url);
-    let redis_pool = cfg.create_pool(Some(deadpool_redis::Runtime::Tokio1))?;
-
-    Ok(redis_pool)
 }
 
 async fn init_session_middleware(

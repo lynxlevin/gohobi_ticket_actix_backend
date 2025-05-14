@@ -6,6 +6,7 @@
   "cSpell.words": [
     "actix",
     "deadpool",
+    "dotenv",
     "dotenvy",
     "hmac",
     "iden",

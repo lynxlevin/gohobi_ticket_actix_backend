@@ -2,10 +2,8 @@ use actix_web::{http, test};
 use entities::users_user;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 
-use crate::utils::{
-    factory::{self, UserFactory},
-    init_app, Connections,
-};
+use crate::utils::{init_app, Connections};
+use general::factory::{self, *};
 use user::LoginRequest;
 
 #[actix_web::test]

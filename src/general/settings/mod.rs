@@ -6,6 +6,10 @@ use types::{
 
 pub mod types;
 
+pub fn get_test_settings() -> Settings {
+    get_settings(".env.testing").expect("Error on getting settings.")
+}
+
 pub fn get_settings(env_file_name: &str) -> Result<Settings, String> {
     dotenvy::from_filename(env_file_name)
         .map_err(|e| format!("Failed to fetch env file: {}", e.to_string()))?;
