@@ -6,6 +6,7 @@ members = [
     "src/entities",
     "src/general",
     "src/user",
+    "src/server",
     "tests",
     # "src/gohobi_ticket",
 ]
