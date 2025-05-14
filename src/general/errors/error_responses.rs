@@ -6,6 +6,12 @@ struct ErrorResponse {
     pub error: String,
 }
 
+pub fn response_401(message: &str) -> HttpResponse {
+    HttpResponse::Unauthorized().json(ErrorResponse {
+        error: message.to_string(),
+    })
+}
+
 pub fn response_404(message: &str) -> HttpResponse {
     HttpResponse::NotFound().json(ErrorResponse {
         error: message.to_string(),

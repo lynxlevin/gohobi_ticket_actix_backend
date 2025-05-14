@@ -23,6 +23,7 @@ pub struct Connections<
     pub app: S,
     pub db: DbConn,
     pub redis_pool: Pool,
+    pub settings: Settings,
 }
 
 pub async fn init_app() -> Result<
@@ -57,13 +58,15 @@ pub async fn init_app() -> Result<
                                                       // .configure(routes::diary_routes),
             )
             .app_data(Data::new(db.clone()))
-            .app_data(Data::new(redis_pool.clone())),
+            .app_data(Data::new(redis_pool.clone()))
+            .app_data(Data::new(settings.clone())),
     )
     .await;
     Ok(Connections {
         app,
         db,
         redis_pool,
+        settings,
     })
 }
 

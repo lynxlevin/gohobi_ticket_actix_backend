@@ -1,5 +1,5 @@
 use crate::{
-    constants::{NOT_FOUND_MESSAGE, USER_EMAIL_KEY, USER_ID_KEY},
+    constants::{NOT_FOUND_MESSAGE, TOO_MANY_LOGIN_ATTEMPTS_MESSAGE, USER_EMAIL_KEY, USER_ID_KEY},
     db_adapters::{UserMutation, UserQuery},
     types::{LoginRequest, UserVisible},
     use_cases::login::login_user,
@@ -11,9 +11,12 @@ use actix_web::{
     HttpResponse,
 };
 use deadpool_redis::Pool;
-use general::errors::{
-    error_responses::{response_404, response_500},
-    use_case_errors::UseCaseError,
+use general::{
+    errors::{
+        error_responses::{response_401, response_404, response_500},
+        use_case_errors::UseCaseError,
+    },
+    settings::types::Settings,
 };
 use sea_orm::DbConn;
 
@@ -21,6 +24,7 @@ use sea_orm::DbConn;
 async fn login_user_endpoint(
     db: Data<DbConn>,
     redis_pool: Data<Pool>,
+    settings: Data<Settings>,
     req_user: Json<LoginRequest>,
     session: actix_session::Session,
 ) -> HttpResponse {
@@ -31,6 +35,7 @@ async fn login_user_endpoint(
         req_user.into_inner(),
         user_query,
         user_mutation,
+        &settings,
     )
     .await
     {
@@ -43,6 +48,7 @@ async fn login_user_endpoint(
             Err(_) => response_500(),
         },
         Err(error) => match error {
+            UseCaseError::Unauthorized => response_401(TOO_MANY_LOGIN_ATTEMPTS_MESSAGE),
             UseCaseError::NotFound => response_404(NOT_FOUND_MESSAGE),
             UseCaseError::InternalServerError => response_500(),
         },

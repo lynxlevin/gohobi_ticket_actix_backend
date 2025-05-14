@@ -1,4 +1,5 @@
 pub enum UseCaseError {
-    NotFound,
-    InternalServerError,
+    Unauthorized,        // 401
+    NotFound,            // 404
+    InternalServerError, // 500
 }

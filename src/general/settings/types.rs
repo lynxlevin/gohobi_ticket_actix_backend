@@ -14,6 +14,7 @@ impl Settings {
         Self {
             application: ApplicationSettings {
                 port: 5000,
+                max_login_attempts: 5,
                 ..Default::default()
             },
             redis: RedisSettings {
@@ -37,6 +38,7 @@ pub struct ApplicationSettings {
     pub port: u32,
     pub host: String,
     pub protocol: String,
+    pub max_login_attempts: u32,
 }
 
 #[derive(Deserialize, Clone, Default, Debug)]
