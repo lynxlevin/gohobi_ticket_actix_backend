@@ -9,7 +9,7 @@ path = "lib.rs"
 
 [dependencies]
 entities = { path = "../entities" }
-general = { path = "../general" }
+general = { path = "../general", features = ["errors", "settings", "db", "factory"] }
 
 actix-session = { workspace = true, features = [] }
 actix-web.workspace = true

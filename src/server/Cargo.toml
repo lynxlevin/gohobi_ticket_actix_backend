@@ -8,7 +8,7 @@ name = "server"
 path = "lib.rs"
 
 [dependencies]
-general = { path = "../general" }
+general = { path = "../general", features = ["settings"] }
 user = { path = "../user" }
 
 actix-session.workspace = true

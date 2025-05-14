@@ -8,12 +8,19 @@ name = "general"
 path = "lib.rs"
 
 [dependencies]
-entities = { path = "../entities" }
-migration = { path = "../../migration" }
+entities = { path = "../entities", optional = true }
+migration = { path = "../../migration", optional = true }
 
-actix-web.workspace = true
-deadpool-redis.workspace = true
+actix-web = { workspace = true, optional = true }
+deadpool-redis = { workspace = true, optional = true }
 dotenvy.workspace = true
-serde.workspace = true
-sea-orm.workspace = true
-uuid.workspace = true
+serde = { workspace = true, optional = true }
+sea-orm = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true }
+
+[features]
+db = ["dep:sea-orm", "dep:migration", "settings"]
+errors = ["dep:actix-web", "dep:serde"]
+factory = ["dep:entities", "dep:sea-orm", "dep:uuid"]
+redis = ["dep:deadpool-redis", "settings"]
+settings = []

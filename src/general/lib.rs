@@ -1,7 +1,10 @@
+#[cfg(feature = "db")]
 pub mod db;
+#[cfg(feature = "errors")]
 pub mod errors;
+#[cfg(feature = "factory")]
 pub mod factory;
+#[cfg(feature = "redis")]
 pub mod redis;
+#[cfg(feature = "settings")]
 pub mod settings;
-
-pub use settings::get_settings;

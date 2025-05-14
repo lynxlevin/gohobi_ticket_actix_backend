@@ -1,6 +1,6 @@
 use actix_session::SessionMiddleware;
 use actix_web::{middleware::Compress, web::Data, App, HttpServer};
-use general::{db::init_db, get_settings, redis::init_redis_pool};
+use general::{db::init_db, redis::init_redis_pool, settings::get_settings};
 use server::{get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder};
 
 #[actix_web::main]

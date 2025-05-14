@@ -8,7 +8,7 @@ name = "gohobi_ticket"
 path = "main.rs"
 
 [dependencies]
-general = { path = "../general" }
+general = { path = "../general", features = ["db", "redis", "settings"] }
 server = { path = "../server" }
 
 actix-session.workspace = true
