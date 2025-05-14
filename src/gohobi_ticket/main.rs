@@ -1,7 +1,7 @@
-use actix_session::{storage::RedisSessionStore, SessionMiddleware};
-use actix_web::{cookie, middleware::Compress, web::Data, App, HttpServer};
+use actix_session::SessionMiddleware;
+use actix_web::{middleware::Compress, web::Data, App, HttpServer};
 use general::{db::init_db, get_settings, redis::init_redis_pool};
-use server::{get_routes, setup_session_middleware_builder};
+use server::{get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -15,10 +15,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Error on getting Redis pool.");
 
-    let secret_key = cookie::Key::from(settings.secret.hmac_secret.as_bytes());
-    let redis_store = RedisSessionStore::new(&settings.redis.url)
-        .await
-        .expect("Error on getting RedisSessionStore");
+    let (redis_store, secret_key) = get_preps_for_redis_session_store(&settings).await;
 
     let address = format!(
         "{}:{}",

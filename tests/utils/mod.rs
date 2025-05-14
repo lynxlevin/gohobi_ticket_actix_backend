@@ -1,8 +1,7 @@
 use actix_http::{encoding::Encoder, Request};
-use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+use actix_session::SessionMiddleware;
 use actix_web::{
     body::{BoxBody, EitherBody},
-    cookie,
     dev::{Service, ServiceResponse},
     middleware::Compress,
     test,
@@ -15,7 +14,7 @@ use general::{
     settings::{get_test_settings, types::Settings},
 };
 use sea_orm::{DbConn, DbErr};
-use server::{get_routes, setup_session_middleware_builder};
+use server::{get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder};
 
 pub struct Connections<
     S: Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>,
@@ -39,15 +38,12 @@ pub async fn init_app() -> Result<
         .await
         .expect("Error on getting Redis pool.");
 
-    let secret_key = cookie::Key::from(settings.secret.hmac_secret.as_bytes());
-    let redis_store = RedisSessionStore::new(&settings.redis.url)
-        .await
-        .expect("Error on getting RedisSessionStore");
+    let (redis_store, secret_key) = get_preps_for_redis_session_store(&settings).await;
 
     let app = test::init_service(
-        // MYMEMO: This should be completely the same as in startup.rs
         App::new()
             .wrap(Compress::default())
+            // .wrap(AuthenticateUser)
             .wrap(
                 setup_session_middleware_builder(
                     SessionMiddleware::builder(redis_store.clone(), secret_key.clone()),

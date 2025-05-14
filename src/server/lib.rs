@@ -6,6 +6,16 @@ use actix_web::{cookie, web::scope, Scope};
 use general::settings::types::Settings;
 use user::auth_routes;
 
+pub async fn get_preps_for_redis_session_store(
+    settings: &Settings,
+) -> (RedisSessionStore, cookie::Key) {
+    let secret_key = cookie::Key::from(settings.secret.hmac_secret.as_bytes());
+    let redis_store = RedisSessionStore::new(&settings.redis.url)
+        .await
+        .expect("Error on getting RedisSessionStore");
+    (redis_store, secret_key)
+}
+
 pub fn setup_session_middleware_builder(
     builder: SessionMiddlewareBuilder<RedisSessionStore>,
     settings: &Settings,
