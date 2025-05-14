@@ -1,6 +1,7 @@
 mod constants;
 mod db_adapters;
 pub mod password_util;
+mod redis_adapter;
 mod types;
 mod use_cases;
 mod web_adapters;

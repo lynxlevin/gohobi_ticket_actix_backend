@@ -1,5 +1,4 @@
-use actix_session::Session;
-use actix_web::{cookie::Cookie, http, test};
+use actix_web::{http, test};
 use entities::users_user;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 

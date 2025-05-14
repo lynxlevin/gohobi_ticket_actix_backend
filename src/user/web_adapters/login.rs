@@ -1,6 +1,7 @@
 use crate::{
     constants::{NOT_FOUND_MESSAGE, TOO_MANY_LOGIN_ATTEMPTS_MESSAGE, USER_EMAIL_KEY, USER_ID_KEY},
     db_adapters::{UserMutation, UserQuery},
+    redis_adapter::UserRedis,
     types::{LoginRequest, UserVisible},
     use_cases::login::login_user,
 };
@@ -30,15 +31,12 @@ async fn login_user_endpoint(
 ) -> HttpResponse {
     let user_query = UserQuery { db: &db };
     let user_mutation = UserMutation { db: &db };
-    match login_user(
-        &redis_pool,
-        req_user.into_inner(),
-        user_query,
-        user_mutation,
-        &settings,
-    )
-    .await
-    {
+    let user_redis = UserRedis {
+        pool: &redis_pool,
+        settings: &settings,
+    };
+
+    match login_user(req_user.into_inner(), user_query, user_mutation, user_redis).await {
         Ok(user) => match renew_session(session, user.id, user.email.clone()) {
             Ok(_) => HttpResponse::Ok().json(UserVisible {
                 id: user.id,
