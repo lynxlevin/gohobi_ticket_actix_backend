@@ -4,8 +4,8 @@ use crate::{
     redis_adapter::UserRedis,
     types::LoginRequest,
 };
+use common::errors::use_case_errors::UseCaseError;
 use entities::users_user;
-use general::errors::use_case_errors::UseCaseError;
 
 pub async fn login_user(
     req: LoginRequest,

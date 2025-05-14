@@ -3,7 +3,7 @@ use actix_session::{
     storage::RedisSessionStore,
 };
 use actix_web::{cookie, web::scope, Scope};
-use general::settings::types::Settings;
+use common::settings::types::Settings;
 use user::auth_routes;
 
 pub async fn get_preps_for_redis_session_store(

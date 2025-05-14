@@ -892,6 +892,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "deadpool-redis",
+ "dotenvy",
+ "entities",
+ "migration",
+ "sea-orm",
+ "serde",
+ "uuid",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1457,20 +1471,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "general"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "deadpool-redis",
- "dotenvy",
- "entities",
- "migration",
- "sea-orm",
- "serde",
- "uuid",
-]
-
-[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1543,8 +1543,8 @@ version = "0.1.0"
 dependencies = [
  "actix-session",
  "actix-web",
+ "common",
  "env_logger",
- "general",
  "server",
 ]
 
@@ -3108,7 +3108,7 @@ version = "0.1.0"
 dependencies = [
  "actix-session",
  "actix-web",
- "general",
+ "common",
  "user",
 ]
 
@@ -3545,8 +3545,8 @@ dependencies = [
  "actix-session",
  "actix-web",
  "chrono",
+ "common",
  "entities",
- "general",
  "sea-orm",
  "server",
  "user",
@@ -3867,9 +3867,9 @@ dependencies = [
  "actix-web",
  "argon2",
  "base64 0.22.1",
+ "common",
  "deadpool-redis",
  "entities",
- "general",
  "pbkdf2",
  "sea-orm",
  "serde",

@@ -25,7 +25,7 @@ impl UserMutation<'_> {
 
 #[cfg(test)]
 mod tests {
-    use general::{
+    use common::{
         db::init_db,
         factory::{self, *},
         settings::get_test_settings,

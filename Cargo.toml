@@ -5,7 +5,7 @@ members = [
     "src/gohobi_ticket",
     "./migration",
     "src/entities",
-    "src/general",
+    "src/common",
     "src/user",
     "src/server",
     "tests",

@@ -12,7 +12,7 @@ use actix_web::{
     HttpResponse,
 };
 use deadpool_redis::Pool;
-use general::{
+use common::{
     errors::{
         error_responses::{response_401, response_404, response_500},
         use_case_errors::UseCaseError,

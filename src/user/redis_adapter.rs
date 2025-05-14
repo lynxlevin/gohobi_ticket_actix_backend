@@ -1,8 +1,8 @@
+use common::{errors::use_case_errors::UseCaseError, settings::types::Settings};
 use deadpool_redis::{
     redis::{AsyncCommands, SetExpiry, SetOptions},
     Pool,
 };
-use general::{errors::use_case_errors::UseCaseError, settings::types::Settings};
 
 #[derive(Clone)]
 pub struct UserRedis<'a> {

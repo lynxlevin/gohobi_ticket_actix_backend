@@ -8,7 +8,7 @@ use actix_web::{
     web::Data,
     App, Error,
 };
-use general::{
+use common::{
     db::init_db,
     redis::init_redis_pool,
     settings::{get_test_settings, types::Settings},
