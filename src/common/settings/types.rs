@@ -14,18 +14,6 @@ impl Settings {
         Self {
             application: ApplicationSettings {
                 port: 5000,
-                max_login_attempts: 5,
-                ..Default::default()
-            },
-            redis: RedisSettings {
-                pool_max_open: 16,
-                pool_max_idle: 8,
-                pool_timeout_seconds: 1,
-                pool_expire_seconds: 60,
-                ..Default::default()
-            },
-            secret: SecretSettings {
-                token_expiration: 30,
                 ..Default::default()
             },
             ..Default::default()
@@ -35,10 +23,10 @@ impl Settings {
 
 #[derive(Deserialize, Clone, Default, Debug)]
 pub struct ApplicationSettings {
-    pub port: u32,
+    pub port: u64,
     pub host: String,
-    pub protocol: String,
-    pub max_login_attempts: u32,
+    pub max_login_attempts: u64,
+    pub login_attempts_cool_time_seconds: u64,
 }
 
 #[derive(Deserialize, Clone, Default, Debug)]
@@ -49,16 +37,10 @@ pub struct DatabaseSettings {
 #[derive(Deserialize, Clone, Debug, Default)]
 pub struct RedisSettings {
     pub url: String,
-    pub pool_max_open: u32,
-    pub pool_max_idle: u32,
-    pub pool_timeout_seconds: u32,
-    pub pool_expire_seconds: u32,
 }
 
 #[derive(Deserialize, Clone, Default, Debug)]
 pub struct SecretSettings {
-    pub secret_key: String,
-    pub token_expiration: u32,
     pub hmac_secret: String,
 }
 

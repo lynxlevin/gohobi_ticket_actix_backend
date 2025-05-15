@@ -14,7 +14,7 @@ impl UserRedis<'_> {
     pub async fn validate_request_count(
         self,
         login_attempts_count_key: &str,
-    ) -> Result<u32, UseCaseError> {
+    ) -> Result<u64, UseCaseError> {
         let mut conn = match self.pool.get().await {
             Ok(conn) => conn,
             Err(_) => return Err(UseCaseError::InternalServerError),
@@ -29,17 +29,19 @@ impl UserRedis<'_> {
     pub async fn increment_login_attempts_count(
         self,
         login_attempts_count_key: &str,
-        login_attempts_count: u32,
+        login_attempts_count: u64,
     ) -> () {
         let mut conn = match self.pool.get().await {
             Ok(conn) => conn,
             Err(_) => return,
         };
         match conn
-            .set_options::<String, u32, String>(
+            .set_options::<String, u64, String>(
                 login_attempts_count_key.to_string(),
                 login_attempts_count + 1,
-                SetOptions::default().with_expiration(SetExpiry::EX(3600)),
+                SetOptions::default().with_expiration(SetExpiry::EX(
+                    self.settings.application.login_attempts_cool_time_seconds,
+                )),
             )
             .await
         {
