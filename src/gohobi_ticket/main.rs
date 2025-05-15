@@ -1,7 +1,10 @@
 use actix_session::SessionMiddleware;
 use actix_web::{middleware::Compress, web::Data, App, HttpServer};
 use common::{db::init_db, redis::init_redis_pool, settings::get_settings};
-use server::{get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder};
+use server::{
+    get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder,
+    AuthenticateUser,
+};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -26,7 +29,7 @@ async fn main() -> std::io::Result<()> {
     let server = HttpServer::new(move || {
         App::new()
             .wrap(Compress::default())
-            // .wrap(AuthenticateUser)
+            .wrap(AuthenticateUser)
             .wrap(
                 setup_session_middleware_builder(
                     SessionMiddleware::builder(redis_store.clone(), secret_key.clone()),

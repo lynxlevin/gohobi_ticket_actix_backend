@@ -6,6 +6,10 @@ pub struct UserQuery<'a> {
 }
 
 impl UserQuery<'_> {
+    pub async fn find_by_id(self, id: i64) -> Result<Option<users_user::Model>, DbErr> {
+        users_user::Entity::find_by_id(id).one(self.db).await
+    }
+
     pub async fn find_active_by_email(
         self,
         email: String,

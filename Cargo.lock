@@ -3870,10 +3870,12 @@ dependencies = [
  "common",
  "deadpool-redis",
  "entities",
+ "futures",
  "pbkdf2",
  "sea-orm",
  "serde",
  "sha2",
+ "uuid",
 ]
 
 [[package]]

@@ -4,6 +4,7 @@ use actix_session::{
 };
 use actix_web::{cookie, web::scope, Scope};
 use common::settings::types::Settings;
+pub use user::auth_middleware::AuthenticateUser;
 use user::auth_routes;
 
 pub async fn get_preps_for_redis_session_store(

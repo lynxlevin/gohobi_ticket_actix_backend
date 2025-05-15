@@ -1,3 +1,4 @@
+pub mod auth_middleware;
 mod constants;
 mod db_adapters;
 pub mod password_util;
