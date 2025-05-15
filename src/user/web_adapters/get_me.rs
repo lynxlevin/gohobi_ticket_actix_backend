@@ -1,4 +1,4 @@
-use crate::{constants::NOT_AUTHORIZED_MESSAGE, types::UserVisible, use_cases::get_me::get_me};
+use crate::{types::UserVisible, use_cases::get_me::get_me};
 use actix_web::{get, web::ReqData, HttpResponse};
 use common::errors::{
     error_responses::{response_401, response_500},
@@ -14,7 +14,7 @@ async fn get_me_endpoint(user: Option<ReqData<users_user::Model>>) -> HttpRespon
     }) {
         Ok(user) => HttpResponse::Ok().json(UserVisible::from(user)),
         Err(e) => match e {
-            UseCaseError::Unauthorized => response_401(NOT_AUTHORIZED_MESSAGE),
+            UseCaseError::Unauthorized => response_401(),
             _ => response_500(),
         },
     }

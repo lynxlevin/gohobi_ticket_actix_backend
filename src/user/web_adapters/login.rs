@@ -13,7 +13,7 @@ use actix_web::{
 };
 use common::{
     errors::{
-        error_responses::{response_401, response_404, response_500},
+        error_responses::{response_400, response_404, response_500},
         use_case_errors::UseCaseError,
     },
     settings::types::Settings,
@@ -42,9 +42,9 @@ async fn login_user_endpoint(
             Err(_) => response_500(),
         },
         Err(error) => match error {
-            UseCaseError::Unauthorized => response_401(TOO_MANY_LOGIN_ATTEMPTS_MESSAGE),
+            UseCaseError::BadRequest => response_400(TOO_MANY_LOGIN_ATTEMPTS_MESSAGE),
             UseCaseError::NotFound => response_404(NOT_FOUND_MESSAGE),
-            UseCaseError::InternalServerError => response_500(),
+            _ => response_500(),
         },
     }
 }

@@ -21,7 +21,7 @@ impl UserRedis<'_> {
         };
         let login_attempts_count = conn.get(login_attempts_count_key).await.unwrap_or(0);
         match login_attempts_count >= self.settings.application.max_login_attempts {
-            true => Err(UseCaseError::Unauthorized),
+            true => Err(UseCaseError::BadRequest),
             false => Ok(login_attempts_count),
         }
     }

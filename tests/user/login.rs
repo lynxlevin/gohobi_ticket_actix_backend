@@ -45,7 +45,7 @@ async fn block_too_many_attempts_on_incorrect_password() -> Result<(), DbErr> {
         })
         .to_request();
     let res = test::call_service(&app, req).await;
-    assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
+    assert_eq!(res.status(), http::StatusCode::BAD_REQUEST);
 
     Ok(())
 }
