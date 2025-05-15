@@ -15,15 +15,14 @@ async fn login_to_get_me_to_logout() -> Result<(), DbErr> {
         .insert(&db)
         .await?;
 
-    let req = test::TestRequest::post()
+    let login_req = test::TestRequest::post()
         .uri("/api/users/login")
         .set_json(LoginRequest {
             email: user.email.to_string(),
             password: password.to_string(),
         })
         .to_request();
-
-    let res = test::call_service(&app, req).await;
+    let res = test::call_service(&app, login_req).await;
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let headers = res.headers();
@@ -37,13 +36,24 @@ async fn login_to_get_me_to_logout() -> Result<(), DbErr> {
 
     let check_req = test::TestRequest::get()
         .uri("/api/users/me")
-        .cookie(session_cookie)
+        .cookie(session_cookie.clone())
         .to_request();
     let res = test::call_service(&app, check_req).await;
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    todo!("Check logout api effectively disables the sessionId.");
-    todo!("Check that get_me after logout fails.");
+    let logout_req = test::TestRequest::post()
+        .uri("/api/users/logout")
+        .cookie(session_cookie.clone())
+        .to_request();
+    let res = test::call_service(&app, logout_req).await;
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let check_req = test::TestRequest::get()
+        .uri("/api/users/me")
+        .cookie(session_cookie.clone())
+        .to_request();
+    let res = test::call_service(&app, check_req).await;
+    assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
 
     Ok(())
 }

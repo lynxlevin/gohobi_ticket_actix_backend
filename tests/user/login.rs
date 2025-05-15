@@ -9,8 +9,7 @@ use user::LoginRequest;
 #[actix_web::test]
 #[ignore]
 async fn happy_path() -> Result<(), DbErr> {
-    println!("This is checked in integration.rs.");
-    Ok(())
+    unimplemented!("This is checked in integration.rs.");
 }
 
 #[actix_web::test]
