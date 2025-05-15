@@ -10,6 +10,7 @@
     "dotenvy",
     "hmac",
     "iden",
-    "serde"
+    "serde",
+    "urlencoding"
   ]
 }

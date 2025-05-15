@@ -11,7 +11,6 @@ use actix_web::{
     web::{Data, Json},
     HttpResponse,
 };
-use deadpool_redis::Pool;
 use common::{
     errors::{
         error_responses::{response_401, response_404, response_500},
@@ -19,6 +18,7 @@ use common::{
     },
     settings::types::Settings,
 };
+use deadpool_redis::Pool;
 use sea_orm::DbConn;
 
 #[post("/login")]
@@ -38,11 +38,7 @@ async fn login_user_endpoint(
 
     match login_user(req_user.into_inner(), user_query, user_mutation, user_redis).await {
         Ok(user) => match renew_session(session, user.id, user.email.clone()) {
-            Ok(_) => HttpResponse::Ok().json(UserVisible {
-                id: user.id,
-                email: user.email,
-                username: user.username,
-            }),
+            Ok(_) => HttpResponse::Ok().json(UserVisible::from(user)),
             Err(_) => response_500(),
         },
         Err(error) => match error {

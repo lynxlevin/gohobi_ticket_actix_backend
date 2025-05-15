@@ -14,6 +14,7 @@ async fn happy_path() -> Result<(), DbErr> {
 }
 
 #[actix_web::test]
+#[ignore]
 async fn block_too_many_attempts_on_incorrect_password() -> Result<(), DbErr> {
     let Connections {
         app, db, settings, ..

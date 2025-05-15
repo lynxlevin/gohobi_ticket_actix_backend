@@ -14,7 +14,10 @@ use common::{
     settings::{get_test_settings, types::Settings},
 };
 use sea_orm::{DbConn, DbErr};
-use server::{get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder};
+use server::{
+    get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder,
+    AuthenticateUser,
+};
 
 pub struct Connections<
     S: Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>,
@@ -43,7 +46,7 @@ pub async fn init_app() -> Result<
     let app = test::init_service(
         App::new()
             .wrap(Compress::default())
-            // .wrap(AuthenticateUser)
+            .wrap(AuthenticateUser)
             .wrap(
                 setup_session_middleware_builder(
                     SessionMiddleware::builder(redis_store.clone(), secret_key.clone()),

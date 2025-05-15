@@ -7,5 +7,5 @@ mod types;
 mod use_cases;
 mod web_adapters;
 
-pub use types::LoginRequest;
+pub use types::{LoginRequest, UserVisible};
 pub use web_adapters::auth_routes;
