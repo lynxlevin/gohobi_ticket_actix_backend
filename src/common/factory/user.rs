@@ -12,10 +12,16 @@ pub fn user() -> users_user::ActiveModel {
 }
 
 pub trait UserFactory {
+    fn username(self, name: &str) -> users_user::ActiveModel;
     fn password(self, hashed_password: &str) -> users_user::ActiveModel;
 }
 
 impl UserFactory for users_user::ActiveModel {
+    fn username(mut self, name: &str) -> users_user::ActiveModel {
+        self.username = Set(name.to_string());
+        self
+    }
+
     fn password(mut self, hashed_password: &str) -> users_user::ActiveModel {
         self.password = Set(hashed_password.to_string());
         self

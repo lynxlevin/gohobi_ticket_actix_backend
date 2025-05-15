@@ -6,6 +6,7 @@ use actix_web::{cookie, web::scope, Scope};
 use common::settings::types::Settings;
 pub use user::auth_middleware::AuthenticateUser;
 use user::auth_routes;
+use user_relation::user_relation_routes;
 
 pub async fn get_preps_for_redis_session_store(
     settings: &Settings,
@@ -39,12 +40,7 @@ pub fn setup_session_middleware_builder(
 }
 
 pub fn get_routes() -> Scope {
-    scope("/api").configure(auth_routes) // .configure(routes::ambition_routes)
-                                         // .configure(routes::desired_state_routes)
-                                         // .configure(routes::action_routes)
-                                         // .configure(routes::mindset_routes)
-                                         // .configure(routes::reading_note_routes)
-                                         // .configure(routes::tag_routes)
-                                         // .configure(routes::action_track_routes)
-                                         // .configure(routes::diary_routes),
+    scope("/api")
+        .configure(auth_routes)
+        .configure(user_relation_routes)
 }

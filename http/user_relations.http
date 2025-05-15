@@ -11,11 +11,5 @@ Content-Type: application/json
 }
 
 ###
-# @name get_me
-GET {{endpoint}}/api/users/me
-
-
-###
-# @name logout
-POST {{endpoint}}/api/users/logout
-Content-Type: application/json
+# @name list_user_relations
+GET {{endpoint}}/api/user_relations/
