@@ -23,20 +23,20 @@ pub struct UserRelationQuery<'a> {
 }
 
 impl UserRelationQuery<'_> {
-    pub async fn find_by_id(
-        self,
-        id: i64,
-        user_id: i64,
-    ) -> Result<Option<user_relations_userrelation::Model>, DbErr> {
-        user_relations_userrelation::Entity::find_by_id(id)
-            .filter(
-                Condition::any()
-                    .add(user_relations_userrelation::Column::User1Id.eq(user_id))
-                    .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
-            )
-            .one(self.db)
-            .await
-    }
+    // pub async fn find_by_id(
+    //     self,
+    //     id: i64,
+    //     user_id: i64,
+    // ) -> Result<Option<user_relations_userrelation::Model>, DbErr> {
+    //     user_relations_userrelation::Entity::find_by_id(id)
+    //         .filter(
+    //             Condition::any()
+    //                 .add(user_relations_userrelation::Column::User1Id.eq(user_id))
+    //                 .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
+    //         )
+    //         .one(self.db)
+    //         .await
+    // }
 
     pub async fn find_related_by_user_id(
         self,

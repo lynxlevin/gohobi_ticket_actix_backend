@@ -1,0 +1,205 @@
+use actix_web::{http, test, HttpMessage};
+use chrono::{Duration, Utc};
+use sea_orm::{ActiveModelTrait, DbErr};
+use ticket::{ListTicketResponse, TicketStatus, TicketVisible};
+
+use crate::utils::{init_app, Connections};
+use common::factory::{self, *};
+
+#[actix_web::test]
+async fn list_giving_tickets() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let user_0 = factory::user().username("user_0").insert(&db).await?;
+    let user_1 = factory::user().username("user_1").insert(&db).await?;
+    let other_user = factory::user().insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .insert(&db)
+        .await?;
+    let _other_relation = factory::user_relation(other_user.id, user_0.id)
+        .insert(&db)
+        .await?;
+
+    let now = Utc::now();
+    let ticket_0 = factory::ticket(user_0.id, user_relation.id)
+        .gift_date(now.date_naive())
+        .status(TicketStatus::Draft.to_value())
+        .insert(&db)
+        .await?;
+    let ticket_1 = factory::ticket(user_0.id, user_relation.id)
+        .gift_date((now - Duration::days(1)).date_naive())
+        .status(TicketStatus::Unread.to_value())
+        .insert(&db)
+        .await?;
+    let ticket_2 = factory::ticket(user_0.id, user_relation.id)
+        .gift_date((now - Duration::days(2)).date_naive())
+        .status(TicketStatus::Edited.to_value())
+        .insert(&db)
+        .await?;
+    let ticket_3 = factory::ticket(user_0.id, user_relation.id)
+        .gift_date((now - Duration::days(3)).date_naive())
+        .use_date(Some(now.date_naive()))
+        .status(TicketStatus::Read.to_value())
+        .insert(&db)
+        .await?;
+    let ticket_4 = factory::ticket(user_0.id, user_relation.id)
+        .gift_date((now - Duration::days(4)).date_naive())
+        .status(TicketStatus::Read.to_value())
+        .insert(&db)
+        .await?;
+    let _receiving_ticket = factory::ticket(user_1.id, user_relation.id)
+        .gift_date(now.date_naive())
+        .status(TicketStatus::Read.to_value())
+        .insert(&db)
+        .await?;
+
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/tickets/?user_relation_id={}&is_giving",
+            user_relation.id
+        ))
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let res: ListTicketResponse = test::read_body_json(res).await;
+    let expected = ListTicketResponse {
+        tickets: vec![
+            TicketVisible::from(ticket_0),
+            TicketVisible::from(ticket_1),
+            TicketVisible::from(ticket_2),
+            TicketVisible::from(ticket_3),
+            TicketVisible::from(ticket_4),
+        ],
+    };
+    assert_eq!(res, expected);
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn list_receiving_tickets() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let user_0 = factory::user().username("user_0").insert(&db).await?;
+    let user_1 = factory::user().username("user_1").insert(&db).await?;
+    let other_user = factory::user().insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .insert(&db)
+        .await?;
+    let _other_relation = factory::user_relation(other_user.id, user_0.id)
+        .insert(&db)
+        .await?;
+
+    let now = Utc::now();
+    let _ticket_0 = factory::ticket(user_1.id, user_relation.id)
+        .gift_date(now.date_naive())
+        .status(TicketStatus::Draft.to_value())
+        .insert(&db)
+        .await?;
+    let ticket_1 = factory::ticket(user_1.id, user_relation.id)
+        .gift_date((now - Duration::days(1)).date_naive())
+        .status(TicketStatus::Unread.to_value())
+        .insert(&db)
+        .await?;
+    let ticket_2 = factory::ticket(user_1.id, user_relation.id)
+        .gift_date((now - Duration::days(2)).date_naive())
+        .status(TicketStatus::Edited.to_value())
+        .insert(&db)
+        .await?;
+    let ticket_3 = factory::ticket(user_1.id, user_relation.id)
+        .gift_date((now - Duration::days(3)).date_naive())
+        .use_date(Some(now.date_naive()))
+        .status(TicketStatus::Read.to_value())
+        .insert(&db)
+        .await?;
+    let ticket_4 = factory::ticket(user_1.id, user_relation.id)
+        .gift_date((now - Duration::days(4)).date_naive())
+        .status(TicketStatus::Read.to_value())
+        .insert(&db)
+        .await?;
+    let _giving_ticket = factory::ticket(user_0.id, user_relation.id)
+        .gift_date(now.date_naive())
+        .status(TicketStatus::Read.to_value())
+        .insert(&db)
+        .await?;
+
+    let valid_queries_for_receiving = vec!["&is_receiving", "&is_giving=false", ""];
+
+    for query in valid_queries_for_receiving {
+        let req = test::TestRequest::get()
+            .uri(&format!(
+                "/api/tickets/?user_relation_id={}{}",
+                user_relation.id, query,
+            ))
+            .to_request();
+        req.extensions_mut().insert(user_0.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::OK);
+
+        let res: ListTicketResponse = test::read_body_json(res).await;
+        let expected = ListTicketResponse {
+            tickets: vec![
+                TicketVisible::from(ticket_1.clone()),
+                TicketVisible::from(ticket_2.clone()),
+                TicketVisible::from(ticket_3.clone()),
+                TicketVisible::from(ticket_4.clone()),
+            ],
+        };
+        assert_eq!(res, expected);
+    }
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn empty_on_unrelated_relation() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let user = factory::user().username("user").insert(&db).await?;
+    let other_user_0 = factory::user().username("other_user_0").insert(&db).await?;
+    let other_user_1 = factory::user().username("other_user_1").insert(&db).await?;
+    let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
+        .insert(&db)
+        .await?;
+
+    let now = Utc::now();
+    let _unrelated_ticket = factory::ticket(other_user_0.id, other_relation.id)
+        .gift_date(now.date_naive())
+        .status(TicketStatus::Unread.to_value())
+        .insert(&db)
+        .await?;
+
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/tickets/?user_relation_id={}&is_giving",
+            other_relation.id
+        ))
+        .to_request();
+    req.extensions_mut().insert(user.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let res: ListTicketResponse = test::read_body_json(res).await;
+    let expected = ListTicketResponse {
+        tickets: Vec::new(),
+    };
+    assert_eq!(res, expected);
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
+    let Connections { app, .. } = init_app().await?;
+
+    let req = test::TestRequest::get()
+        .uri("/api/tickets/?user_relation_id=1&is_giving")
+        .to_request();
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
+
+    Ok(())
+}

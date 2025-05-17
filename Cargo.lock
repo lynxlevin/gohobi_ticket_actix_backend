@@ -3110,6 +3110,7 @@ dependencies = [
  "actix-session",
  "actix-web",
  "common",
+ "ticket",
  "user",
  "user_relation",
 ]
@@ -3551,6 +3552,7 @@ dependencies = [
  "entities",
  "sea-orm",
  "server",
+ "ticket",
  "urlencoding",
  "user",
  "user_relation",
@@ -3605,6 +3607,18 @@ checksum = "8b9ef9bad013ada3808854ceac7b46812a6465ba368859a37e2100283d2d719c"
 dependencies = [
  "cfg-if",
  "once_cell",
+]
+
+[[package]]
+name = "ticket"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "chrono",
+ "common",
+ "entities",
+ "sea-orm",
+ "serde",
 ]
 
 [[package]]

@@ -1,0 +1,40 @@
+use common::errors::use_case_errors::UseCaseError;
+use entities::users_user;
+use serde::Deserialize;
+
+use crate::{
+    db_adapters::{Order, TicketQuery},
+    ListTicketResponse, TicketVisible,
+};
+
+#[derive(Debug, Deserialize)]
+pub struct ListTicketsQueryParam {
+    user_relation_id: i64,
+    is_giving: Option<String>,
+}
+
+pub async fn list_tickets(
+    user: users_user::Model,
+    ticket_query: TicketQuery<'_>,
+    query_param: ListTicketsQueryParam,
+) -> Result<ListTicketResponse, UseCaseError> {
+    let is_giving = query_param
+        .is_giving
+        .is_some_and(|x| x != "false".to_string());
+    let tickets = match ticket_query
+        .filter_by_relation_and_user(query_param.user_relation_id, user.id)
+        .order_by_gift_date(Order::Desc)
+        .get_tickets(user.id, is_giving)
+        .await
+    {
+        Ok(tickets) => tickets,
+        Err(_) => return Err(UseCaseError::InternalServerError),
+    };
+
+    Ok(ListTicketResponse {
+        tickets: tickets
+            .iter()
+            .map(|ticket| TicketVisible::from(ticket))
+            .collect(),
+    })
+}

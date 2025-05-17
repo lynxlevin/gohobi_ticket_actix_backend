@@ -12,6 +12,7 @@ entities = { path = "../src/entities" }
 common = { path = "../src/common", features = ["db", "redis", "settings"] }
 user = { path = "../src/user" }
 user_relation = { path = "../src/user_relation" }
+ticket = { path = "../src/ticket" }
 server = { path = "../src/server" }
 
 actix-session.workspace = true

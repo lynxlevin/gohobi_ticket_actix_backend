@@ -8,6 +8,7 @@ members = [
     "src/common",
     "src/user",
     "src/user_relation",
+    "src/ticket",
     "src/server",
     "tests",
 ]
