@@ -10,6 +10,7 @@ path = "lib.rs"
 [dependencies]
 entities = { path = "../entities" }
 common = { path = "../common", features = ["errors", "settings", "db", "factory"] }
+user_relation = { path = "../user_relation" }
 
 actix-web.workspace = true
 chrono.workspace = true

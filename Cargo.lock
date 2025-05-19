@@ -3619,6 +3619,7 @@ dependencies = [
  "entities",
  "sea-orm",
  "serde",
+ "user_relation",
 ]
 
 [[package]]

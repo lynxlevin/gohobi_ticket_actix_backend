@@ -23,3 +23,18 @@ GET {{endpoint}}/api/tickets/?user_relation_id={{user_relation_id}}&is_giving
 ###
 # @name list_receiving_tickets
 GET {{endpoint}}/api/tickets/?user_relation_id={{user_relation_id}}&is_receiving
+
+###
+# @name create_ticket
+POST {{endpoint}}/api/tickets/
+Content-Type: application/json
+
+{
+  "ticket": {
+    "gift_date": "2025-05-19",
+    "description": "test ticket",
+    "user_relation_id": {{user_relation_id}},
+    "is_special": true,
+    "status": "draft"
+  }
+}

@@ -1,7 +1,12 @@
 use actix_web::web::{scope, ServiceConfig};
 
+mod create;
 mod list;
 
 pub fn ticket_routes(cfg: &mut ServiceConfig) {
-    cfg.service(scope("/tickets").service(list::list_tickets_endpoint));
+    cfg.service(
+        scope("/tickets")
+            .service(list::list_tickets_endpoint)
+            .service(create::create_ticket_endpoint),
+    );
 }

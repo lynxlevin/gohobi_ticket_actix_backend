@@ -2,7 +2,8 @@ use chrono::NaiveDate;
 use entities::tickets_ticket;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[serde(rename_all = "lowercase")]
 pub enum TicketStatus {
     Unread,
     Read,
@@ -83,4 +84,23 @@ impl From<&tickets_ticket::Model> for TicketVisible {
             is_special: value.is_special,
         }
     }
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct CreateTicketRequest {
+    pub ticket: CreateTicketRequestInner,
+}
+
+#[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct CreateTicketRequestInner {
+    pub gift_date: NaiveDate,
+    pub description: String,
+    pub user_relation_id: i64,
+    pub is_special: Option<bool>,
+    pub status: Option<TicketStatus>,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct CreateTicketResponse {
+    pub ticket: TicketVisible,
 }
