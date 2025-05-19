@@ -38,3 +38,9 @@ Content-Type: application/json
     "status": "draft"
   }
 }
+
+@ticket_id=2071
+
+###
+# @name delete_ticket
+DELETE {{endpoint}}/api/tickets/{{ticket_id}}/

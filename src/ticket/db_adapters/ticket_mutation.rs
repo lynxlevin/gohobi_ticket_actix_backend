@@ -1,7 +1,7 @@
 use crate::{CreateTicketRequestInner, TicketStatus};
 use chrono::Utc;
 use entities::tickets_ticket;
-use sea_orm::{ActiveModelTrait, DbConn, DbErr, Set};
+use sea_orm::{ActiveModelTrait, DbConn, DbErr, ModelTrait, Set};
 
 pub struct TicketMutation<'a> {
     pub db: &'a DbConn,
@@ -33,5 +33,9 @@ impl<'a> TicketMutation<'a> {
             ticket.is_special = Set(is_special);
         }
         ticket.insert(self.db).await
+    }
+
+    pub async fn delete(self, ticket: tickets_ticket::Model) -> Result<(), DbErr> {
+        ticket.delete(self.db).await.map(|_| ())
     }
 }

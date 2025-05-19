@@ -20,14 +20,13 @@ impl<'a> TicketQuery<'a> {
             query: tickets_ticket::Entity::find(),
         }
     }
-    pub fn filter_by_relation_and_user(mut self, user_relation_id: i64, user_id: i64) -> Self {
+    pub fn filter_by_user(mut self, user_id: i64) -> Self {
         self.query = self
             .query
             .join(
                 LeftJoin,
                 tickets_ticket::Relation::UserRelationsUserrelation.def(),
             )
-            .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id))
             .filter(
                 Condition::any()
                     .add(user_relations_userrelation::Column::User1Id.eq(user_id))
@@ -35,9 +34,22 @@ impl<'a> TicketQuery<'a> {
             );
         self
     }
+    pub fn filter_by_relation(mut self, user_relation_id: i64) -> Self {
+        self.query = self
+            .query
+            .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id));
+        self
+    }
     pub fn order_by_gift_date(mut self, order: Order) -> Self {
         self.query = self.query.order_by(tickets_ticket::Column::GiftDate, order);
         self
+    }
+
+    pub async fn get_by_id(self, ticket_id: i64) -> Result<Option<tickets_ticket::Model>, DbErr> {
+        self.query
+            .filter(tickets_ticket::Column::Id.eq(ticket_id))
+            .one(self.db)
+            .await
     }
 
     pub async fn get_tickets(

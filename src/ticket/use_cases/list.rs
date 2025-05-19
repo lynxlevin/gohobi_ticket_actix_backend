@@ -22,7 +22,8 @@ pub async fn list_tickets(
         .is_giving
         .is_some_and(|x| x != "false".to_string());
     let tickets = match ticket_query
-        .filter_by_relation_and_user(query_param.user_relation_id, user.id)
+        .filter_by_user(user.id)
+        .filter_by_relation(query_param.user_relation_id)
         .order_by_gift_date(Order::Desc)
         .get_tickets(user.id, is_giving)
         .await
