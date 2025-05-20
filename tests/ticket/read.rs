@@ -1,0 +1,164 @@
+use actix_web::{http, test, HttpMessage};
+use entities::tickets_ticket;
+use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
+use ticket::{
+    TicketStatus, TicketVisible, UpdateTicketRequest, UpdateTicketRequestInner,
+    UpsertTicketResponse,
+};
+
+use crate::utils::{init_app, Connections};
+use common::factory::{self, *};
+
+#[actix_web::test]
+async fn read_unread_ticket() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let user_0 = factory::user().insert(&db).await?;
+    let user_1 = factory::user().insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .insert(&db)
+        .await?;
+    let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
+        .insert(&db)
+        .await?;
+
+    let req = test::TestRequest::put()
+        .uri(&format!("/api/tickets/{}/read/", receiving_ticket.id))
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
+    let expected = TicketVisible {
+        status: TicketStatus::Read,
+        ..TicketVisible::from(&receiving_ticket)
+    };
+    assert_eq!(res, expected);
+
+    let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
+    assert!(ticket_in_db.is_some());
+    let ticket_in_db = ticket_in_db.unwrap();
+    assert_eq!(TicketVisible::from(&ticket_in_db), expected);
+    assert!(ticket_in_db.updated_at > receiving_ticket.updated_at);
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn read_edited_ticket() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let user_0 = factory::user().insert(&db).await?;
+    let user_1 = factory::user().insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .insert(&db)
+        .await?;
+    let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
+        .status(TicketStatus::Edited.to_value())
+        .insert(&db)
+        .await?;
+
+    let req = test::TestRequest::put()
+        .uri(&format!("/api/tickets/{}/read/", receiving_ticket.id))
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
+    let expected = TicketVisible {
+        status: TicketStatus::Read,
+        ..TicketVisible::from(&receiving_ticket)
+    };
+    assert_eq!(res, expected);
+
+    let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
+    assert!(ticket_in_db.is_some());
+    let ticket_in_db = ticket_in_db.unwrap();
+    assert_eq!(TicketVisible::from(&ticket_in_db), expected);
+    assert!(ticket_in_db.updated_at > receiving_ticket.updated_at);
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn forbidden_on_giving_ticket() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let user_0 = factory::user().insert(&db).await?;
+    let user_1 = factory::user().insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .insert(&db)
+        .await?;
+    let giving_ticket = factory::ticket(user_0.id, user_relation.id)
+        .insert(&db)
+        .await?;
+
+    let req = test::TestRequest::put()
+        .uri(&format!("/api/tickets/{}/read/", giving_ticket.id))
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::FORBIDDEN);
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn not_found_cases() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let user_0 = factory::user().insert(&db).await?;
+    let user_1 = factory::user().insert(&db).await?;
+    let other_user = factory::user().insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .insert(&db)
+        .await?;
+    let other_relation = factory::user_relation(other_user.id, user_1.id)
+        .insert(&db)
+        .await?;
+    let receiving_draft_ticket = factory::ticket(user_1.id, user_relation.id)
+        .status(TicketStatus::Draft.to_value())
+        .insert(&db)
+        .await?;
+    let unrelated_ticket = factory::ticket(other_user.id, other_relation.id)
+        .insert(&db)
+        .await?;
+
+    for (ticket_id, case) in vec![
+        (receiving_draft_ticket.id, "receiving_draft_ticket.id"),
+        (unrelated_ticket.id, "unrelated_ticket.id"),
+        (-1, "non_existent_id"),
+    ] {
+        dbg!(case);
+        let req = test::TestRequest::put()
+            .uri(&format!("/api/tickets/{}/read/", ticket_id))
+            .to_request();
+        req.extensions_mut().insert(user_0.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::NOT_FOUND);
+    }
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
+    let Connections { app, .. } = init_app().await?;
+
+    let req = test::TestRequest::put()
+        .uri("/api/tickets/1/read/")
+        .set_json(UpdateTicketRequest {
+            ticket: UpdateTicketRequestInner {
+                description: Some(String::default()),
+                status: None,
+            },
+        })
+        .to_request();
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
+
+    Ok(())
+}

@@ -55,5 +55,10 @@ Content-Type: application/json
 }
 
 ###
+# @name read_ticket
+PUT {{endpoint}}/api/tickets/{{ticket_id}}/read/
+Content-Type: application/json
+
+###
 # @name delete_ticket
 DELETE {{endpoint}}/api/tickets/{{ticket_id}}/
