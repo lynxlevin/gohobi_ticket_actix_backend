@@ -3,8 +3,8 @@ use chrono::{Duration, Utc};
 use entities::tickets_ticket;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{
-    CreateTicketRequest, CreateTicketRequestInner, CreateTicketResponse, TicketStatus,
-    TicketVisible,
+    CreateTicketRequest, CreateTicketRequestInner, TicketStatus, TicketVisible,
+    UpsertTicketResponse,
 };
 
 use crate::utils::{init_app, Connections};
@@ -39,7 +39,7 @@ async fn happy_path() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::CREATED);
 
-    let CreateTicketResponse { ticket: res } = test::read_body_json(res).await;
+    let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
     assert_eq!(res.gift_date, gift_date);
     assert_eq!(res.description, description);
     assert_eq!(res.giving_user_id, user_0.id);
@@ -85,7 +85,7 @@ async fn create_draft() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::CREATED);
 
-    let CreateTicketResponse { ticket: res } = test::read_body_json(res).await;
+    let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
     assert_eq!(res.gift_date, gift_date);
     assert_eq!(res.description, description);
     assert_eq!(res.giving_user_id, user_0.id);
@@ -140,7 +140,7 @@ async fn create_special() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::CREATED);
 
-    let CreateTicketResponse { ticket: res } = test::read_body_json(res).await;
+    let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
     assert_eq!(res.gift_date, gift_date);
     assert_eq!(res.description, description);
     assert_eq!(res.giving_user_id, user_0.id);
@@ -191,7 +191,7 @@ async fn create_special_already_exists() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::CREATED);
 
-    let CreateTicketResponse { ticket: res } = test::read_body_json(res).await;
+    let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
     assert_eq!(res.gift_date, gift_date);
     assert_eq!(res.description, description);
     assert_eq!(res.giving_user_id, user_0.id);

@@ -39,7 +39,20 @@ Content-Type: application/json
   }
 }
 
+###
 @ticket_id=2071
+
+###
+# @name update_ticket
+PUT {{endpoint}}/api/tickets/{{ticket_id}}/
+Content-Type: application/json
+
+{
+  "ticket": {
+    "description": "null",
+    "status": "read"
+  }
+}
 
 ###
 # @name delete_ticket

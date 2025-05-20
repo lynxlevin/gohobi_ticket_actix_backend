@@ -101,6 +101,17 @@ pub struct CreateTicketRequestInner {
 }
 
 #[derive(Deserialize, Debug, Serialize)]
-pub struct CreateTicketResponse {
+pub struct UpsertTicketResponse {
     pub ticket: TicketVisible,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct UpdateTicketRequest {
+    pub ticket: UpdateTicketRequestInner,
+}
+
+#[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct UpdateTicketRequestInner {
+    pub description: Option<String>,
+    pub status: Option<TicketStatus>,
 }

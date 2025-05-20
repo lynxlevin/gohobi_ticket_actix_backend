@@ -14,7 +14,7 @@ use user_relation::UserRelationQuery;
 use crate::{
     db_adapters::{TicketMutation, TicketQuery},
     use_cases::create::create_ticket,
-    CreateTicketRequest, CreateTicketResponse,
+    CreateTicketRequest, UpsertTicketResponse,
 };
 
 #[post("/")]
@@ -37,7 +37,7 @@ async fn create_ticket_endpoint(
             )
             .await
             {
-                Ok(ticket) => HttpResponse::Created().json(CreateTicketResponse { ticket }),
+                Ok(ticket) => HttpResponse::Created().json(UpsertTicketResponse { ticket }),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("UserRelation not found."),
                     _ => response_500(),
