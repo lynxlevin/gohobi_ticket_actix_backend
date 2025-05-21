@@ -1,5 +1,6 @@
-use crate::{db_adapters::UserRelationQuery, ListUserRelationsResponse, UserRelationVisible};
+use crate::{ListUserRelationsResponse, UserRelationVisible};
 use common::errors::use_case_errors::UseCaseError;
+use db_adapters::user_relation::UserRelationQuery;
 use entities::users_user;
 
 pub async fn list_user_relations(

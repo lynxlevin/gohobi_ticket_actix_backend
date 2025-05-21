@@ -1,18 +1,18 @@
 use common::errors::use_case_errors::UseCaseError;
-use entities::users_user;
-use user_relation::UserRelationQuery;
-
-use crate::{
-    db_adapters::{TicketMutation, TicketQuery},
-    CreateTicketRequestInner, TicketVisible,
+use db_adapters::{
+    ticket::{types::CreateTicketParams, TicketMutation, TicketQuery},
+    user_relation::UserRelationQuery,
 };
+use entities::users_user;
+
+use crate::TicketVisible;
 
 pub async fn create_ticket(
     user: users_user::Model,
     user_relation_query: UserRelationQuery<'_>,
     ticket_query: TicketQuery<'_>,
     ticket_mutation: TicketMutation<'_>,
-    params: &mut CreateTicketRequestInner,
+    params: &mut CreateTicketParams,
 ) -> Result<TicketVisible, UseCaseError> {
     match user_relation_query
         .find_by_id(params.user_relation_id, user.id)

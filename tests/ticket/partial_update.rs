@@ -1,10 +1,8 @@
 use actix_web::{http, test, HttpMessage};
+use db_adapters::ticket::types::{TicketStatus, UpdateTicketParams};
 use entities::tickets_ticket;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
-use ticket::{
-    TicketStatus, TicketVisible, UpdateTicketRequest, UpdateTicketRequestInner,
-    UpsertTicketResponse,
-};
+use ticket::{TicketVisible, UpdateTicketRequest, UpsertTicketResponse};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
@@ -26,7 +24,7 @@ async fn update_description_of_unread_ticket() -> Result<(), DbErr> {
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketRequestInner {
+            ticket: UpdateTicketParams {
                 description: Some(description.clone()),
                 status: None,
             },
@@ -71,7 +69,7 @@ async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbE
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketRequestInner {
+            ticket: UpdateTicketParams {
                 description: Some(description.clone()),
                 status: None,
             },
@@ -116,7 +114,7 @@ async fn update_only_status() -> Result<(), DbErr> {
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketRequestInner {
+            ticket: UpdateTicketParams {
                 description: None,
                 status: Some(status.clone()),
             },
@@ -172,7 +170,7 @@ async fn forbidden_on_changing_published_tickets_to_draft() -> Result<(), DbErr>
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/", ticket.id))
             .set_json(UpdateTicketRequest {
-                ticket: UpdateTicketRequestInner {
+                ticket: UpdateTicketParams {
                     description: None,
                     status: Some(TicketStatus::Draft),
                 },
@@ -202,7 +200,7 @@ async fn forbidden_on_receiving_ticket() -> Result<(), DbErr> {
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", receiving_ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketRequestInner {
+            ticket: UpdateTicketParams {
                 description: Some("Some name".to_string()),
                 status: None,
             },
@@ -237,7 +235,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/", ticket_id))
             .set_json(UpdateTicketRequest {
-                ticket: UpdateTicketRequestInner {
+                ticket: UpdateTicketParams {
                     description: Some("some name".to_string()),
                     status: None,
                 },
@@ -259,7 +257,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let req = test::TestRequest::put()
         .uri("/api/tickets/1/")
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketRequestInner {
+            ticket: UpdateTicketParams {
                 description: Some(String::default()),
                 status: None,
             },

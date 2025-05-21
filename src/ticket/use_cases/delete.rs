@@ -1,7 +1,6 @@
 use common::errors::use_case_errors::UseCaseError;
+use db_adapters::ticket::{TicketMutation, TicketQuery};
 use entities::users_user;
-
-use crate::db_adapters::{TicketMutation, TicketQuery};
 
 pub async fn delete_ticket(
     user: users_user::Model,

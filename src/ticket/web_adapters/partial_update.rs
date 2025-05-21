@@ -7,14 +7,13 @@ use common::errors::{
     error_responses::{response_401, response_403, response_404, response_500},
     use_case_errors::UseCaseError,
 };
+use db_adapters::ticket::{TicketMutation, TicketQuery};
 use entities::users_user;
 use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    db_adapters::{TicketMutation, TicketQuery},
-    use_cases::partial_update::partial_update_ticket,
-    UpdateTicketRequest, UpsertTicketResponse,
+    use_cases::partial_update::partial_update_ticket, UpdateTicketRequest, UpsertTicketResponse,
 };
 
 #[derive(Deserialize, Serialize, Debug)]

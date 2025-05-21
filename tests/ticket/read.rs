@@ -1,10 +1,8 @@
 use actix_web::{http, test, HttpMessage};
+use db_adapters::ticket::types::TicketStatus;
 use entities::tickets_ticket;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
-use ticket::{
-    TicketStatus, TicketVisible, UpdateTicketRequest, UpdateTicketRequestInner,
-    UpsertTicketResponse,
-};
+use ticket::{TicketVisible, UpsertTicketResponse};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
@@ -149,12 +147,6 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri("/api/tickets/1/read/")
-        .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketRequestInner {
-                description: Some(String::default()),
-                status: None,
-            },
-        })
         .to_request();
     let res = test::call_service(&app, req).await;
 

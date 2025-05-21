@@ -1048,6 +1048,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "db_adapters"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "chrono",
+ "common",
+ "entities",
+ "sea-orm",
+ "serde",
+]
+
+[[package]]
 name = "deadpool"
 version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3549,6 +3561,7 @@ dependencies = [
  "actix-web",
  "chrono",
  "common",
+ "db_adapters",
  "entities",
  "sea-orm",
  "server",
@@ -3616,10 +3629,10 @@ dependencies = [
  "actix-web",
  "chrono",
  "common",
+ "db_adapters",
  "entities",
  "sea-orm",
  "serde",
- "user_relation",
 ]
 
 [[package]]
@@ -3903,6 +3916,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "common",
+ "db_adapters",
  "entities",
  "sea-orm",
  "serde",

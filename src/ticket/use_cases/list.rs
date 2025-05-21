@@ -1,11 +1,9 @@
 use common::errors::use_case_errors::UseCaseError;
+use db_adapters::ticket::{Order, TicketQuery};
 use entities::users_user;
 use serde::Deserialize;
 
-use crate::{
-    db_adapters::{Order, TicketQuery},
-    ListTicketResponse, TicketVisible,
-};
+use crate::{ListTicketResponse, TicketVisible};
 
 #[derive(Debug, Deserialize)]
 pub struct ListTicketsQueryParam {

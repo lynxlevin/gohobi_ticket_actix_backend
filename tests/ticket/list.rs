@@ -1,7 +1,8 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{Duration, Utc};
+use db_adapters::ticket::types::TicketStatus;
 use sea_orm::{ActiveModelTrait, DbErr};
-use ticket::{ListTicketResponse, TicketStatus, TicketVisible};
+use ticket::{ListTicketResponse, TicketVisible};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};

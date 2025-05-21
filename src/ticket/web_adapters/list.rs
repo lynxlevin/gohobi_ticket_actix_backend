@@ -4,13 +4,11 @@ use actix_web::{
     HttpResponse,
 };
 use common::errors::error_responses::{response_401, response_500};
+use db_adapters::ticket::TicketQuery;
 use entities::users_user;
 use sea_orm::DbConn;
 
-use crate::{
-    db_adapters::TicketQuery,
-    use_cases::list::{list_tickets, ListTicketsQueryParam},
-};
+use crate::use_cases::list::{list_tickets, ListTicketsQueryParam};
 
 #[get("/")]
 async fn list_tickets_endpoint(

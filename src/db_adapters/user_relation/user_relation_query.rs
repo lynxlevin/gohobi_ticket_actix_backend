@@ -4,7 +4,7 @@ use sea_orm::{
     QueryOrder, QuerySelect, RelationTrait,
 };
 
-use crate::types::UserRelationWithName;
+use super::types::UserRelationWithName;
 
 #[derive(DeriveIden)]
 enum User1 {

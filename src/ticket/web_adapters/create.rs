@@ -7,15 +7,14 @@ use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
 };
+use db_adapters::{
+    ticket::{TicketMutation, TicketQuery},
+    user_relation::UserRelationQuery,
+};
 use entities::users_user;
 use sea_orm::DbConn;
-use user_relation::UserRelationQuery;
 
-use crate::{
-    db_adapters::{TicketMutation, TicketQuery},
-    use_cases::create::create_ticket,
-    CreateTicketRequest, UpsertTicketResponse,
-};
+use crate::{use_cases::create::create_ticket, CreateTicketRequest, UpsertTicketResponse};
 
 #[post("/")]
 async fn create_ticket_endpoint(

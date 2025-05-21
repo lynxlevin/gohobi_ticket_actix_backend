@@ -6,6 +6,7 @@ members = [
     "./migration",
     "src/entities",
     "src/common",
+    "src/db_adapters",
     "src/user",
     "src/user_relation",
     "src/ticket",

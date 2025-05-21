@@ -1,17 +1,18 @@
 use common::errors::use_case_errors::UseCaseError;
+use db_adapters::ticket::{
+    types::{TicketStatus, UpdateTicketParams},
+    TicketMutation, TicketQuery,
+};
 use entities::users_user;
 
-use crate::{
-    db_adapters::{TicketMutation, TicketQuery},
-    TicketStatus, TicketVisible, UpdateTicketRequestInner,
-};
+use crate::TicketVisible;
 
 pub async fn partial_update_ticket(
     user: users_user::Model,
     ticket_query: TicketQuery<'_>,
     ticket_mutation: TicketMutation<'_>,
     ticket_id: i64,
-    params: &mut UpdateTicketRequestInner,
+    params: &mut UpdateTicketParams,
 ) -> Result<TicketVisible, UseCaseError> {
     let ticket = match ticket_query
         .filter_by_user(user.id)

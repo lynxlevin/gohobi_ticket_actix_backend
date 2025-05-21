@@ -1,11 +1,9 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{Duration, Utc};
+use db_adapters::ticket::types::{CreateTicketParams, TicketStatus};
 use entities::tickets_ticket;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
-use ticket::{
-    CreateTicketRequest, CreateTicketRequestInner, TicketStatus, TicketVisible,
-    UpsertTicketResponse,
-};
+use ticket::{CreateTicketRequest, TicketVisible, UpsertTicketResponse};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
@@ -25,7 +23,7 @@ async fn happy_path() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri("/api/tickets/")
         .set_json(CreateTicketRequest {
-            ticket: CreateTicketRequestInner {
+            ticket: CreateTicketParams {
                 gift_date,
                 description: description.clone(),
                 user_relation_id: user_relation.id,
@@ -71,7 +69,7 @@ async fn create_draft() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri("/api/tickets/")
         .set_json(CreateTicketRequest {
-            ticket: CreateTicketRequestInner {
+            ticket: CreateTicketParams {
                 gift_date,
                 description: description.clone(),
                 user_relation_id: user_relation.id,
@@ -126,7 +124,7 @@ async fn create_special() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri("/api/tickets/")
         .set_json(CreateTicketRequest {
-            ticket: CreateTicketRequestInner {
+            ticket: CreateTicketParams {
                 gift_date,
                 description: description.clone(),
                 user_relation_id: user_relation.id,
@@ -177,7 +175,7 @@ async fn create_special_already_exists() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri("/api/tickets/")
         .set_json(CreateTicketRequest {
-            ticket: CreateTicketRequestInner {
+            ticket: CreateTicketParams {
                 gift_date,
                 description: description.clone(),
                 user_relation_id: user_relation.id,
@@ -221,7 +219,7 @@ async fn not_found_if_incorrect_user_relation_id() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri("/api/tickets/")
         .set_json(CreateTicketRequest {
-            ticket: CreateTicketRequestInner {
+            ticket: CreateTicketParams {
                 gift_date: Utc::now().date_naive(),
                 description: String::default(),
                 user_relation_id: other_relation.id,
@@ -245,7 +243,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri("/api/tickets/")
         .set_json(CreateTicketRequest {
-            ticket: CreateTicketRequestInner {
+            ticket: CreateTicketParams {
                 gift_date: Utc::now().date_naive(),
                 description: String::default(),
                 user_relation_id: 1,

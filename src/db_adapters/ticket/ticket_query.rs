@@ -1,4 +1,3 @@
-use crate::TicketStatus;
 use chrono::{Datelike, NaiveDate};
 use entities::{tickets_ticket, user_relations_userrelation};
 use sea_orm::{
@@ -7,6 +6,8 @@ use sea_orm::{
 };
 
 pub use sea_orm::Order;
+
+use super::types::TicketStatus;
 
 pub struct TicketQuery<'a> {
     pub db: &'a DbConn,

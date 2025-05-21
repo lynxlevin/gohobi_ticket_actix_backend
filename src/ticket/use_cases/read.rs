@@ -1,10 +1,11 @@
 use common::errors::use_case_errors::UseCaseError;
+use db_adapters::ticket::{
+    types::{TicketStatus, UpdateTicketParams},
+    TicketMutation, TicketQuery,
+};
 use entities::users_user;
 
-use crate::{
-    db_adapters::{TicketMutation, TicketQuery},
-    TicketStatus, TicketVisible, UpdateTicketRequestInner,
-};
+use crate::TicketVisible;
 
 pub async fn read_ticket(
     user: users_user::Model,
@@ -35,7 +36,7 @@ pub async fn read_ticket(
     ticket_mutation
         .update(
             ticket,
-            UpdateTicketRequestInner {
+            UpdateTicketParams {
                 description: None,
                 status: Some(TicketStatus::Read),
             },

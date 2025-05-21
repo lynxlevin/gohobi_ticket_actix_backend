@@ -4,10 +4,11 @@ use actix_web::{
     HttpResponse,
 };
 use common::errors::error_responses::{response_401, response_500};
+use db_adapters::user_relation::UserRelationQuery;
 use entities::users_user;
 use sea_orm::DbConn;
 
-use crate::{db_adapters::UserRelationQuery, use_cases::list::list_user_relations};
+use crate::use_cases::list::list_user_relations;
 
 #[get("/")]
 async fn list_user_relations_endpoint(

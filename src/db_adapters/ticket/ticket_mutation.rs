@@ -1,7 +1,8 @@
-use crate::{CreateTicketRequestInner, TicketStatus, UpdateTicketRequestInner};
 use chrono::Utc;
 use entities::tickets_ticket;
 use sea_orm::{ActiveModelTrait, DbConn, DbErr, IntoActiveModel, ModelTrait, Set};
+
+use super::types::{CreateTicketParams, TicketStatus, UpdateTicketParams};
 
 pub struct TicketMutation<'a> {
     pub db: &'a DbConn,
@@ -11,7 +12,7 @@ impl<'a> TicketMutation<'a> {
     pub async fn create(
         self,
         user_id: i64,
-        params: CreateTicketRequestInner,
+        params: CreateTicketParams,
     ) -> Result<tickets_ticket::Model, DbErr> {
         let now = Utc::now();
         let mut ticket = tickets_ticket::ActiveModel {
@@ -38,7 +39,7 @@ impl<'a> TicketMutation<'a> {
     pub async fn update(
         self,
         ticket: tickets_ticket::Model,
-        params: UpdateTicketRequestInner,
+        params: UpdateTicketParams,
     ) -> Result<tickets_ticket::Model, DbErr> {
         let mut ticket = ticket.into_active_model();
         if let Some(description) = params.description {
