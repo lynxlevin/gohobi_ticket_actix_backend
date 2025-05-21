@@ -12,6 +12,7 @@ common = { path = "../common", features = ["settings"] }
 user = { path = "../user" }
 user_relation = { path = "../user_relation" }
 ticket = { path = "../ticket" }
+diary_tag = { path = "../diary_tag" }
 
 actix-session.workspace = true
 actix-web.workspace = true

@@ -1057,6 +1057,7 @@ dependencies = [
  "entities",
  "sea-orm",
  "serde",
+ "uuid",
 ]
 
 [[package]]
@@ -1150,6 +1151,19 @@ dependencies = [
  "quote",
  "syn 2.0.101",
  "unicode-xid",
+]
+
+[[package]]
+name = "diary_tag"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "common",
+ "db_adapters",
+ "entities",
+ "sea-orm",
+ "serde",
+ "uuid",
 ]
 
 [[package]]
@@ -3122,6 +3136,7 @@ dependencies = [
  "actix-session",
  "actix-web",
  "common",
+ "diary_tag",
  "ticket",
  "user",
  "user_relation",
@@ -3562,6 +3577,7 @@ dependencies = [
  "chrono",
  "common",
  "db_adapters",
+ "diary_tag",
  "entities",
  "sea-orm",
  "server",

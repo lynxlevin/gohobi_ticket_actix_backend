@@ -4,6 +4,7 @@ use actix_session::{
 };
 use actix_web::{cookie, web::scope, Scope};
 use common::settings::types::Settings;
+use diary_tag::diary_tag_routes;
 use ticket::ticket_routes;
 pub use user::auth_middleware::AuthenticateUser;
 use user::auth_routes;
@@ -45,4 +46,5 @@ pub fn get_routes() -> Scope {
         .configure(auth_routes)
         .configure(user_relation_routes)
         .configure(ticket_routes)
+        .configure(diary_tag_routes)
 }
