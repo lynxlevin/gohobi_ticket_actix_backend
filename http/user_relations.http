@@ -13,3 +13,10 @@ Content-Type: application/json
 ###
 # @name list_user_relations
 GET {{endpoint}}/api/user_relations/
+
+###
+@user_relation_id=1
+
+###
+# @name special_ticket_availability
+GET {{endpoint}}/api/user_relations/{{user_relation_id}}/special_ticket_availability/?year=2025&month=6
