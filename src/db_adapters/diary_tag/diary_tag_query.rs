@@ -5,6 +5,7 @@ use sea_orm::{
     ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter,
     QueryOrder, QuerySelect, RelationTrait, Select,
 };
+use uuid::Uuid;
 
 use super::types::DiaryTagVisible;
 
@@ -56,6 +57,27 @@ impl<'a> DiaryTagQuery<'a> {
             .order_by_asc(diaries_diarytag::Column::SortNo)
             .into_model::<DiaryTagVisible>()
             .all(self.db)
+            .await
+    }
+
+    pub async fn get_diary_tag_with_diary_count(
+        self,
+        diary_tag_id: Uuid,
+    ) -> Result<Option<DiaryTagVisible>, DbErr> {
+        self.query
+            .filter(diaries_diarytag::Column::Id.eq(diary_tag_id))
+            .column_as(diaries_diary::Column::Id.count(), "diary_count")
+            .join(
+                LeftJoin,
+                diaries_diarytag::Relation::DiariesDiarytagrelation.def(),
+            )
+            .join(
+                LeftJoin,
+                diaries_diarytagrelation::Relation::DiariesDiary.def(),
+            )
+            .group_by(diaries_diarytag::Column::Id)
+            .into_model::<DiaryTagVisible>()
+            .one(self.db)
             .await
     }
 }

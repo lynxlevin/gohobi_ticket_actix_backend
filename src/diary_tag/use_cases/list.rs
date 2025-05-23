@@ -27,6 +27,6 @@ pub async fn list_diary_tags(
         .await
     {
         Ok(tags) => Ok(ListDiaryTagsResponse { diary_tags: tags }),
-        Err(e) => Err(UseCaseError::InternalServerError),
+        Err(_) => Err(UseCaseError::InternalServerError),
     }
 }

@@ -1,0 +1,29 @@
+# Turn on debug to use these.
+
+###
+# @name login
+POST {{endpoint}}/api/users/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+# @name list_user_relations
+GET {{endpoint}}/api/user_relations/
+
+@user_relation_id=1
+
+###
+# @name list_diary_tags
+GET {{endpoint}}/api/diary_tags/?user_relation_id={{user_relation_id}}
+
+###
+@diary_tag_id=e6d2efec-e2e5-441d-aee0-8a2f485ee29d
+
+###
+# @name get_diary_tag
+GET {{endpoint}}/api/diary_tags/{{diary_tag_id}}/
+
