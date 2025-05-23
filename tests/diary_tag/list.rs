@@ -118,7 +118,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
 
     for (user_relation_id, case) in vec![
         (other_relation.id, "other_relation.id"),
-        // (-1, "non existent id"),
+        (-1, "non existent id"),
     ] {
         dbg!(case);
         let req = test::TestRequest::get()

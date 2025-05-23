@@ -9,7 +9,8 @@ pub async fn get_diary_tag(
 ) -> Result<DiaryTagVisible, UseCaseError> {
     match diary_tag_query
         .filter_by_user(user_id)
-        .get_diary_tag_with_diary_count(diary_tag_id)
+        .annotate_diary_count()
+        .get_diary_tag_visible(diary_tag_id)
         .await
     {
         Ok(tag) => match tag {

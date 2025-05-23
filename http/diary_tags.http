@@ -27,3 +27,6 @@ GET {{endpoint}}/api/diary_tags/?user_relation_id={{user_relation_id}}
 # @name get_diary_tag
 GET {{endpoint}}/api/diary_tags/{{diary_tag_id}}/
 
+###
+# @name delete_ticket
+DELETE {{endpoint}}/api/diary_tags/{{diary_tag_id}}/

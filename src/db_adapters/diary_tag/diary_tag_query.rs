@@ -41,9 +41,9 @@ impl<'a> DiaryTagQuery<'a> {
             .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation_id));
         self
     }
-
-    pub async fn get_diary_tags_with_diary_count(self) -> Result<Vec<DiaryTagVisible>, DbErr> {
-        self.query
+    pub fn annotate_diary_count(mut self) -> Self {
+        self.query = self
+            .query
             .column_as(diaries_diary::Column::Id.count(), "diary_count")
             .join(
                 LeftJoin,
@@ -53,30 +53,35 @@ impl<'a> DiaryTagQuery<'a> {
                 LeftJoin,
                 diaries_diarytagrelation::Relation::DiariesDiary.def(),
             )
-            .group_by(diaries_diarytag::Column::Id)
+            .group_by(diaries_diarytag::Column::Id);
+        self
+    }
+
+    pub async fn get_diary_tags_visible(self) -> Result<Vec<DiaryTagVisible>, DbErr> {
+        self.query
             .order_by_asc(diaries_diarytag::Column::SortNo)
             .into_model::<DiaryTagVisible>()
             .all(self.db)
             .await
     }
 
-    pub async fn get_diary_tag_with_diary_count(
+    pub async fn get_diary_tag_visible(
         self,
         diary_tag_id: Uuid,
     ) -> Result<Option<DiaryTagVisible>, DbErr> {
         self.query
             .filter(diaries_diarytag::Column::Id.eq(diary_tag_id))
-            .column_as(diaries_diary::Column::Id.count(), "diary_count")
-            .join(
-                LeftJoin,
-                diaries_diarytag::Relation::DiariesDiarytagrelation.def(),
-            )
-            .join(
-                LeftJoin,
-                diaries_diarytagrelation::Relation::DiariesDiary.def(),
-            )
-            .group_by(diaries_diarytag::Column::Id)
             .into_model::<DiaryTagVisible>()
+            .one(self.db)
+            .await
+    }
+
+    pub async fn get_diary_tag(
+        self,
+        diary_tag_id: Uuid,
+    ) -> Result<Option<diaries_diarytag::Model>, DbErr> {
+        self.query
+            .filter(diaries_diarytag::Column::Id.eq(diary_tag_id))
             .one(self.db)
             .await
     }
