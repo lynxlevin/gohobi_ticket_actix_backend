@@ -10,6 +10,7 @@ members = [
     "src/user",
     "src/user_relation",
     "src/ticket",
+    "src/diary",
     "src/diary_tag",
     "src/server",
     "tests",

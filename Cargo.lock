@@ -1154,6 +1154,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "diary"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "chrono",
+ "common",
+ "db_adapters",
+ "entities",
+ "sea-orm",
+ "serde",
+]
+
+[[package]]
 name = "diary_tag"
 version = "0.1.0"
 dependencies = [
@@ -3136,6 +3149,7 @@ dependencies = [
  "actix-session",
  "actix-web",
  "common",
+ "diary",
  "diary_tag",
  "ticket",
  "user",
@@ -3577,6 +3591,7 @@ dependencies = [
  "chrono",
  "common",
  "db_adapters",
+ "diary",
  "diary_tag",
  "entities",
  "sea-orm",

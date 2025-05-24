@@ -1,0 +1,23 @@
+[package]
+name = "diary"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "diary"
+path = "lib.rs"
+
+[dependencies]
+entities = { path = "../entities" }
+common = { path = "../common", features = [
+    "errors",
+    "settings",
+    "db",
+    "factory",
+] }
+db_adapters = { path = "../db_adapters" }
+
+actix-web.workspace = true
+chrono.workspace = true
+sea-orm.workspace = true
+serde.workspace = true

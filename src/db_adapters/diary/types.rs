@@ -1,4 +1,6 @@
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -29,4 +31,14 @@ impl From<String> for DiaryStatus {
             _ => DiaryStatus::Invalid,
         }
     }
+}
+
+#[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct CreateDiaryParams {
+    pub entry: String,
+    pub date: NaiveDate,
+    pub user_relation_id: i64,
+    pub user_1_status: DiaryStatus,
+    pub user_2_status: DiaryStatus,
+    pub tag_ids: Vec<Uuid>,
 }
