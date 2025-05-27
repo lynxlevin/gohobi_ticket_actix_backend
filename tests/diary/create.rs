@@ -40,7 +40,7 @@ async fn happy_path() -> Result<(), DbErr> {
     assert_eq!(res.entry, entry.clone());
     assert_eq!(res.date, today);
     assert_eq!(res.status, DiaryStatus::Read);
-    assert_eq!(res.tag_ids, tag_ids);
+    assert_eq!(res.tag_ids, Some(tag_ids.clone()));
 
     let diary_in_db = diaries_diary::Entity::find_by_id(res.id).one(&db).await?;
     assert!(diary_in_db.is_some());
@@ -88,6 +88,7 @@ async fn happy_path_with_tag_ids() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::CREATED);
 
     let res: UpsertDiaryResponse = test::read_body_json(res).await;
+    assert_eq!(res.tag_ids, Some(tag_ids.clone()));
 
     let tag_link_in_db = diaries_diarytagrelation::Entity::find()
         .filter(diaries_diarytagrelation::Column::DiaryId.eq(res.id))
@@ -115,9 +116,10 @@ async fn not_found_if_incorrect_user_relation_id() -> Result<(), DbErr> {
         .insert(&db)
         .await?;
 
-    for (user_relation_id, case) in
-        vec![(other_relation.id, "other_relation.id"), (-1, "invalid id")]
-    {
+    for (user_relation_id, case) in vec![
+        (other_relation.id, "other_relation.id"),
+        (-1, "non-existent id"),
+    ] {
         dbg!(case);
         let req = test::TestRequest::post()
             .uri("/api/diaries/")

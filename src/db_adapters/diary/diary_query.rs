@@ -1,10 +1,11 @@
 use entities::{diaries_diary, user_relations_userrelation};
 use sea_orm::{
-    ColumnTrait, Condition, DbConn, EntityTrait, JoinType::LeftJoin, QueryFilter, QueryOrder,
-    QuerySelect, RelationTrait, Select,
+    ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter,
+    QueryOrder, QuerySelect, RelationTrait, Select,
 };
 
 pub use sea_orm::Order;
+use uuid::Uuid;
 
 pub struct DiaryQuery<'a> {
     pub db: &'a DbConn,
@@ -12,7 +13,7 @@ pub struct DiaryQuery<'a> {
 }
 
 impl<'a> DiaryQuery<'a> {
-    pub fn init_query(db: &'a DbConn) -> Self {
+    pub fn init(db: &'a DbConn) -> Self {
         Self {
             db,
             query: diaries_diary::Entity::find(),
@@ -38,8 +39,27 @@ impl<'a> DiaryQuery<'a> {
             .filter(diaries_diary::Column::UserRelationId.eq(user_relation_id));
         self
     }
+    pub fn filter_by_id(mut self, diary_id: Uuid) -> Self {
+        self.query = self.query.filter(diaries_diary::Column::Id.eq(diary_id));
+        self
+    }
     pub fn order_by_date(mut self, order: Order) -> Self {
         self.query = self.query.order_by(diaries_diary::Column::Date, order);
         self
+    }
+
+    pub async fn get_also_relation(
+        self,
+    ) -> Result<
+        Option<(
+            diaries_diary::Model,
+            Option<user_relations_userrelation::Model>,
+        )>,
+        DbErr,
+    > {
+        self.query
+            .select_also(user_relations_userrelation::Entity)
+            .one(self.db)
+            .await
     }
 }

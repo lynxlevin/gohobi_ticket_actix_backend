@@ -47,7 +47,7 @@ pub async fn create_diary<'a>(
             entry: diary.entry,
             date: diary.date,
             status: DiaryStatus::Read,
-            tag_ids: req_params.tag_ids,
+            tag_ids: Some(req_params.tag_ids),
         }),
         Err(_) => Err(UseCaseError::InternalServerError),
     }

@@ -27,3 +27,10 @@ Content-Type: application/json
   "user_relation_id": {{user_relation_id}},
   "tag_ids": []
 }
+
+###
+@diary_id=01970f8a-03e0-72e0-96d9-76a82ee3d60f
+
+###
+# @name mark_diary_read
+PUT {{endpoint}}/api/diaries/{{diary_id}}/mark_read/

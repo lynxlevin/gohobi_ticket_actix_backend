@@ -1164,6 +1164,7 @@ dependencies = [
  "entities",
  "sea-orm",
  "serde",
+ "uuid",
 ]
 
 [[package]]

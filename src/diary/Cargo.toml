@@ -21,3 +21,4 @@ actix-web.workspace = true
 chrono.workspace = true
 sea-orm.workspace = true
 serde.workspace = true
+uuid.workspace = true

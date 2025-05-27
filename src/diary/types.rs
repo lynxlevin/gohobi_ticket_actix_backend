@@ -33,5 +33,5 @@ pub struct UpsertDiaryResponse {
     pub entry: String,
     pub date: NaiveDate,
     pub status: DiaryStatus,
-    pub tag_ids: Vec<Uuid>,
+    pub tag_ids: Option<Vec<Uuid>>,
 }

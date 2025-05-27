@@ -1,9 +1,9 @@
 use chrono::Utc;
 use entities::{diaries_diary, diaries_diarytagrelation};
-use sea_orm::{ActiveModelTrait, DbConn, DbErr, EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, DbConn, DbErr, EntityTrait, IntoActiveModel, Set};
 use uuid::Uuid;
 
-use super::types::CreateDiaryParams;
+use super::types::{CreateDiaryParams, UpdateDiaryParams};
 
 pub struct DiaryMutation<'a> {
     pub db: &'a DbConn,
@@ -50,19 +50,28 @@ impl<'a> DiaryMutation<'a> {
         Ok(diary)
     }
 
-    // pub async fn update(
-    //     self,
-    //     ticket: diaries_diary::Model,
-    //     params: UpdateTicketParams,
-    // ) -> Result<diaries_diary::Model, DbErr> {
-    //     let mut ticket = ticket.into_active_model();
-    //     if let Some(description) = params.description {
-    //         ticket.description = Set(description);
-    //     };
-    //     if let Some(status) = params.status {
-    //         ticket.status = Set(status.to_value());
-    //     };
-    //     ticket.updated_at = Set(Utc::now().into());
-    //     ticket.update(self.db).await
-    // }
+    pub async fn update(
+        self,
+        diary: diaries_diary::Model,
+        params: UpdateDiaryParams,
+    ) -> Result<diaries_diary::Model, DbErr> {
+        let mut diary = diary.into_active_model();
+        if let Some(entry) = params.entry {
+            diary.entry = Set(entry);
+        };
+        if let Some(date) = params.date {
+            diary.date = Set(date.into());
+        };
+        if let Some(_tag_ids) = params.tag_ids {
+            todo!();
+        };
+        if let Some(user_1_status) = params.user_1_status {
+            diary.user_1_status = Set(user_1_status.to_value());
+        };
+        if let Some(user_2_status) = params.user_2_status {
+            diary.user_2_status = Set(user_2_status.to_value());
+        };
+        diary.updated_at = Set(Utc::now().into());
+        diary.update(self.db).await
+    }
 }
