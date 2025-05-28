@@ -1,4 +1,4 @@
-use entities::{diaries_diary, user_relations_userrelation};
+use entities::{diaries_diary, diaries_diarytag, user_relations_userrelation};
 use sea_orm::{
     ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter,
     QueryOrder, QuerySelect, RelationTrait, Select,
@@ -60,6 +60,15 @@ impl<'a> DiaryQuery<'a> {
         self.query
             .select_also(user_relations_userrelation::Entity)
             .one(self.db)
+            .await
+    }
+
+    pub async fn get_all_with_tags(
+        self,
+    ) -> Result<Vec<(diaries_diary::Model, Vec<diaries_diarytag::Model>)>, DbErr> {
+        self.query
+            .find_with_related(diaries_diarytag::Entity)
+            .all(self.db)
             .await
     }
 }

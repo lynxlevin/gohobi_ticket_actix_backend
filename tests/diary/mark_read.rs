@@ -17,8 +17,8 @@ async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
         .insert(&db)
         .await?;
     let diary = factory::diary(user_relation.id)
-        .user_1_status(&DiaryStatus::Unread.to_value())
-        .user_2_status(&DiaryStatus::Read.to_value())
+        .user_1_status(DiaryStatus::Unread.to_value())
+        .user_2_status(DiaryStatus::Read.to_value())
         .insert(&db)
         .await?;
 
@@ -57,8 +57,8 @@ async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
         .insert(&db)
         .await?;
     let diary = factory::diary(user_relation.id)
-        .user_1_status(&DiaryStatus::Edited.to_value())
-        .user_2_status(&DiaryStatus::Read.to_value())
+        .user_1_status(DiaryStatus::Edited.to_value())
+        .user_2_status(DiaryStatus::Read.to_value())
         .insert(&db)
         .await?;
 
