@@ -2,12 +2,17 @@ use entities::{
     diaries_diary, diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation,
 };
 use sea_orm::{
-    ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter,
-    QueryOrder, QuerySelect, RelationTrait, Select,
+    ColumnTrait, Condition, DbConn, DbErr, DeriveColumn, EntityTrait, EnumIter, JoinType::LeftJoin,
+    QueryFilter, QueryOrder, QuerySelect, RelationTrait, Select,
 };
 use uuid::Uuid;
 
 use super::types::DiaryTagVisible;
+
+#[derive(DeriveColumn, Copy, Debug, Clone, EnumIter)]
+enum TagId {
+    Id,
+}
 
 pub struct DiaryTagQuery<'a> {
     pub db: &'a DbConn,
@@ -35,10 +40,17 @@ impl<'a> DiaryTagQuery<'a> {
             );
         self
     }
-    pub fn filter_by_relation(mut self, user_relation_id: i64) -> Self {
+    pub fn filter_by_relation(
+        mut self,
+        user_relation: &user_relations_userrelation::Model,
+    ) -> Self {
         self.query = self
             .query
-            .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation_id));
+            .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation.id));
+        self
+    }
+    pub fn filter_id_in(mut self, ids: Vec<Uuid>) -> Self {
+        self.query = self.query.filter(diaries_diarytag::Column::Id.is_in(ids));
         self
     }
     pub fn annotate_diary_count(mut self) -> Self {
@@ -83,6 +95,15 @@ impl<'a> DiaryTagQuery<'a> {
         self.query
             .filter(diaries_diarytag::Column::Id.eq(diary_tag_id))
             .one(self.db)
+            .await
+    }
+
+    pub async fn get_ids(self) -> Result<Vec<Uuid>, DbErr> {
+        self.query
+            .select_only()
+            .column(diaries_diarytag::Column::Id)
+            .into_values::<_, TagId>()
+            .all(self.db)
             .await
     }
 }

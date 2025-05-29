@@ -47,7 +47,6 @@ pub struct CreateDiaryParams {
 pub struct UpdateDiaryParams {
     pub entry: Option<String>,
     pub date: Option<NaiveDate>,
-    pub tag_ids: Option<Vec<Uuid>>,
     pub user_1_status: Option<DiaryStatus>,
     pub user_2_status: Option<DiaryStatus>,
 }

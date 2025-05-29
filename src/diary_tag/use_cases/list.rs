@@ -9,12 +9,12 @@ pub async fn list_diary_tags(
     diary_tag_query: DiaryTagQuery<'_>,
     user_relation_query: UserRelationQuery<'_>,
 ) -> Result<ListDiaryTagsResponse, UseCaseError> {
-    match user_relation_query
+    let user_relation = match user_relation_query
         .find_by_id(user_relation_id, user_id)
         .await
     {
         Ok(user_relation) => match user_relation {
-            Some(_) => {}
+            Some(relation) => relation,
             None => return Err(UseCaseError::NotFound),
         },
         Err(_) => return Err(UseCaseError::InternalServerError),
@@ -22,7 +22,7 @@ pub async fn list_diary_tags(
 
     match diary_tag_query
         .filter_by_user(user_id)
-        .filter_by_relation(user_relation_id)
+        .filter_by_relation(&user_relation)
         .annotate_diary_count()
         .get_diary_tags_visible()
         .await

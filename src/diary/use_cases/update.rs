@@ -1,9 +1,12 @@
 use common::errors::use_case_errors::UseCaseError;
-use db_adapters::diary::{
-    types::{DiaryStatus, UpdateDiaryParams},
-    DiaryMutation, DiaryQuery,
+use db_adapters::{
+    diary::{
+        types::{DiaryStatus, UpdateDiaryParams},
+        DiaryMutation, DiaryQuery,
+    },
+    diary_tag::DiaryTagQuery,
 };
-use entities::users_user;
+use entities::{diaries_diary, users_user};
 use uuid::Uuid;
 
 use crate::{UpdateDiaryRequest, UpsertDiaryResponse};
@@ -12,10 +15,12 @@ pub async fn update_diary<'a>(
     user: users_user::Model,
     diary_query: DiaryQuery<'a>,
     diary_mutation: DiaryMutation<'a>,
+    diary_tag_query: DiaryTagQuery<'a>,
     diary_id: Uuid,
     req_param: UpdateDiaryRequest,
 ) -> Result<UpsertDiaryResponse, UseCaseError> {
     let (diary, user_relation) = match diary_query
+        .clone()
         .filter_by_user(user.id)
         .filter_by_id(diary_id)
         .get_also_relation()
@@ -31,34 +36,110 @@ pub async fn update_diary<'a>(
         Err(_) => return Err(UseCaseError::InternalServerError),
     };
 
-    let params = UpdateDiaryParams {
-        entry: Some(req_param.entry),
-        date: Some(req_param.date),
-        tag_ids: req_param.tag_ids,
-        user_1_status: match user_relation.user_1_id == user.id {
-            true => Some(DiaryStatus::Read),
-            false => match DiaryStatus::from(diary.clone().user_1_status) {
-                DiaryStatus::Read => Some(DiaryStatus::Edited),
-                _ => None,
+    let (user_1_status, user_2_status) = match user_relation.user_1_id == user.id {
+        true => (
+            Some(DiaryStatus::Read),
+            get_partner_status(diary.clone().user_2_status.into()),
+        ),
+        false => (
+            get_partner_status(diary.clone().user_1_status.into()),
+            Some(DiaryStatus::Read),
+        ),
+    };
+    let diary = diary_mutation
+        .update(
+            diary,
+            UpdateDiaryParams {
+                entry: Some(req_param.entry),
+                date: Some(req_param.date),
+                user_1_status,
+                user_2_status,
             },
-        },
-        user_2_status: match user_relation.user_2_id == user.id {
-            true => Some(DiaryStatus::Read),
-            false => match DiaryStatus::from(diary.clone().user_2_status) {
-                DiaryStatus::Read => Some(DiaryStatus::Edited),
-                _ => None,
-            },
-        },
+        )
+        .await
+        .map_err(|_| UseCaseError::InternalServerError)?;
+
+    let linked_tag_ids = match req_param.tag_ids {
+        Some(tag_ids) => {
+            let clean_tag_ids = diary_tag_query
+                .filter_id_in(tag_ids)
+                .filter_by_relation(&user_relation)
+                .get_ids()
+                .await
+                .map_err(|_| UseCaseError::InternalServerError)?;
+            let current_linked_tag_ids = diary_query
+                .filter_by_id(diary.id)
+                .get_tag_ids()
+                .await
+                .map_err(|_| UseCaseError::InternalServerError)?;
+
+            link_tags(
+                clean_tag_ids.clone(),
+                &current_linked_tag_ids,
+                &diary_mutation,
+                &diary,
+            )
+            .await?;
+
+            unlink_tags(
+                &clean_tag_ids,
+                current_linked_tag_ids,
+                &diary_mutation,
+                &diary,
+            )
+            .await?;
+
+            Some(clean_tag_ids)
+        }
+        None => None,
     };
 
-    match diary_mutation.update(diary, params).await {
-        Ok((diary, tag_ids)) => Ok(UpsertDiaryResponse {
-            id: diary.id,
-            entry: diary.entry,
-            date: diary.date,
-            status: DiaryStatus::Read,
-            tag_ids: tag_ids,
-        }),
-        Err(_) => Err(UseCaseError::InternalServerError),
+    Ok(UpsertDiaryResponse {
+        id: diary.id,
+        entry: diary.entry,
+        date: diary.date,
+        status: DiaryStatus::Read,
+        tag_ids: linked_tag_ids,
+    })
+}
+
+fn get_partner_status(current_partner_status: DiaryStatus) -> Option<DiaryStatus> {
+    match current_partner_status {
+        DiaryStatus::Read => Some(DiaryStatus::Edited),
+        _ => None,
     }
+}
+
+async fn link_tags(
+    tag_ids: Vec<Uuid>,
+    current_linked_tag_ids: &Vec<Uuid>,
+    diary_mutation: &DiaryMutation<'_>,
+    diary: &diaries_diary::Model,
+) -> Result<(), UseCaseError> {
+    let tag_ids_to_link: Vec<Uuid> = tag_ids
+        .into_iter()
+        .filter(|tag_id| !current_linked_tag_ids.contains(&tag_id))
+        .collect();
+    diary_mutation
+        .link_tags(diary.id, tag_ids_to_link)
+        .await
+        .map_err(|_| UseCaseError::InternalServerError)?;
+    Ok(())
+}
+
+async fn unlink_tags(
+    tag_ids: &Vec<Uuid>,
+    current_linked_tag_ids: Vec<Uuid>,
+    diary_mutation: &DiaryMutation<'_>,
+    diary: &diaries_diary::Model,
+) -> Result<(), UseCaseError> {
+    let tag_ids_to_remove: Vec<Uuid> = current_linked_tag_ids
+        .into_iter()
+        .filter(|id| !tag_ids.contains(&id))
+        .collect();
+    diary_mutation
+        .unlink_tags(diary.id, tag_ids_to_remove)
+        .await
+        .map_err(|_| UseCaseError::InternalServerError)?;
+    Ok(())
 }

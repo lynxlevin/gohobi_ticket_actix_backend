@@ -7,7 +7,10 @@ use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
 };
-use db_adapters::diary::{DiaryMutation, DiaryQuery};
+use db_adapters::{
+    diary::{DiaryMutation, DiaryQuery},
+    diary_tag::DiaryTagQuery,
+};
 use entities::users_user;
 use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
@@ -31,10 +34,12 @@ async fn update_diary_endpoint(
         Some(user) => {
             let diary_query = DiaryQuery::init(&db);
             let diary_mutation = DiaryMutation::init(&db);
+            let diary_tag_query = DiaryTagQuery::init_query(&db);
             match update_diary(
                 user.into_inner(),
                 diary_query,
                 diary_mutation,
+                diary_tag_query,
                 path_param.diary_id,
                 req_param.into_inner(),
             )

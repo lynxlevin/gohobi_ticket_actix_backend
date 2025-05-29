@@ -1,12 +1,20 @@
-use entities::{diaries_diary, diaries_diarytag, user_relations_userrelation};
+use entities::{
+    diaries_diary, diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation,
+};
 use sea_orm::{
-    ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter,
-    QueryOrder, QuerySelect, RelationTrait, Select,
+    ColumnTrait, Condition, DbConn, DbErr, DeriveColumn, EntityTrait, EnumIter, JoinType::LeftJoin,
+    QueryFilter, QueryOrder, QuerySelect, RelationTrait, Select,
 };
 
 pub use sea_orm::Order;
 use uuid::Uuid;
 
+#[derive(DeriveColumn, Copy, Debug, Clone, EnumIter)]
+enum TagId {
+    TagMasterId,
+}
+
+#[derive(Clone)]
 pub struct DiaryQuery<'a> {
     pub db: &'a DbConn,
     pub query: Select<diaries_diary::Entity>,
@@ -68,6 +76,19 @@ impl<'a> DiaryQuery<'a> {
     ) -> Result<Vec<(diaries_diary::Model, Vec<diaries_diarytag::Model>)>, DbErr> {
         self.query
             .find_with_related(diaries_diarytag::Entity)
+            .all(self.db)
+            .await
+    }
+
+    pub async fn get_tag_ids(self) -> Result<Vec<Uuid>, DbErr> {
+        self.query
+            .join(
+                LeftJoin,
+                diaries_diary::Relation::DiariesDiarytagrelation.def(),
+            )
+            .select_only()
+            .column(diaries_diarytagrelation::Column::TagMasterId)
+            .into_values::<_, TagId>()
             .all(self.db)
             .await
     }
