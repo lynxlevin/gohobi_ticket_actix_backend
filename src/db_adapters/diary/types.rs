@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -8,7 +10,6 @@ pub enum DiaryStatus {
     Unread,
     Read,
     Edited,
-    Invalid,
 }
 
 impl DiaryStatus {
@@ -17,18 +18,26 @@ impl DiaryStatus {
             DiaryStatus::Unread => "unread".to_string(),
             DiaryStatus::Read => "read".to_string(),
             DiaryStatus::Edited => "edited".to_string(),
-            DiaryStatus::Invalid => "invalid".to_string(),
         }
     }
 }
 
-impl From<String> for DiaryStatus {
-    fn from(value: String) -> Self {
-        match value.as_str() {
-            "unread" => DiaryStatus::Unread,
-            "read" => DiaryStatus::Read,
-            "edited" => DiaryStatus::Edited,
-            _ => DiaryStatus::Invalid,
+impl From<&String> for DiaryStatus {
+    fn from(value: &String) -> Self {
+        value.parse().unwrap()
+    }
+}
+
+impl FromStr for DiaryStatus {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "unread" => Ok(DiaryStatus::Unread),
+            "read" => Ok(DiaryStatus::Read),
+            "edited" => Ok(DiaryStatus::Edited),
+            // NOTE: Invalid status should fall back to unread so that after reading, it will safely be turned to read.
+            _ => Ok(DiaryStatus::Unread),
         }
     }
 }

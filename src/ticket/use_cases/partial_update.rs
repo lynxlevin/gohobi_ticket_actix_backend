@@ -39,7 +39,7 @@ pub async fn partial_update_ticket(
         .status
         .clone()
         .is_some_and(|status| status == TicketStatus::Draft)
-        && published_statuses.contains(&TicketStatus::from(ticket.status.to_owned()))
+        && published_statuses.contains(&(&ticket.status).into())
     {
         return Err(UseCaseError::Forbidden);
     };

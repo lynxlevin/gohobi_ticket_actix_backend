@@ -31,7 +31,7 @@ impl From<tickets_ticket::Model> for TicketVisible {
             gift_date: value.gift_date,
             use_description: value.use_description,
             use_date: value.use_date,
-            status: value.status.into(),
+            status: (&value.status).into(),
             is_special: value.is_special,
         }
     }
@@ -47,7 +47,7 @@ impl From<&tickets_ticket::Model> for TicketVisible {
             gift_date: value.gift_date,
             use_description: value.use_description.to_owned(),
             use_date: value.use_date,
-            status: value.status.to_owned().into(),
+            status: (&value.status).into(),
             is_special: value.is_special,
         }
     }

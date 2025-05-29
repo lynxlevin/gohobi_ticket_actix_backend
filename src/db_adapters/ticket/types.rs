@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
@@ -23,14 +25,23 @@ impl TicketStatus {
     }
 }
 
-impl From<String> for TicketStatus {
-    fn from(value: String) -> Self {
-        match value.as_str() {
-            "unread" => TicketStatus::Unread,
-            "read" => TicketStatus::Read,
-            "edited" => TicketStatus::Edited,
-            "draft" => TicketStatus::Draft,
-            _ => TicketStatus::Invalid,
+impl From<&String> for TicketStatus {
+    fn from(value: &String) -> Self {
+        value.parse().unwrap()
+    }
+}
+
+impl FromStr for TicketStatus {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "unread" => Ok(TicketStatus::Unread),
+            "read" => Ok(TicketStatus::Read),
+            "edited" => Ok(TicketStatus::Edited),
+            "draft" => Ok(TicketStatus::Draft),
+            // NOTE: Invalid status should fall back to unread so that after reading, it will safely be turned to read.
+            _ => Ok(TicketStatus::Unread),
         }
     }
 }

@@ -57,7 +57,7 @@ async fn happy_path() -> Result<(), DbErr> {
             entry: diary_1.entry,
             date: diary_1.date,
             tags: vec![],
-            status: diary_1.user_1_status.into(),
+            status: (&diary_1.user_1_status).into(),
         },
         DiaryVisible {
             id: diary_2.id,
@@ -68,14 +68,14 @@ async fn happy_path() -> Result<(), DbErr> {
                 text: tag.text,
                 sort_no: tag.sort_no,
             }],
-            status: diary_2.user_1_status.into(),
+            status: (&diary_2.user_1_status).into(),
         },
         DiaryVisible {
             id: diary_0.id,
             entry: diary_0.entry,
             date: diary_0.date,
             tags: vec![],
-            status: diary_0.user_1_status.into(),
+            status: (&diary_0.user_1_status).into(),
         },
     ];
     for (res_diary, expected_diary) in res.iter().zip(expected) {

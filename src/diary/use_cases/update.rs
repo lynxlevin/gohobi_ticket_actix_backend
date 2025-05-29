@@ -39,10 +39,10 @@ pub async fn update_diary<'a>(
     let (user_1_status, user_2_status) = match user_relation.user_1_id == user.id {
         true => (
             Some(DiaryStatus::Read),
-            get_partner_status(diary.clone().user_2_status.into()),
+            get_partner_status((&diary.user_2_status).into()),
         ),
         false => (
-            get_partner_status(diary.clone().user_1_status.into()),
+            get_partner_status((&diary.user_1_status).into()),
             Some(DiaryStatus::Read),
         ),
     };
