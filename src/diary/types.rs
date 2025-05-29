@@ -27,6 +27,13 @@ pub struct CreateDiaryRequest {
     pub tag_ids: Vec<Uuid>,
 }
 
+#[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct UpdateDiaryRequest {
+    pub entry: String,
+    pub date: NaiveDate,
+    pub tag_ids: Option<Vec<Uuid>>,
+}
+
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct UpsertDiaryResponse {
     pub id: Uuid,

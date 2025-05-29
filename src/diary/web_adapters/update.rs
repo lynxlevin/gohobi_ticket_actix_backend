@@ -1,6 +1,6 @@
 use actix_web::{
     put,
-    web::{Data, Path, ReqData},
+    web::{Data, Json, Path, ReqData},
     HttpResponse,
 };
 use common::errors::{
@@ -13,28 +13,30 @@ use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::use_cases::mark_read::mark_diary_read;
+use crate::{use_cases::update::update_diary, UpdateDiaryRequest};
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
     diary_id: Uuid,
 }
 
-#[put("/{diary_id}/mark_read/")]
-async fn mark_diary_read_endpoint(
+#[put("/{diary_id}/")]
+async fn update_diary_endpoint(
     db: Data<DbConn>,
     user: Option<ReqData<users_user::Model>>,
     path_param: Path<PathParam>,
+    req_param: Json<UpdateDiaryRequest>,
 ) -> HttpResponse {
     match user {
         Some(user) => {
             let diary_query = DiaryQuery::init(&db);
             let diary_mutation = DiaryMutation::init(&db);
-            match mark_diary_read(
+            match update_diary(
                 user.into_inner(),
                 diary_query,
                 diary_mutation,
                 path_param.diary_id,
+                req_param.into_inner(),
             )
             .await
             {

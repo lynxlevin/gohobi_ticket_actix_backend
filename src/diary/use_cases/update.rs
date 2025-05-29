@@ -6,13 +6,14 @@ use db_adapters::diary::{
 use entities::users_user;
 use uuid::Uuid;
 
-use crate::UpsertDiaryResponse;
+use crate::{UpdateDiaryRequest, UpsertDiaryResponse};
 
-pub async fn mark_diary_read<'a>(
+pub async fn update_diary<'a>(
     user: users_user::Model,
     diary_query: DiaryQuery<'a>,
     diary_mutation: DiaryMutation<'a>,
     diary_id: Uuid,
+    req_param: UpdateDiaryRequest,
 ) -> Result<UpsertDiaryResponse, UseCaseError> {
     let (diary, user_relation) = match diary_query
         .filter_by_user(user.id)
@@ -31,26 +32,32 @@ pub async fn mark_diary_read<'a>(
     };
 
     let params = UpdateDiaryParams {
-        entry: None,
-        date: None,
-        tag_ids: None,
+        entry: Some(req_param.entry),
+        date: Some(req_param.date),
+        tag_ids: req_param.tag_ids,
         user_1_status: match user_relation.user_1_id == user.id {
             true => Some(DiaryStatus::Read),
-            false => None,
+            false => match DiaryStatus::from(diary.clone().user_1_status) {
+                DiaryStatus::Read => Some(DiaryStatus::Edited),
+                _ => None,
+            },
         },
         user_2_status: match user_relation.user_2_id == user.id {
             true => Some(DiaryStatus::Read),
-            false => None,
+            false => match DiaryStatus::from(diary.clone().user_2_status) {
+                DiaryStatus::Read => Some(DiaryStatus::Edited),
+                _ => None,
+            },
         },
     };
 
     match diary_mutation.update(diary, params).await {
-        Ok((diary, _)) => Ok(UpsertDiaryResponse {
+        Ok((diary, tag_ids)) => Ok(UpsertDiaryResponse {
             id: diary.id,
             entry: diary.entry,
             date: diary.date,
             status: DiaryStatus::Read,
-            tag_ids: None,
+            tag_ids: tag_ids,
         }),
         Err(_) => Err(UseCaseError::InternalServerError),
     }
