@@ -21,7 +21,7 @@ pub async fn update_diary<'a>(
 ) -> Result<UpsertDiaryResponse, UseCaseError> {
     let (diary, user_relation) = match diary_query
         .clone()
-        .filter_by_user(user.id)
+        .filter_which_user_has_access(user.id)
         .filter_by_id(diary_id)
         .get_also_relation()
         .await

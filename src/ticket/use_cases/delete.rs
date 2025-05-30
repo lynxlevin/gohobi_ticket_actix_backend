@@ -9,7 +9,7 @@ pub async fn delete_ticket(
     ticket_id: i64,
 ) -> Result<(), UseCaseError> {
     let ticket = match ticket_query
-        .filter_by_user(user.id)
+        .filter_which_user_has_access(user.id)
         .get_by_id(ticket_id)
         .await
     {

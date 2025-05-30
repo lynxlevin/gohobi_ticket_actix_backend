@@ -9,7 +9,7 @@ pub async fn delete_diary_tag<'a>(
     diary_tag_id: Uuid,
 ) -> Result<(), UseCaseError> {
     let diary_tag = match diary_tag_query
-        .filter_by_user(user_id)
+        .filter_which_user_has_access(user_id)
         .get_diary_tag(diary_tag_id)
         .await
     {

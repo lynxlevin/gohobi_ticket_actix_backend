@@ -21,7 +21,7 @@ pub async fn list_diary_tags(
     };
 
     match diary_tag_query
-        .filter_by_user(user_id)
+        .filter_which_user_has_access(user_id)
         .filter_by_relation(&user_relation)
         .annotate_diary_count()
         .get_diary_tags_visible()

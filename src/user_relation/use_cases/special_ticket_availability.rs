@@ -21,7 +21,7 @@ pub async fn check_special_ticket_availability(
         Err(_) => return Err(UseCaseError::InternalServerError),
     }
     match ticket_query
-        .filter_by_user(user_id)
+        .filter_which_user_has_access(user_id)
         .exists_other_special_ticket(
             user_id,
             user_relation_id,

@@ -15,7 +15,7 @@ pub async fn partial_update_ticket(
     params: &mut UpdateTicketParams,
 ) -> Result<TicketVisible, UseCaseError> {
     let ticket = match ticket_query
-        .filter_by_user(user.id)
+        .filter_which_user_has_access(user.id)
         .get_by_id(ticket_id)
         .await
     {

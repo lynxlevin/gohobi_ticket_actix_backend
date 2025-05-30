@@ -25,7 +25,7 @@ pub async fn list_diary<'a>(
     };
 
     match diary_query
-        .filter_by_user(user.id)
+        .filter_which_user_has_access(user.id)
         .filter_by_relation(user_relation_id)
         .order_by_date(Order::Desc)
         .get_all_with_tags()

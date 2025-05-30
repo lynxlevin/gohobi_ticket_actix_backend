@@ -27,7 +27,7 @@ impl<'a> DiaryQuery<'a> {
             query: diaries_diary::Entity::find(),
         }
     }
-    pub fn filter_by_user(mut self, user_id: i64) -> Self {
+    pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
         self.query = self
             .query
             .join(

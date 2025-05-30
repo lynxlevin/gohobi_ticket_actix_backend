@@ -21,7 +21,7 @@ impl<'a> TicketQuery<'a> {
             query: tickets_ticket::Entity::find(),
         }
     }
-    pub fn filter_by_user(mut self, user_id: i64) -> Self {
+    pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
         self.query = self
             .query
             .join(

@@ -15,7 +15,7 @@ pub async fn mark_diary_read<'a>(
     diary_id: Uuid,
 ) -> Result<UpsertDiaryResponse, UseCaseError> {
     let (diary, user_relation) = match diary_query
-        .filter_by_user(user.id)
+        .filter_which_user_has_access(user.id)
         .filter_by_id(diary_id)
         .get_also_relation()
         .await
