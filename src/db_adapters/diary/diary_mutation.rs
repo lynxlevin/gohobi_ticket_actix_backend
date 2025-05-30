@@ -43,11 +43,10 @@ impl<'a> DiaryMutation<'a> {
             });
         }
 
-        if tag_links.len() > 0 {
-            diaries_diarytagrelation::Entity::insert_many(tag_links)
-                .exec(self.db)
-                .await?;
-        }
+        diaries_diarytagrelation::Entity::insert_many(tag_links)
+            .on_empty_do_nothing()
+            .exec(self.db)
+            .await?;
 
         Ok(diary)
     }
@@ -87,6 +86,7 @@ impl<'a> DiaryMutation<'a> {
             })
             .collect();
         diaries_diarytagrelation::Entity::insert_many(links_to_create)
+            .on_empty_do_nothing()
             .exec(self.db)
             .await
             .map(|_| ())

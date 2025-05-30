@@ -88,7 +88,7 @@ impl<'a> DiaryTagQuery<'a> {
             .await
     }
 
-    pub async fn get_diary_tag(
+    pub async fn get_one(
         self,
         diary_tag_id: Uuid,
     ) -> Result<Option<diaries_diarytag::Model>, DbErr> {
@@ -96,6 +96,10 @@ impl<'a> DiaryTagQuery<'a> {
             .filter(diaries_diarytag::Column::Id.eq(diary_tag_id))
             .one(self.db)
             .await
+    }
+
+    pub async fn get_all(self) -> Result<Vec<diaries_diarytag::Model>, DbErr> {
+        self.query.all(self.db).await
     }
 
     pub async fn get_ids(self) -> Result<Vec<Uuid>, DbErr> {
