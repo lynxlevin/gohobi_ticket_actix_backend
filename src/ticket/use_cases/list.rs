@@ -19,21 +19,18 @@ pub async fn list_tickets(
     let is_giving = query_param
         .is_giving
         .is_some_and(|x| x != "false".to_string());
-    let tickets = match ticket_query
+
+    ticket_query
         .filter_which_user_has_access(user.id)
         .filter_by_relation(query_param.user_relation_id)
         .order_by_gift_date(Order::Desc)
         .get_tickets(user.id, is_giving)
         .await
-    {
-        Ok(tickets) => tickets,
-        Err(_) => return Err(UseCaseError::InternalServerError),
-    };
-
-    Ok(ListTicketResponse {
-        tickets: tickets
-            .iter()
-            .map(|ticket| TicketVisible::from(ticket))
-            .collect(),
-    })
+        .map(|tickets| ListTicketResponse {
+            tickets: tickets
+                .iter()
+                .map(|ticket| TicketVisible::from(ticket))
+                .collect(),
+        })
+        .map_err(|_| UseCaseError::InternalServerError)
 }

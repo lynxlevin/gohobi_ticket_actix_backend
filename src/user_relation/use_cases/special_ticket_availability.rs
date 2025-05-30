@@ -10,17 +10,13 @@ pub async fn check_special_ticket_availability(
     ticket_query: TicketQuery<'_>,
     query: SpecialTicketAvailabilityQueryParam,
 ) -> Result<bool, UseCaseError> {
-    match user_relation_query
+    user_relation_query
         .find_by_id(user_relation_id, user_id)
         .await
-    {
-        Ok(user_relation) => match user_relation {
-            Some(_) => {}
-            None => return Err(UseCaseError::NotFound),
-        },
-        Err(_) => return Err(UseCaseError::InternalServerError),
-    }
-    match ticket_query
+        .map_err(|_| UseCaseError::InternalServerError)?
+        .ok_or(UseCaseError::NotFound)?;
+
+    ticket_query
         .filter_which_user_has_access(user_id)
         .exists_other_special_ticket(
             user_id,
@@ -31,8 +27,6 @@ pub async fn check_special_ticket_availability(
             },
         )
         .await
-    {
-        Ok(exists) => Ok(!exists),
-        Err(_) => Err(UseCaseError::InternalServerError),
-    }
+        .map(|exists| !exists)
+        .map_err(|_| UseCaseError::InternalServerError)
 }

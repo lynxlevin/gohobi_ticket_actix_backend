@@ -41,6 +41,13 @@ impl<'a> TicketQuery<'a> {
             .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id));
         self
     }
+    pub fn exclude_draft_tickets(mut self) -> Self {
+        self.query = self
+            .query
+            .filter(tickets_ticket::Column::Status.ne(TicketStatus::Draft.to_value()));
+        self
+    }
+
     pub fn order_by_gift_date(mut self, order: Order) -> Self {
         self.query = self.query.order_by(tickets_ticket::Column::GiftDate, order);
         self

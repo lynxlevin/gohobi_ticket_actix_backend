@@ -13,24 +13,16 @@ pub async fn read_ticket(
     ticket_mutation: TicketMutation<'_>,
     ticket_id: i64,
 ) -> Result<TicketVisible, UseCaseError> {
-    let ticket = match ticket_query
+    let ticket = ticket_query
         .filter_which_user_has_access(user.id)
+        .exclude_draft_tickets()
         .get_by_id(ticket_id)
         .await
-    {
-        Ok(ticket) => match ticket {
-            Some(ticket) => ticket,
-            None => return Err(UseCaseError::NotFound),
-        },
-        Err(_) => return Err(UseCaseError::InternalServerError),
-    };
+        .map_err(|_| UseCaseError::InternalServerError)?
+        .ok_or(UseCaseError::NotFound)?;
 
     if ticket.giving_user_id == user.id {
         return Err(UseCaseError::Forbidden);
-    };
-
-    if ticket.status == TicketStatus::Draft.to_value() {
-        return Err(UseCaseError::NotFound);
     };
 
     ticket_mutation
@@ -43,8 +35,5 @@ pub async fn read_ticket(
         )
         .await
         .map(|ticket| TicketVisible::from(ticket))
-        .map_err(|e| {
-            dbg!(e);
-            UseCaseError::InternalServerError
-        })
+        .map_err(|_| UseCaseError::InternalServerError)
 }

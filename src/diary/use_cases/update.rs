@@ -25,15 +25,13 @@ pub async fn update_diary<'a>(
         .filter_by_id(diary_id)
         .get_also_relation()
         .await
+        .map_err(|_| UseCaseError::InternalServerError)?
     {
-        Ok(res) => match res {
-            Some((diary, user_relation)) => match user_relation {
-                Some(user_relation) => (diary, user_relation),
-                None => return Err(UseCaseError::NotFound),
-            },
+        Some((diary, user_relation)) => match user_relation {
+            Some(user_relation) => (diary, user_relation),
             None => return Err(UseCaseError::NotFound),
         },
-        Err(_) => return Err(UseCaseError::InternalServerError),
+        None => return Err(UseCaseError::NotFound),
     };
 
     let (user_1_status, user_2_status) = match user_relation.user_1_id == user.id {

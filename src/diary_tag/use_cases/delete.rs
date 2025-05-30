@@ -8,20 +8,16 @@ pub async fn delete_diary_tag<'a>(
     diary_tag_mutation: DiaryTagMutation<'a>,
     diary_tag_id: Uuid,
 ) -> Result<(), UseCaseError> {
-    let diary_tag = match diary_tag_query
+    let diary_tag = diary_tag_query
         .filter_which_user_has_access(user_id)
         .get_one(diary_tag_id)
         .await
-    {
-        Ok(tag) => match tag {
-            Some(tag) => tag,
-            None => return Err(UseCaseError::NotFound),
-        },
-        Err(_) => return Err(UseCaseError::InternalServerError),
-    };
+        .map_err(|_| UseCaseError::InternalServerError)?
+        .ok_or(UseCaseError::NotFound)?;
 
-    match diary_tag_mutation.delete(diary_tag).await {
-        Ok(_) => Ok(()),
-        Err(_) => Err(UseCaseError::InternalServerError),
-    }
+    diary_tag_mutation
+        .delete(diary_tag)
+        .await
+        .map(|_| ())
+        .map_err(|_| UseCaseError::InternalServerError)
 }

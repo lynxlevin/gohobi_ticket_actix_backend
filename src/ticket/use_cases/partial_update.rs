@@ -7,6 +7,12 @@ use entities::users_user;
 
 use crate::TicketVisible;
 
+const PUBLISHED_STATUSES: [TicketStatus; 3] = [
+    TicketStatus::Unread,
+    TicketStatus::Read,
+    TicketStatus::Edited,
+];
+
 pub async fn partial_update_ticket(
     user: users_user::Model,
     ticket_query: TicketQuery<'_>,
@@ -14,32 +20,22 @@ pub async fn partial_update_ticket(
     ticket_id: i64,
     params: &mut UpdateTicketParams,
 ) -> Result<TicketVisible, UseCaseError> {
-    let ticket = match ticket_query
+    let ticket = ticket_query
         .filter_which_user_has_access(user.id)
         .get_by_id(ticket_id)
         .await
-    {
-        Ok(ticket) => match ticket {
-            Some(ticket) => ticket,
-            None => return Err(UseCaseError::NotFound),
-        },
-        Err(_) => return Err(UseCaseError::InternalServerError),
-    };
+        .map_err(|_| UseCaseError::InternalServerError)?
+        .ok_or(UseCaseError::NotFound)?;
 
     if ticket.giving_user_id != user.id {
         return Err(UseCaseError::Forbidden);
     };
 
-    let published_statuses = vec![
-        TicketStatus::Unread,
-        TicketStatus::Read,
-        TicketStatus::Edited,
-    ];
     if params
         .status
         .clone()
         .is_some_and(|status| status == TicketStatus::Draft)
-        && published_statuses.contains(&(&ticket.status).into())
+        && PUBLISHED_STATUSES.contains(&(&ticket.status).into())
     {
         return Err(UseCaseError::Forbidden);
     };
@@ -52,8 +48,5 @@ pub async fn partial_update_ticket(
         .update(ticket, params.clone())
         .await
         .map(|ticket| TicketVisible::from(ticket))
-        .map_err(|e| {
-            dbg!(e);
-            UseCaseError::InternalServerError
-        })
+        .map_err(|_| UseCaseError::InternalServerError)
 }

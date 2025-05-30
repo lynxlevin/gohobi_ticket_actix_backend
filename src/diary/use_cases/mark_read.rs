@@ -19,28 +19,25 @@ pub async fn mark_diary_read<'a>(
         .filter_by_id(diary_id)
         .get_also_relation()
         .await
+        .map_err(|_| UseCaseError::InternalServerError)?
     {
-        Ok(res) => match res {
-            Some((diary, user_relation)) => match user_relation {
-                Some(user_relation) => (diary, user_relation),
-                None => return Err(UseCaseError::NotFound),
-            },
+        Some((diary, user_relation)) => match user_relation {
+            Some(user_relation) => (diary, user_relation),
             None => return Err(UseCaseError::NotFound),
         },
-        Err(_) => return Err(UseCaseError::InternalServerError),
+        None => return Err(UseCaseError::NotFound),
+    };
+
+    let (user_1_status, user_2_status) = match user_relation.user_1_id == user.id {
+        true => (Some(DiaryStatus::Read), None),
+        false => (None, Some(DiaryStatus::Read)),
     };
 
     let params = UpdateDiaryParams {
         entry: None,
         date: None,
-        user_1_status: match user_relation.user_1_id == user.id {
-            true => Some(DiaryStatus::Read),
-            false => None,
-        },
-        user_2_status: match user_relation.user_2_id == user.id {
-            true => Some(DiaryStatus::Read),
-            false => None,
-        },
+        user_1_status,
+        user_2_status,
     };
 
     match diary_mutation.update(diary, params).await {

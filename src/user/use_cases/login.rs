@@ -14,32 +14,25 @@ pub async fn login_user(
     user_redis: UserRedis<'_>,
 ) -> Result<users_user::Model, UseCaseError> {
     let login_attempts_count_key = format!("gt_login_count_{}", &req.email);
-    let login_attempts_count = match user_redis
+    let login_attempts_count = user_redis
         .clone()
         .validate_request_count(&login_attempts_count_key)
-        .await
-    {
-        Ok(count) => count,
-        Err(e) => return Err(e),
-    };
+        .await?;
 
-    let user = match user_query.find_active_by_email(req.email.clone()).await {
-        Ok(user) => match user {
-            Some(user) => user,
-            None => return Err(UseCaseError::NotFound),
-        },
-        Err(_) => return Err(UseCaseError::InternalServerError),
-    };
+    let user = user_query
+        .find_active_by_email(req.email.clone())
+        .await
+        .map_err(|_| UseCaseError::InternalServerError)?
+        .ok_or(UseCaseError::NotFound)?;
 
     match password_util::verify(&req.password, &user.password) {
         Ok(password_type) => match password_type {
-            PasswordType::Django => match user_mutation
-                .convert_to_argon2_password(user.clone(), &req.password)
-                .await
-            {
-                Ok(user) => Ok(user),
-                Err(_) => Ok(user),
-            },
+            PasswordType::Django => {
+                let _ = user_mutation
+                    .convert_to_argon2_password(user.clone(), &req.password)
+                    .await;
+                Ok(user)
+            }
             _ => Ok(user),
         },
         Err(_) => {

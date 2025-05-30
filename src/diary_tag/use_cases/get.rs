@@ -7,16 +7,11 @@ pub async fn get_diary_tag(
     diary_tag_query: DiaryTagQuery<'_>,
     diary_tag_id: Uuid,
 ) -> Result<DiaryTagVisible, UseCaseError> {
-    match diary_tag_query
+    diary_tag_query
         .filter_which_user_has_access(user_id)
         .annotate_diary_count()
         .get_diary_tag_visible(diary_tag_id)
         .await
-    {
-        Ok(tag) => match tag {
-            Some(tag) => Ok(tag),
-            None => Err(UseCaseError::NotFound),
-        },
-        Err(_) => Err(UseCaseError::InternalServerError),
-    }
+        .map_err(|_| UseCaseError::InternalServerError)?
+        .ok_or(UseCaseError::NotFound)
 }

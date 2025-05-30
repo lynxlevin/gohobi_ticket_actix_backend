@@ -16,16 +16,11 @@ pub async fn create_diary<'a>(
     diary_mutation: DiaryMutation<'a>,
     req_params: CreateDiaryRequest,
 ) -> Result<UpsertDiaryResponse, UseCaseError> {
-    let user_relation = match user_relation_query
+    let user_relation = user_relation_query
         .find_by_id(req_params.user_relation_id, user.id)
         .await
-    {
-        Ok(user_relation) => match user_relation {
-            Some(user_relation) => user_relation,
-            None => return Err(UseCaseError::NotFound),
-        },
-        Err(_) => return Err(UseCaseError::InternalServerError),
-    };
+        .map_err(|_| UseCaseError::InternalServerError)?
+        .ok_or(UseCaseError::NotFound)?;
 
     let (user_1_status, user_2_status) = match user_relation.user_1_id == user.id {
         true => (DiaryStatus::Read, DiaryStatus::Unread),
@@ -41,14 +36,15 @@ pub async fn create_diary<'a>(
         user_2_status,
     };
 
-    match diary_mutation.create(params).await {
-        Ok(diary) => Ok(UpsertDiaryResponse {
+    diary_mutation
+        .create(params)
+        .await
+        .map(|diary| UpsertDiaryResponse {
             id: diary.id,
             entry: diary.entry,
             date: diary.date,
             status: DiaryStatus::Read,
             tag_ids: Some(req_params.tag_ids),
-        }),
-        Err(_) => Err(UseCaseError::InternalServerError),
-    }
+        })
+        .map_err(|_| UseCaseError::InternalServerError)
 }

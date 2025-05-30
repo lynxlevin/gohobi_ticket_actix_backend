@@ -13,16 +13,11 @@ pub async fn list_diary<'a>(
     user_relation_query: UserRelationQuery<'a>,
     diary_query: DiaryQuery<'a>,
 ) -> Result<Vec<DiaryVisible>, UseCaseError> {
-    let user_relation = match user_relation_query
+    let user_relation = user_relation_query
         .find_by_id(user_relation_id, user.id)
         .await
-    {
-        Ok(relation) => match relation {
-            Some(relation) => relation,
-            None => return Err(UseCaseError::NotFound),
-        },
-        Err(_) => return Err(UseCaseError::InternalServerError),
-    };
+        .map_err(|_| UseCaseError::InternalServerError)?
+        .ok_or(UseCaseError::NotFound)?;
 
     match diary_query
         .filter_which_user_has_access(user.id)

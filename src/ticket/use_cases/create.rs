@@ -14,39 +14,23 @@ pub async fn create_ticket(
     ticket_mutation: TicketMutation<'_>,
     params: &mut CreateTicketParams,
 ) -> Result<TicketVisible, UseCaseError> {
-    match user_relation_query
+    user_relation_query
         .find_by_id(params.user_relation_id, user.id)
         .await
-    {
-        Ok(user_relation) => {
-            if user_relation.is_none() {
-                return Err(UseCaseError::NotFound);
-            }
-        }
-        Err(_) => return Err(UseCaseError::InternalServerError),
-    };
+        .map_err(|_| UseCaseError::InternalServerError)?
+        .ok_or(UseCaseError::NotFound)?;
 
-    if params.is_special.is_some_and(|is_special| is_special) {
-        match ticket_query
+    if params.is_special.is_some_and(|b| b) {
+        let exists = ticket_query
             .exists_other_special_ticket(user.id, params.user_relation_id, params.gift_date)
             .await
-        {
-            Ok(exists) => {
-                dbg!(exists);
-                if exists {
-                    params.is_special = Some(false);
-                }
-            }
-            Err(_) => return Err(UseCaseError::InternalServerError),
-        }
+            .map_err(|_| UseCaseError::InternalServerError)?;
+        params.is_special = Some(!exists);
     };
 
     ticket_mutation
         .create(user.id, params.clone())
         .await
         .map(|ticket| TicketVisible::from(ticket))
-        .map_err(|e| {
-            dbg!(e);
-            UseCaseError::InternalServerError
-        })
+        .map_err(|_| UseCaseError::InternalServerError)
 }
