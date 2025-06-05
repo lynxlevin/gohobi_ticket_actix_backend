@@ -10,9 +10,7 @@ use common::factory::{self, *};
 #[actix_web::test]
 async fn list_giving_tickets() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().username("user_0").insert(&db).await?;
-    let user_1 = factory::user().username("user_1").insert(&db).await?;
-    let other_user = factory::user().insert(&db).await?;
+    let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -82,9 +80,7 @@ async fn list_giving_tickets() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn list_receiving_tickets() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().username("user_0").insert(&db).await?;
-    let user_1 = factory::user().username("user_1").insert(&db).await?;
-    let other_user = factory::user().insert(&db).await?;
+    let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -157,9 +153,7 @@ async fn list_receiving_tickets() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn empty_on_unrelated_relation() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user = factory::user().username("user").insert(&db).await?;
-    let other_user_0 = factory::user().username("other_user_0").insert(&db).await?;
-    let other_user_1 = factory::user().username("other_user_1").insert(&db).await?;
+    let [user, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
         .insert(&db)
         .await?;

@@ -11,8 +11,7 @@ use common::factory::{self, *};
 #[actix_web::test]
 async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -51,8 +50,7 @@ async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -91,9 +89,7 @@ async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn not_found_if_incorrect_id() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
-    let other_user = factory::user().insert(&db).await?;
+    let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(user_1.id, other_user.id)
         .insert(&db)
         .await?;

@@ -10,8 +10,7 @@ use crate::utils::{init_app, Connections};
 #[actix_web::test]
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -84,7 +83,14 @@ async fn happy_path() -> Result<(), DbErr> {
 
     assert_eq!(res[3], req_param.diary_tags[1]);
 
-    assert_eq!(res[4], BulkUpdateDiaryTagItem::from(&tag_3));
+    assert_eq!(
+        res[4],
+        BulkUpdateDiaryTagItem {
+            id: Some(tag_3.id),
+            text: tag_3.text,
+            sort_no: 4,
+        }
+    );
 
     let tags_in_db = diaries_diarytag::Entity::find()
         .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation.id))
@@ -104,9 +110,7 @@ async fn happy_path() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn create_new_if_other_relation_tag() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
-    let other_user = factory::user().insert(&db).await?;
+    let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -163,8 +167,7 @@ async fn create_new_if_other_relation_tag() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn bad_request_on_duplicate_sort_no() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -199,9 +202,7 @@ async fn bad_request_on_duplicate_sort_no() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn not_found_cases() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user = factory::user().insert(&db).await?;
-    let other_user_0 = factory::user().insert(&db).await?;
-    let other_user_1 = factory::user().insert(&db).await?;
+    let [user, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
         .insert(&db)
         .await?;

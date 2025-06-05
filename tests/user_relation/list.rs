@@ -8,9 +8,7 @@ use common::factory::{self, *};
 #[actix_web::test]
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().username("user_0").insert(&db).await?;
-    let user_1 = factory::user().username("user_1").insert(&db).await?;
-    let user_2 = factory::user().username("user_2").insert(&db).await?;
+    let [user_0, user_1, user_2, ..] = factory::get_users(&db).await?;
     let user_relation_0 = factory::user_relation(user_0.id, user_1.id)
         .user_1_giving_ticket_img(Some("user_0s image".to_string()))
         .user_2_giving_ticket_img(Some("user_1s image".to_string()))

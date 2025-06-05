@@ -10,8 +10,7 @@ use common::factory::{self, *};
 #[actix_web::test]
 async fn update_description_of_unread_ticket() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -26,7 +25,7 @@ async fn update_description_of_unread_ticket() -> Result<(), DbErr> {
         .set_json(UpdateTicketRequest {
             ticket: UpdateTicketParams {
                 description: Some(description.clone()),
-                status: None,
+                ..Default::default()
             },
         })
         .to_request();
@@ -54,8 +53,7 @@ async fn update_description_of_unread_ticket() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -71,7 +69,7 @@ async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbE
         .set_json(UpdateTicketRequest {
             ticket: UpdateTicketParams {
                 description: Some(description.clone()),
-                status: None,
+                ..Default::default()
             },
         })
         .to_request();
@@ -100,8 +98,7 @@ async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbE
 #[actix_web::test]
 async fn update_only_status() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -115,8 +112,8 @@ async fn update_only_status() -> Result<(), DbErr> {
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
             ticket: UpdateTicketParams {
-                description: None,
                 status: Some(status.clone()),
+                ..Default::default()
             },
         })
         .to_request();
@@ -144,8 +141,7 @@ async fn update_only_status() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn forbidden_on_changing_published_tickets_to_draft() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -171,8 +167,8 @@ async fn forbidden_on_changing_published_tickets_to_draft() -> Result<(), DbErr>
             .uri(&format!("/api/tickets/{}/", ticket.id))
             .set_json(UpdateTicketRequest {
                 ticket: UpdateTicketParams {
-                    description: None,
                     status: Some(TicketStatus::Draft),
+                    ..Default::default()
                 },
             })
             .to_request();
@@ -188,8 +184,7 @@ async fn forbidden_on_changing_published_tickets_to_draft() -> Result<(), DbErr>
 #[actix_web::test]
 async fn forbidden_on_receiving_ticket() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let user_1 = factory::user().insert(&db).await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .insert(&db)
         .await?;
@@ -202,7 +197,7 @@ async fn forbidden_on_receiving_ticket() -> Result<(), DbErr> {
         .set_json(UpdateTicketRequest {
             ticket: UpdateTicketParams {
                 description: Some("Some name".to_string()),
-                status: None,
+                ..Default::default()
             },
         })
         .to_request();
@@ -217,9 +212,7 @@ async fn forbidden_on_receiving_ticket() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn not_found_cases() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user_0 = factory::user().insert(&db).await?;
-    let other_user_0 = factory::user().insert(&db).await?;
-    let other_user_1 = factory::user().insert(&db).await?;
+    let [user_0, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
         .insert(&db)
         .await?;
@@ -237,7 +230,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
             .set_json(UpdateTicketRequest {
                 ticket: UpdateTicketParams {
                     description: Some("some name".to_string()),
-                    status: None,
+                    ..Default::default()
                 },
             })
             .to_request();
@@ -259,7 +252,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
         .set_json(UpdateTicketRequest {
             ticket: UpdateTicketParams {
                 description: Some(String::default()),
-                status: None,
+                ..Default::default()
             },
         })
         .to_request();
