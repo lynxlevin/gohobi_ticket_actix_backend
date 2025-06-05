@@ -18,6 +18,7 @@ common = { path = "../common", features = [
 db_adapters = { path = "../db_adapters" }
 
 actix-web.workspace = true
+awc.workspace = true
 chrono.workspace = true
 sea-orm.workspace = true
 serde.workspace = true
