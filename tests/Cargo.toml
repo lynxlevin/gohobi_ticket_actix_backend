@@ -26,4 +26,5 @@ uuid.workspace = true
 
 [dev-dependencies]
 actix-http = "3.10.0"
+mockito.workspace = true
 urlencoding = "2.1.3"
