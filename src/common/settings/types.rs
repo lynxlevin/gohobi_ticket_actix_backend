@@ -13,7 +13,7 @@ impl Settings {
     pub fn base_settings() -> Self {
         Self {
             application: ApplicationSettings {
-                port: 5000,
+                port: 8000,
                 ..Default::default()
             },
             ..Default::default()
