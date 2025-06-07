@@ -30,6 +30,7 @@ fn get_development_settings() -> Result<Settings, String> {
     merge_env(Settings {
         application: ApplicationSettings {
             host: "127.0.0.1".to_string(),
+            slack_host: "https://hooks.slack.com".to_string(),
             ..b.application
         },
         debug: true,
@@ -42,6 +43,7 @@ fn get_production_settings() -> Result<Settings, String> {
     merge_env(Settings {
         application: ApplicationSettings {
             host: "0.0.0.0".to_string(),
+            slack_host: "https://hooks.slack.com".to_string(),
             ..b.application
         },
         debug: false,
@@ -58,6 +60,7 @@ fn merge_env(s: Settings) -> Result<Settings, String> {
             login_attempts_cool_time_seconds: get_env_var("LOGIN_ATTEMPTS_COOL_TIME_SECONDS")?
                 .parse::<u64>()
                 .map_err(|e| e.to_string())?,
+            slack_incoming_webhook_path: get_env_var("SLACK_INCOMING_WEBHOOK_PATH")?,
             ..s.application
         },
         database: DatabaseSettings {

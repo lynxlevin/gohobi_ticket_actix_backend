@@ -4,6 +4,6 @@ mod web_adapters;
 
 pub use types::{
     CreateTicketRequest, ListTicketResponse, TicketVisible, UpdateTicketRequest,
-    UpsertTicketResponse,
+    UpsertTicketResponse, UseTicketParams, UseTicketRequest,
 };
 pub use web_adapters::ticket_routes;

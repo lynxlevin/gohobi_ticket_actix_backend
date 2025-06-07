@@ -23,6 +23,7 @@ pub trait UserRelationFactory {
         self,
         img: Option<String>,
     ) -> user_relations_userrelation::ActiveModel;
+    fn use_slack(self, use_slack: bool) -> user_relations_userrelation::ActiveModel;
 }
 
 impl UserRelationFactory for user_relations_userrelation::ActiveModel {
@@ -39,6 +40,11 @@ impl UserRelationFactory for user_relations_userrelation::ActiveModel {
         img: Option<String>,
     ) -> user_relations_userrelation::ActiveModel {
         self.user_2_giving_ticket_img = Set(img);
+        self
+    }
+
+    fn use_slack(mut self, use_slack: bool) -> user_relations_userrelation::ActiveModel {
+        self.use_slack = Set(use_slack);
         self
     }
 }

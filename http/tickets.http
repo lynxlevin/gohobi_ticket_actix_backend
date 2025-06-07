@@ -40,7 +40,7 @@ Content-Type: application/json
 }
 
 ###
-@ticket_id=2071
+@ticket_id=2303
 
 ###
 # @name update_ticket
@@ -58,6 +58,17 @@ Content-Type: application/json
 # @name read_ticket
 PUT {{endpoint}}/api/tickets/{{ticket_id}}/read/
 Content-Type: application/json
+
+###
+# @name use_ticket
+PUT {{endpoint}}/api/tickets/{{ticket_id}}/use/
+Content-Type: application/json
+
+{
+  "ticket": {
+    "use_description": "test"
+  }
+}
 
 ###
 # @name delete_ticket

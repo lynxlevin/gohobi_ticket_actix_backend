@@ -17,11 +17,13 @@ common = { path = "../common", features = [
 ] }
 db_adapters = { path = "../db_adapters" }
 
+actix-tls.workspace = true
 actix-web.workspace = true
 awc.workspace = true
 chrono.workspace = true
 sea-orm.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 mockito.workspace = true

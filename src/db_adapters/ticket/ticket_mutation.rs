@@ -48,6 +48,12 @@ impl<'a> TicketMutation<'a> {
         if let Some(status) = params.status {
             ticket.status = Set(status.to_value());
         };
+        if let Some(use_description) = params.use_description {
+            ticket.use_description = Set(use_description);
+        };
+        if let Some(use_date) = params.use_date {
+            ticket.use_date = Set(Some(use_date));
+        };
         ticket.updated_at = Set(Utc::now().into());
         ticket.update(self.db).await
     }

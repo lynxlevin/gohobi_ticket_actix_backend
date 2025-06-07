@@ -27,6 +27,8 @@ pub struct ApplicationSettings {
     pub host: String,
     pub max_login_attempts: u64,
     pub login_attempts_cool_time_seconds: u64,
+    pub slack_host: String,
+    pub slack_incoming_webhook_path: String,
 }
 
 #[derive(Deserialize, Clone, Default, Debug)]

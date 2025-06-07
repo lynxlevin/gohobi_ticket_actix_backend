@@ -29,8 +29,8 @@ pub async fn read_ticket(
         .update(
             ticket,
             UpdateTicketParams {
-                description: None,
                 status: Some(TicketStatus::Read),
+                ..Default::default()
             },
         )
         .await

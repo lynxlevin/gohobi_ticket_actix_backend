@@ -67,3 +67,13 @@ pub struct UpsertTicketResponse {
 pub struct UpdateTicketRequest {
     pub ticket: UpdateTicketParams,
 }
+
+#[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct UseTicketParams {
+    pub use_description: String,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct UseTicketRequest {
+    pub ticket: UseTicketParams,
+}
