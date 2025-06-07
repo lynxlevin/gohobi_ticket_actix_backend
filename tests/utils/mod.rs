@@ -34,6 +34,17 @@ pub async fn init_app() -> Result<
     DbErr,
 > {
     let settings = get_test_settings();
+    init_app_with_settings(settings).await
+}
+
+pub async fn init_app_with_settings(
+    settings: Settings,
+) -> Result<
+    Connections<
+        impl Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>,
+    >,
+    DbErr,
+> {
     let db = init_db(&settings)
         .await
         .expect("Error on getting DB connection.");
