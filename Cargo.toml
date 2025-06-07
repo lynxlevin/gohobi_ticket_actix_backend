@@ -18,6 +18,7 @@ members = [
 default-members = ["src/gohobi_ticket"]
 
 [workspace.dependencies]
+actix-tls = { version = "3.4.0", default-features = false }
 actix-session = { version = "0.10.1", features = ["redis-session"] }
 actix-web = "4.10.2"
 argon2 = { version = "0.5.3", default-features = false, features = [
@@ -26,7 +27,7 @@ argon2 = { version = "0.5.3", default-features = false, features = [
     "std",
 ] }
 async-std = { version = "1", features = ["attributes", "tokio1"] }
-awc = "3.7.0"
+awc = { version = "3.7.0", default-features = false, features = ["rustls-0_23-webpki-roots"] }
 base64 = { version = "0.22.1", default-features = false }
 chrono = "0.4.41"
 deadpool-redis = "0.20.0"
