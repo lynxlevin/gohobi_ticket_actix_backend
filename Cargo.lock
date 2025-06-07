@@ -3659,6 +3659,7 @@ dependencies = [
  "entities",
  "mockito",
  "sea-orm",
+ "serde_json",
  "server",
  "ticket",
  "urlencoding",
@@ -3711,6 +3712,7 @@ dependencies = [
  "mockito",
  "sea-orm",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
