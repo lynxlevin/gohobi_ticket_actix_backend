@@ -44,9 +44,15 @@ pub fn setup_session_middleware_builder(
 
 pub fn get_routes() -> Scope {
     scope("/api")
+        .service(health_check)
         .configure(auth_routes)
         .configure(user_relation_routes)
         .configure(ticket_routes)
         .configure(diary_routes)
         .configure(diary_tag_routes)
+}
+
+#[actix_web::get("/health-check")]
+pub async fn health_check() -> actix_web::HttpResponse {
+    actix_web::HttpResponse::Ok().json("Application is safe and healthy.")
 }

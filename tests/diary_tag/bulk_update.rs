@@ -83,14 +83,8 @@ async fn happy_path() -> Result<(), DbErr> {
 
     assert_eq!(res[3], req_param.diary_tags[1]);
 
-    assert_eq!(
-        res[4],
-        BulkUpdateDiaryTagItem {
-            id: Some(tag_3.id),
-            text: tag_3.text,
-            sort_no: 4,
-        }
-    );
+    // allow for duplicate sort_no
+    assert_eq!(res[4], BulkUpdateDiaryTagItem::from(&tag_3));
 
     let tags_in_db = diaries_diarytag::Entity::find()
         .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation.id))

@@ -57,6 +57,7 @@ pub async fn use_ticket(
         .map_err(|_| UseCaseError::InternalServerError)
 }
 
+// MYMEMO: add slack_adaptor
 fn get_message(
     ticket: &tickets_ticket::Model,
     user_relation: &UserRelationWithName,
