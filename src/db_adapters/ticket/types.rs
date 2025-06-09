@@ -58,6 +58,7 @@ pub struct CreateTicketParams {
 #[derive(Deserialize, Debug, Serialize, Clone, Default)]
 pub struct UpdateTicketParams {
     pub description: Option<String>,
+    pub is_special: Option<bool>,
     pub status: Option<TicketStatus>,
     pub use_description: Option<String>,
     pub use_date: Option<NaiveDate>,

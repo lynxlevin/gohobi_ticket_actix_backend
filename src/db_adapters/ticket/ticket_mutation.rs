@@ -54,6 +54,9 @@ impl<'a> TicketMutation<'a> {
         if let Some(use_date) = params.use_date {
             ticket.use_date = Set(Some(use_date));
         };
+        if let Some(is_special) = params.is_special {
+            ticket.is_special = Set(is_special);
+        };
         ticket.updated_at = Set(Utc::now().into());
         ticket.update(self.db).await
     }

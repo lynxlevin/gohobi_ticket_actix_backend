@@ -139,6 +139,47 @@ async fn update_only_status() -> Result<(), DbErr> {
 }
 
 #[actix_web::test]
+async fn update_only_is_special() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .insert(&db)
+        .await?;
+    let ticket = factory::ticket(user_0.id, user_relation.id)
+        .insert(&db)
+        .await?;
+
+    let req = test::TestRequest::put()
+        .uri(&format!("/api/tickets/{}/", ticket.id))
+        .set_json(UpdateTicketRequest {
+            ticket: UpdateTicketParams {
+                is_special: Some(true),
+                ..Default::default()
+            },
+        })
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
+    let expected = TicketVisible {
+        is_special: true,
+        ..TicketVisible::from(&ticket)
+    };
+    assert_eq!(res, expected);
+
+    let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
+    assert!(ticket_in_db.is_some());
+    let ticket_in_db = ticket_in_db.unwrap();
+    assert_eq!(TicketVisible::from(&ticket_in_db), expected);
+    assert!(ticket_in_db.updated_at > ticket.updated_at);
+
+    Ok(())
+}
+
+#[actix_web::test]
 async fn forbidden_on_changing_published_tickets_to_draft() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
