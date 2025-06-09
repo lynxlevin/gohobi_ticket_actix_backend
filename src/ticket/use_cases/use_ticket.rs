@@ -1,13 +1,11 @@
-use std::sync::Arc;
-
+use crate::slack_adapter;
 use chrono::Utc;
 use common::{errors::use_case_errors::UseCaseError, settings::types::Settings};
 use db_adapters::{
     ticket::{types::UpdateTicketParams, TicketMutation, TicketQuery},
-    user_relation::{types::UserRelationWithName, UserRelationQuery},
+    user_relation::UserRelationQuery,
 };
-use entities::{tickets_ticket, users_user};
-use serde_json::json;
+use entities::users_user;
 
 use crate::{TicketVisible, UseTicketParams};
 
@@ -39,8 +37,8 @@ pub async fn use_ticket(
         .ok_or(UseCaseError::NotFound)?;
 
     if user_relation.use_slack {
-        let message = get_message(&ticket, &user_relation, &params.use_description);
-        send_slack_message(&message, &settings).await?;
+        let message = slack_adapter::get_message(&ticket, &user_relation, &params.use_description);
+        slack_adapter::send_slack_message(&message, &settings).await?;
     }
 
     ticket_mutation
@@ -55,75 +53,4 @@ pub async fn use_ticket(
         .await
         .map(|ticket| TicketVisible::from(ticket))
         .map_err(|_| UseCaseError::InternalServerError)
-}
-
-// MYMEMO: add slack_adaptor
-fn get_message(
-    ticket: &tickets_ticket::Model,
-    user_relation: &UserRelationWithName,
-    use_description: &str,
-) -> serde_json::Value {
-    let (giving_user_name, receiving_user_name) =
-        match user_relation.user_1_id == ticket.giving_user_id {
-            true => (&user_relation.user_1_name, &user_relation.user_2_name),
-            false => (&user_relation.user_2_name, &user_relation.user_1_name),
-        };
-    match ticket.is_special {
-        true => {
-            json!({
-                    "text": format!("{}が特別チケットを使ったよ", receiving_user_name),
-                    "blocks": [
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": ":star: :star: :star: 特別チケット :star: :star: :star:"},
-                },
-                {"type": "section", "text": {"type": "mrkdwn", "text": format!("{}へ:\n{}", giving_user_name, use_description)}},
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": format!("使ったチケット: \n```\n{}\n```", ticket.description)},
-                },
-                    ],
-                }
-            )
-        }
-        false => {
-            json!({
-                    "text": format!("{}がチケットを使ったよ", receiving_user_name),
-                    "blocks": [
-                        {"type": "section", "text": {"type": "mrkdwn", "text": format!("{}へ:\n{}", giving_user_name, use_description)}},
-                        {
-                            "type": "section",
-                            "text": {"type": "mrkdwn", "text": format!("使ったチケット: \n```\n{}\n```", ticket.description)},
-                        },
-                    ],
-                }
-            )
-        }
-    }
-}
-
-async fn send_slack_message(
-    message: &serde_json::Value,
-    settings: &Settings,
-) -> Result<(), UseCaseError> {
-    let config = actix_tls::connect::rustls_0_23::reexports::ClientConfig::builder()
-        .with_root_certificates(actix_tls::connect::rustls_0_23::webpki_roots_cert_store())
-        .with_no_client_auth();
-    let client = awc::Client::builder()
-        .connector(awc::Connector::new().rustls_0_23(Arc::new(config)))
-        .finish();
-    let url = format!(
-        "{}{}",
-        settings.application.slack_host, settings.application.slack_incoming_webhook_path
-    );
-    let _res = client
-        .post(url)
-        .content_type("application/json")
-        .send_json(message)
-        .await
-        .map_err(|e| {
-            dbg!(e);
-            UseCaseError::InternalServerError
-        })?;
-    Ok(())
 }
