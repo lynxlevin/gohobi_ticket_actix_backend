@@ -81,7 +81,8 @@ impl<'a> DiaryQuery<'a> {
     }
 
     pub async fn get_tag_ids(self) -> Result<Vec<Uuid>, DbErr> {
-        self.query
+        match self
+            .query
             .join(
                 LeftJoin,
                 diaries_diary::Relation::DiariesDiarytagrelation.def(),
@@ -91,5 +92,15 @@ impl<'a> DiaryQuery<'a> {
             .into_values::<_, TagId>()
             .all(self.db)
             .await
+        {
+            Ok(ids) => Ok(ids),
+            Err(e) => match &e {
+                DbErr::Type(error) => match error.as_str() {
+                    "A null value was encountered while decoding \"tag_master_id\"" => Ok(vec![]),
+                    _ => Err(e),
+                },
+                _ => Err(e),
+            },
+        }
     }
 }
