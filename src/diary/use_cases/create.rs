@@ -8,14 +8,14 @@ use db_adapters::{
 };
 use entities::users_user;
 
-use crate::{CreateDiaryRequest, UpsertDiaryResponse};
+use crate::{CreateDiaryRequest, DiaryTag, DiaryVisible};
 
 pub async fn create_diary<'a>(
     user: users_user::Model,
     user_relation_query: UserRelationQuery<'a>,
     diary_mutation: DiaryMutation<'a>,
     req_params: CreateDiaryRequest,
-) -> Result<UpsertDiaryResponse, UseCaseError> {
+) -> Result<DiaryVisible, UseCaseError> {
     let user_relation = user_relation_query
         .find_by_id(req_params.user_relation_id, user.id)
         .await
@@ -39,12 +39,12 @@ pub async fn create_diary<'a>(
     diary_mutation
         .create(params)
         .await
-        .map(|diary| UpsertDiaryResponse {
+        .map(|(diary, tags)| DiaryVisible {
             id: diary.id,
             entry: diary.entry,
             date: diary.date,
             status: DiaryStatus::Read,
-            tag_ids: Some(req_params.tag_ids),
+            tags: tags.iter().map(|tag| DiaryTag::from(tag)).collect(),
         })
         .map_err(|_| UseCaseError::InternalServerError)
 }

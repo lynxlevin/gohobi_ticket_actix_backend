@@ -9,7 +9,7 @@ use db_adapters::{
 use entities::{diaries_diary, users_user};
 use uuid::Uuid;
 
-use crate::{UpdateDiaryRequest, UpsertDiaryResponse};
+use crate::{DiaryTag, DiaryVisible, UpdateDiaryRequest};
 
 pub async fn update_diary<'a>(
     user: users_user::Model,
@@ -18,7 +18,7 @@ pub async fn update_diary<'a>(
     diary_tag_query: DiaryTagQuery<'a>,
     diary_id: Uuid,
     req_param: UpdateDiaryRequest,
-) -> Result<UpsertDiaryResponse, UseCaseError> {
+) -> Result<DiaryVisible, UseCaseError> {
     let (diary, user_relation) = match diary_query
         .clone()
         .filter_which_user_has_access(user.id)
@@ -55,16 +55,20 @@ pub async fn update_diary<'a>(
             },
         )
         .await
-        .map_err(|_| UseCaseError::InternalServerError)?;
+        .map_err(|e| {
+            dbg!(e);
+            UseCaseError::InternalServerError
+        })?;
 
-    let linked_tag_ids = match req_param.tag_ids {
+    let linked_tags = match req_param.tag_ids {
         Some(tag_ids) => {
-            let clean_tag_ids = diary_tag_query
+            let clean_tags = diary_tag_query
                 .filter_id_in(tag_ids)
                 .filter_by_relation(&user_relation)
-                .get_ids()
+                .get_all()
                 .await
                 .map_err(|_| UseCaseError::InternalServerError)?;
+            let clean_tag_ids = clean_tags.iter().map(|tag| tag.id).collect::<Vec<_>>();
             let current_linked_tag_ids = diary_query
                 .filter_by_id(diary.id)
                 .get_tag_ids()
@@ -87,17 +91,17 @@ pub async fn update_diary<'a>(
             )
             .await?;
 
-            Some(clean_tag_ids)
+            clean_tags
         }
-        None => None,
+        None => vec![],
     };
 
-    Ok(UpsertDiaryResponse {
+    Ok(DiaryVisible {
         id: diary.id,
         entry: diary.entry,
         date: diary.date,
         status: DiaryStatus::Read,
-        tag_ids: linked_tag_ids,
+        tags: linked_tags.iter().map(|tag| DiaryTag::from(tag)).collect(),
     })
 }
 

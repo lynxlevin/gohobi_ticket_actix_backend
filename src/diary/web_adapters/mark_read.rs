@@ -38,7 +38,7 @@ async fn mark_diary_read_endpoint(
             )
             .await
             {
-                Ok(diary) => HttpResponse::Ok().json(diary),
+                Ok(_) => HttpResponse::Ok().finish(),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("Diary not found."),
                     _ => response_500(),

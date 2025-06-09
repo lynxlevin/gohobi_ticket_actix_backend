@@ -101,13 +101,4 @@ impl<'a> DiaryTagQuery<'a> {
     pub async fn get_all(self) -> Result<Vec<diaries_diarytag::Model>, DbErr> {
         self.query.all(self.db).await
     }
-
-    pub async fn get_ids(self) -> Result<Vec<Uuid>, DbErr> {
-        self.query
-            .select_only()
-            .column(diaries_diarytag::Column::Id)
-            .into_values::<_, TagId>()
-            .all(self.db)
-            .await
-    }
 }

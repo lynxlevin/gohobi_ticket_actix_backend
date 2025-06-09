@@ -6,14 +6,12 @@ use db_adapters::diary::{
 use entities::users_user;
 use uuid::Uuid;
 
-use crate::UpsertDiaryResponse;
-
 pub async fn mark_diary_read<'a>(
     user: users_user::Model,
     diary_query: DiaryQuery<'a>,
     diary_mutation: DiaryMutation<'a>,
     diary_id: Uuid,
-) -> Result<UpsertDiaryResponse, UseCaseError> {
+) -> Result<(), UseCaseError> {
     let (diary, user_relation) = match diary_query
         .filter_which_user_has_access(user.id)
         .filter_by_id(diary_id)
@@ -41,13 +39,7 @@ pub async fn mark_diary_read<'a>(
     };
 
     match diary_mutation.update(diary, params).await {
-        Ok(diary) => Ok(UpsertDiaryResponse {
-            id: diary.id,
-            entry: diary.entry,
-            date: diary.date,
-            status: DiaryStatus::Read,
-            tag_ids: None,
-        }),
+        Ok(_) => Ok(()),
         Err(_) => Err(UseCaseError::InternalServerError),
     }
 }

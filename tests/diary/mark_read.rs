@@ -1,6 +1,5 @@
 use actix_web::{http, test, HttpMessage};
 use db_adapters::diary::types::DiaryStatus;
-use diary::UpsertDiaryResponse;
 use entities::diaries_diary;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use uuid::Uuid;
@@ -29,13 +28,7 @@ async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    let res: UpsertDiaryResponse = test::read_body_json(res).await;
-    assert_eq!(res.entry, diary.entry);
-    assert_eq!(res.date, diary.date);
-    assert_eq!(res.status, DiaryStatus::Read);
-    assert!(res.tag_ids.is_none());
-
-    let diary_in_db = diaries_diary::Entity::find_by_id(res.id).one(&db).await?;
+    let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db).await?;
     assert!(diary_in_db.is_some());
     let diary_in_db = diary_in_db.unwrap();
     assert_eq!(diary_in_db.entry, diary.entry);
@@ -68,13 +61,7 @@ async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    let res: UpsertDiaryResponse = test::read_body_json(res).await;
-    assert_eq!(res.entry, diary.entry);
-    assert_eq!(res.date, diary.date);
-    assert_eq!(res.status, DiaryStatus::Read);
-    assert!(res.tag_ids.is_none());
-
-    let diary_in_db = diaries_diary::Entity::find_by_id(res.id).one(&db).await?;
+    let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db).await?;
     assert!(diary_in_db.is_some());
     let diary_in_db = diary_in_db.unwrap();
     assert_eq!(diary_in_db.entry, diary.entry);

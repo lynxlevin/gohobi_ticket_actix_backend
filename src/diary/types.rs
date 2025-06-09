@@ -1,5 +1,6 @@
 use chrono::NaiveDate;
 use db_adapters::diary::types::DiaryStatus;
+use entities::diaries_diarytag;
 use sea_orm::prelude::Uuid;
 use serde::{Deserialize, Serialize};
 
@@ -8,6 +9,16 @@ pub struct DiaryTag {
     pub id: Uuid,
     pub text: String,
     pub sort_no: i32,
+}
+
+impl From<&diaries_diarytag::Model> for DiaryTag {
+    fn from(value: &diaries_diarytag::Model) -> Self {
+        Self {
+            id: value.id,
+            text: value.text.to_string(),
+            sort_no: value.sort_no,
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
@@ -31,14 +42,5 @@ pub struct CreateDiaryRequest {
 pub struct UpdateDiaryRequest {
     pub entry: String,
     pub date: NaiveDate,
-    pub tag_ids: Option<Vec<Uuid>>,
-}
-
-#[derive(Deserialize, Debug, Serialize, PartialEq)]
-pub struct UpsertDiaryResponse {
-    pub id: Uuid,
-    pub entry: String,
-    pub date: NaiveDate,
-    pub status: DiaryStatus,
     pub tag_ids: Option<Vec<Uuid>>,
 }

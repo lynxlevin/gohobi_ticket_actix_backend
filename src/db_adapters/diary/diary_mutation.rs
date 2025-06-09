@@ -1,5 +1,5 @@
 use chrono::Utc;
-use entities::{diaries_diary, diaries_diarytagrelation};
+use entities::{diaries_diary, diaries_diarytag, diaries_diarytagrelation};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbConn, DbErr, EntityTrait, IntoActiveModel, QueryFilter, Set,
 };
@@ -16,7 +16,10 @@ impl<'a> DiaryMutation<'a> {
         Self { db }
     }
 
-    pub async fn create(self, params: CreateDiaryParams) -> Result<diaries_diary::Model, DbErr> {
+    pub async fn create(
+        self,
+        params: CreateDiaryParams,
+    ) -> Result<(diaries_diary::Model, Vec<diaries_diarytag::Model>), DbErr> {
         let now = Utc::now();
         let diary = diaries_diary::ActiveModel {
             id: Set(Uuid::now_v7()),
@@ -32,23 +35,33 @@ impl<'a> DiaryMutation<'a> {
         .insert(self.db)
         .await?;
 
-        let mut tag_links: Vec<diaries_diarytagrelation::ActiveModel> = vec![];
-        for tag_id in params.tag_ids {
-            tag_links.push(diaries_diarytagrelation::ActiveModel {
-                id: Set(Uuid::now_v7()),
-                created_at: Set(now.into()),
-                updated_at: Set(now.into()),
-                diary_id: Set(diary.id),
-                tag_master_id: Set(tag_id),
-            });
-        }
+        let tags = match params.tag_ids.len() {
+            0 => vec![],
+            _ => {
+                let tag_links = params
+                    .tag_ids
+                    .iter()
+                    .map(|tag_id| diaries_diarytagrelation::ActiveModel {
+                        id: Set(Uuid::now_v7()),
+                        created_at: Set(now.into()),
+                        updated_at: Set(now.into()),
+                        diary_id: Set(diary.id),
+                        tag_master_id: Set(tag_id.to_owned()),
+                    })
+                    .collect::<Vec<_>>();
 
-        diaries_diarytagrelation::Entity::insert_many(tag_links)
-            .on_empty_do_nothing()
-            .exec(self.db)
-            .await?;
+                diaries_diarytagrelation::Entity::insert_many(tag_links)
+                    .on_empty_do_nothing()
+                    .exec(self.db)
+                    .await?;
+                diaries_diarytag::Entity::find()
+                    .filter(diaries_diarytag::Column::Id.is_in(params.tag_ids))
+                    .all(self.db)
+                    .await?
+            }
+        };
 
-        Ok(diary)
+        Ok((diary, tags))
     }
 
     pub async fn update(

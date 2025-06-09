@@ -1,7 +1,7 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{Duration, Utc};
 use db_adapters::diary::types::DiaryStatus;
-use diary::{UpdateDiaryRequest, UpsertDiaryResponse};
+use diary::{DiaryTag, DiaryVisible, UpdateDiaryRequest};
 use entities::{diaries_diary, diaries_diarytagrelation};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbErr, DeriveColumn, EntityTrait, EnumIter, QueryFilter,
@@ -42,11 +42,11 @@ async fn happy_path() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    let res: UpsertDiaryResponse = test::read_body_json(res).await;
+    let res: DiaryVisible = test::read_body_json(res).await;
     assert_eq!(res.entry, entry.clone());
     assert_eq!(res.date, date);
     assert_eq!(res.status, DiaryStatus::Read);
-    assert_eq!(res.tag_ids, None);
+    assert_eq!(res.tags, vec![]);
 
     let diary_in_db = diaries_diary::Entity::find_by_id(res.id)
         .one(&db)
@@ -92,9 +92,15 @@ async fn assert_tag_change() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    let res: UpsertDiaryResponse = test::read_body_json(res).await;
-    let expected_tag_ids = vec![tag_1.id];
-    assert_eq!(res.tag_ids, Some(expected_tag_ids.clone()));
+    let res: DiaryVisible = test::read_body_json(res).await;
+    let expected_tags = vec![tag_1];
+    assert_eq!(
+        res.tags,
+        expected_tags
+            .iter()
+            .map(|tag| DiaryTag::from(tag))
+            .collect::<Vec<_>>()
+    );
 
     let linked_tag_ids_in_db: Vec<Uuid> = diaries_diarytagrelation::Entity::find()
         .filter(diaries_diarytagrelation::Column::DiaryId.eq(diary.id))
@@ -106,7 +112,10 @@ async fn assert_tag_change() -> Result<(), DbErr> {
         .into_values::<_, TagLinkTagId>()
         .all(&db)
         .await?;
-    assert_eq!(linked_tag_ids_in_db, expected_tag_ids);
+    assert_eq!(
+        linked_tag_ids_in_db,
+        expected_tags.iter().map(|tag| tag.id).collect::<Vec<_>>()
+    );
 
     Ok(())
 }
@@ -150,7 +159,7 @@ async fn assert_user_2_status_changes() -> Result<(), DbErr> {
 
         assert_eq!(res.status(), http::StatusCode::OK);
 
-        let res: UpsertDiaryResponse = test::read_body_json(res).await;
+        let res: DiaryVisible = test::read_body_json(res).await;
         assert_eq!(res.status, DiaryStatus::Read);
 
         let diary_in_db = diaries_diary::Entity::find_by_id(diary.id)

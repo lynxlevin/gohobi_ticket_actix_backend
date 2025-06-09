@@ -1,13 +1,21 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::Utc;
 use db_adapters::diary::types::DiaryStatus;
-use diary::{CreateDiaryRequest, UpsertDiaryResponse};
+use diary::{CreateDiaryRequest, DiaryTag, DiaryVisible};
 use entities::{diaries_diary, diaries_diarytagrelation};
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DbErr, DeriveColumn, EntityTrait, EnumIter, QueryFilter,
+    QuerySelect,
+};
 use uuid::Uuid;
 
 use crate::utils::{init_app, Connections};
 use common::factory;
+
+#[derive(DeriveColumn, Copy, Debug, Clone, EnumIter)]
+enum TagLinkTagId {
+    TagId,
+}
 
 #[actix_web::test]
 async fn happy_path() -> Result<(), DbErr> {
@@ -35,11 +43,11 @@ async fn happy_path() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::CREATED);
 
-    let res: UpsertDiaryResponse = test::read_body_json(res).await;
+    let res: DiaryVisible = test::read_body_json(res).await;
     assert_eq!(res.entry, entry.clone());
     assert_eq!(res.date, today);
     assert_eq!(res.status, DiaryStatus::Read);
-    assert_eq!(res.tag_ids, Some(tag_ids.clone()));
+    assert_eq!(res.tags, vec![]);
 
     let diary_in_db = diaries_diary::Entity::find_by_id(res.id).one(&db).await?;
     assert!(diary_in_db.is_some());
@@ -69,7 +77,7 @@ async fn happy_path_with_tag_ids() -> Result<(), DbErr> {
 
     let diary_tag_0 = factory::diary_tag(user_relation.id).insert(&db).await?;
     let diary_tag_1 = factory::diary_tag(user_relation.id).insert(&db).await?;
-    let tag_ids = vec![diary_tag_0.id, diary_tag_1.id];
+    let tags = vec![diary_tag_0, diary_tag_1];
 
     let req = test::TestRequest::post()
         .uri("/api/diaries/")
@@ -77,7 +85,7 @@ async fn happy_path_with_tag_ids() -> Result<(), DbErr> {
             user_relation_id: user_relation.id,
             entry: String::default(),
             date: Utc::now().date_naive(),
-            tag_ids: tag_ids.clone(),
+            tag_ids: tags.iter().map(|tag| tag.id).collect(),
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -85,21 +93,28 @@ async fn happy_path_with_tag_ids() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::CREATED);
 
-    let res: UpsertDiaryResponse = test::read_body_json(res).await;
-    assert_eq!(res.tag_ids, Some(tag_ids.clone()));
+    let res: DiaryVisible = test::read_body_json(res).await;
+    assert_eq!(
+        res.tags,
+        tags.iter()
+            .map(|tag| DiaryTag::from(tag))
+            .collect::<Vec<_>>()
+    );
 
-    let tag_link_in_db = diaries_diarytagrelation::Entity::find()
+    let linked_tag_ids_in_db: Vec<Uuid> = diaries_diarytagrelation::Entity::find()
         .filter(diaries_diarytagrelation::Column::DiaryId.eq(res.id))
+        .select_only()
+        .column_as(
+            diaries_diarytagrelation::Column::TagMasterId,
+            TagLinkTagId::TagId,
+        )
+        .into_values::<_, TagLinkTagId>()
         .all(&db)
         .await?;
-    assert_eq!(tag_link_in_db.len(), tag_ids.len());
-    let linked_tag_ids: Vec<Uuid> = tag_link_in_db
-        .iter()
-        .map(|link| link.tag_master_id)
-        .collect();
-    for tag_id in tag_ids {
-        assert!(linked_tag_ids.contains(&tag_id));
-    }
+    assert_eq!(
+        linked_tag_ids_in_db,
+        tags.iter().map(|tag| tag.id).collect::<Vec<_>>()
+    );
 
     Ok(())
 }
