@@ -8,7 +8,7 @@ pub struct ListUserRelationsResponse {
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct UserRelationVisible {
     pub id: i64,
-    pub related_user_name: String,
+    pub related_username: String,
     pub giving_ticket_img: Option<String>,
     pub receiving_ticket_img: Option<String>,
     pub use_slack: bool,

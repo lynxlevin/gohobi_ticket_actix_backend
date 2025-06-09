@@ -12,7 +12,7 @@ pub async fn list_user_relations(
             user_relations: user_relations
                 .iter()
                 .map(|r| {
-                    let (related_user_name, giving_ticket_img, receiving_ticket_img) =
+                    let (related_username, giving_ticket_img, receiving_ticket_img) =
                         match user.id == r.user_1_id {
                             true => (
                                 r.user_2_name.clone(),
@@ -27,7 +27,7 @@ pub async fn list_user_relations(
                         };
                     UserRelationVisible {
                         id: r.id,
-                        related_user_name,
+                        related_username,
                         giving_ticket_img,
                         receiving_ticket_img,
                         use_slack: r.use_slack,

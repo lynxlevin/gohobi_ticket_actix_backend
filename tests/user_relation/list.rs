@@ -36,14 +36,14 @@ async fn happy_path() -> Result<(), DbErr> {
         user_relations: vec![
             UserRelationVisible {
                 id: user_relation_0.id,
-                related_user_name: user_1.username,
+                related_username: user_1.username,
                 giving_ticket_img: user_relation_0.user_1_giving_ticket_img,
                 receiving_ticket_img: user_relation_0.user_2_giving_ticket_img,
                 use_slack: false,
             },
             UserRelationVisible {
                 id: user_relation_1.id,
-                related_user_name: user_2.username,
+                related_username: user_2.username,
                 giving_ticket_img: user_relation_1.user_2_giving_ticket_img,
                 receiving_ticket_img: user_relation_1.user_1_giving_ticket_img,
                 use_slack: false,
