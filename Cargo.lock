@@ -4019,9 +4019,11 @@ dependencies = [
  "chrono",
  "common",
  "db_adapters",
+ "diary",
  "entities",
  "sea-orm",
  "serde",
+ "ticket",
 ]
 
 [[package]]
