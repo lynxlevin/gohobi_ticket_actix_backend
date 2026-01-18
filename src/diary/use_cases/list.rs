@@ -12,6 +12,7 @@ pub async fn list_diary<'a>(
     user_relation_id: i64,
     user_relation_query: UserRelationQuery<'a>,
     diary_query: DiaryQuery<'a>,
+    text_query: Option<String>,
 ) -> Result<Vec<DiaryVisible>, UseCaseError> {
     let user_relation = user_relation_query
         .find_by_id(user_relation_id, user.id)
@@ -19,9 +20,15 @@ pub async fn list_diary<'a>(
         .map_err(|_| UseCaseError::InternalServerError)?
         .ok_or(UseCaseError::NotFound)?;
 
-    match diary_query
+    let mut diary_query = diary_query
         .filter_which_user_has_access(user.id)
-        .filter_by_relation(user_relation_id)
+        .filter_by_relation(user_relation_id);
+
+    if let Some(text) = text_query {
+        diary_query = diary_query.filter_contains_text(&text);
+    }
+
+    match diary_query
         .order_by_date(Order::Desc)
         .get_all_with_tags()
         .await

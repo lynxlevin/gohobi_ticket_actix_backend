@@ -8,3 +8,5 @@ pub use types::{
     UpsertTicketResponse, UseTicketParams, UseTicketRequest,
 };
 pub use web_adapters::ticket_routes;
+// FIXME: This should not be accessed publicly. Need to change crate structure.
+pub use use_cases::list;

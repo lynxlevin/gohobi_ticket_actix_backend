@@ -9,6 +9,7 @@ pub use sea_orm::Order;
 
 use super::types::TicketStatus;
 
+#[derive(Clone)]
 pub struct TicketQuery<'a> {
     pub db: &'a DbConn,
     pub query: Select<tickets_ticket::Entity>,
@@ -41,6 +42,16 @@ impl<'a> TicketQuery<'a> {
             .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id));
         self
     }
+
+    pub fn filter_contains_text(mut self, text: &str) -> Self {
+        self.query = self.query.filter(
+            Condition::any()
+                .add(tickets_ticket::Column::Description.contains(text))
+                .add(tickets_ticket::Column::UseDescription.contains(text)),
+        );
+        self
+    }
+
     pub fn exclude_draft_tickets(mut self) -> Self {
         self.query = self
             .query
