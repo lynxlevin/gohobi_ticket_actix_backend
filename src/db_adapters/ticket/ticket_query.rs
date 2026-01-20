@@ -64,6 +64,13 @@ impl<'a> TicketQuery<'a> {
         self
     }
 
+    pub fn order_by_created_at(mut self, order: Order) -> Self {
+        self.query = self
+            .query
+            .order_by(tickets_ticket::Column::CreatedAt, order);
+        self
+    }
+
     pub async fn get_by_id(self, ticket_id: i64) -> Result<Option<tickets_ticket::Model>, DbErr> {
         self.query
             .filter(tickets_ticket::Column::Id.eq(ticket_id))

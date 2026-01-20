@@ -29,6 +29,7 @@ pub async fn list_tickets(
     }
     ticket_query
         .order_by_gift_date(Order::Desc)
+        .order_by_created_at(Order::Desc)
         .get_tickets(user.id, is_giving)
         .await
         .map(|tickets| ListTicketResponse {

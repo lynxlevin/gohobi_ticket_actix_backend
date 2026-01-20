@@ -95,12 +95,12 @@ async fn happy_path() -> Result<(), DbErr> {
 
     let expected = SearchResponse {
         giving_tickets: vec![
-            TicketVisible::from(giving_ticket_description_hit),
             TicketVisible::from(giving_ticket_use_description_hit),
+            TicketVisible::from(giving_ticket_description_hit),
         ],
         receiving_tickets: vec![
-            TicketVisible::from(receiving_ticket_description_hit),
             TicketVisible::from(receiving_ticket_use_description_hit),
+            TicketVisible::from(receiving_ticket_description_hit),
         ],
         diaries: vec![
             DiaryVisible {
