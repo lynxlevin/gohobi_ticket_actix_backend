@@ -4021,6 +4021,7 @@ dependencies = [
  "db_adapters",
  "diary",
  "entities",
+ "futures",
  "sea-orm",
  "serde",
  "ticket",

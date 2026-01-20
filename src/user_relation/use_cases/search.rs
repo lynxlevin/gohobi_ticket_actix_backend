@@ -1,3 +1,5 @@
+use futures::join;
+
 use crate::{SearchRequest, SearchResponse};
 use common::errors::use_case_errors::UseCaseError;
 use db_adapters::{diary::DiaryQuery, ticket::TicketQuery, user_relation::UserRelationQuery};
@@ -20,42 +22,45 @@ pub async fn search(
         .map_err(|_| UseCaseError::InternalServerError)?
         .ok_or(UseCaseError::NotFound)?;
 
-    let giving_tickets = list_tickets(
+    let text_query = Some(params.text);
+
+    let get_giving_tickets_future = list_tickets(
         user.clone(),
         ticket_query.clone(),
         ListTicketsQueryParam {
             user_relation_id,
             is_giving: Some("true".to_string()),
         },
-        Some(params.text.clone()),
-    )
-    .await?
-    .tickets;
+        text_query.clone(),
+    );
 
-    let receiving_tickets = list_tickets(
+    let receiving_tickets_future = list_tickets(
         user.clone(),
         ticket_query,
         ListTicketsQueryParam {
             user_relation_id,
             is_giving: Some("false".to_string()),
         },
-        Some(params.text.clone()),
-    )
-    .await?
-    .tickets;
+        text_query.clone(),
+    );
 
-    let diaries = list_diary(
+    let diaries_future = list_diary(
         user,
         user_relation_id,
         user_relation_query,
         diary_query,
-        Some(params.text),
-    )
-    .await?;
+        text_query,
+    );
+
+    let (giving_tickets_res, receiving_tickets_res, diaries_res) = join!(
+        get_giving_tickets_future,
+        receiving_tickets_future,
+        diaries_future,
+    );
 
     Ok(SearchResponse {
-        giving_tickets,
-        receiving_tickets,
-        diaries,
+        giving_tickets: giving_tickets_res?.tickets,
+        receiving_tickets: receiving_tickets_res?.tickets,
+        diaries: diaries_res?,
     })
 }

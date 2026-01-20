@@ -21,5 +21,6 @@ diary = { path = "../diary" }
 
 actix-web.workspace = true
 chrono.workspace = true
+futures.workspace = true
 sea-orm.workspace = true
 serde.workspace = true
