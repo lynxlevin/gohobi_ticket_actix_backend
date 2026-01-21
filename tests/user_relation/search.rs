@@ -56,13 +56,14 @@ async fn happy_path() -> Result<(), DbErr> {
         .await?;
     factory::link_diary_tag(&db, diary_tag_hit.id, tag.id).await?;
 
-    let no_hit_giving_ticket = factory::ticket(user_0.id, user_relation.id);
+    let no_hit_giving_ticket =
+        factory::ticket(user_0.id, user_relation.id).description("Find".to_string());
     let no_hit_receiving_ticket = factory::ticket(user_2.id, user_relation.id);
     let no_hit_draft_receiving_ticket =
         factory::ticket(user_1.id, user_relation.id).status(TicketStatus::Draft.to_value());
     let other_relation_giving_ticket = factory::ticket(user_0.id, other_relation.id);
     let other_relation_receiving_ticket = factory::ticket(user_2.id, other_relation.id);
-    let no_hit_diary = factory::diary(user_relation.id);
+    let no_hit_diary = factory::diary(user_relation.id).entry("me");
     let other_relation_diary = factory::diary(other_relation.id);
     tickets_ticket::Entity::insert_many(vec![
         no_hit_giving_ticket,

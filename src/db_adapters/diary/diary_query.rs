@@ -52,11 +52,13 @@ impl<'a> DiaryQuery<'a> {
         self
     }
     pub fn filter_contains_texts(mut self, texts: Vec<&str>) -> Self {
-        let mut cond = Condition::any();
+        let mut cond = Condition::all();
         for text in texts {
-            cond = cond
-                .add(diaries_diary::Column::Entry.contains(text))
-                .add(diaries_diarytag::Column::Text.contains(text));
+            cond = cond.add(
+                Condition::any()
+                    .add(diaries_diary::Column::Entry.contains(text))
+                    .add(diaries_diarytag::Column::Text.contains(text)),
+            )
         }
         self.query = self.query.filter(cond);
         self
