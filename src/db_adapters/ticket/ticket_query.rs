@@ -43,12 +43,14 @@ impl<'a> TicketQuery<'a> {
         self
     }
 
-    pub fn filter_contains_text(mut self, text: &str) -> Self {
-        self.query = self.query.filter(
-            Condition::any()
+    pub fn filter_contains_texts(mut self, texts: Vec<&str>) -> Self {
+        let mut cond = Condition::any();
+        for text in texts {
+            cond = cond
                 .add(tickets_ticket::Column::Description.contains(text))
-                .add(tickets_ticket::Column::UseDescription.contains(text)),
-        );
+                .add(tickets_ticket::Column::UseDescription.contains(text));
+        }
+        self.query = self.query.filter(cond);
         self
     }
 

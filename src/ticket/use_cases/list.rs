@@ -15,7 +15,7 @@ pub async fn list_tickets(
     user: users_user::Model,
     ticket_query: TicketQuery<'_>,
     query_param: ListTicketsQueryParam,
-    text_query: Option<String>,
+    text_query: Option<Vec<&str>>,
 ) -> Result<ListTicketResponse, UseCaseError> {
     let is_giving = query_param
         .is_giving
@@ -24,8 +24,8 @@ pub async fn list_tickets(
     let mut ticket_query = ticket_query
         .filter_which_user_has_access(user.id)
         .filter_by_relation(query_param.user_relation_id);
-    if let Some(text) = text_query {
-        ticket_query = ticket_query.filter_contains_text(&text);
+    if let Some(text_query) = text_query {
+        ticket_query = ticket_query.filter_contains_texts(text_query);
     }
     ticket_query
         .order_by_gift_date(Order::Desc)

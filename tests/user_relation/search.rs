@@ -26,7 +26,7 @@ async fn happy_path() -> Result<(), DbErr> {
     let search_text = "Find me".to_string();
 
     let giving_ticket_description_hit = factory::ticket(user_0.id, user_relation.id)
-        .description(format!("aa{}bb", search_text))
+        .description("Let me now Find you".to_string())
         .insert(&db)
         .await?;
     let giving_ticket_use_description_hit = factory::ticket(user_0.id, user_relation.id)

@@ -22,7 +22,7 @@ pub async fn search(
         .map_err(|_| UseCaseError::InternalServerError)?
         .ok_or(UseCaseError::NotFound)?;
 
-    let text_query = Some(params.text);
+    let text_query = Some(params.text.split([' ', '　']).collect::<Vec<_>>());
 
     let get_giving_tickets_future = list_tickets(
         user.clone(),

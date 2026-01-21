@@ -51,12 +51,14 @@ impl<'a> DiaryQuery<'a> {
         self.query = self.query.filter(diaries_diary::Column::Id.eq(diary_id));
         self
     }
-    pub fn filter_contains_text(mut self, text: &str) -> Self {
-        self.query = self.query.filter(
-            Condition::any()
+    pub fn filter_contains_texts(mut self, texts: Vec<&str>) -> Self {
+        let mut cond = Condition::any();
+        for text in texts {
+            cond = cond
                 .add(diaries_diary::Column::Entry.contains(text))
-                .add(diaries_diarytag::Column::Text.contains(text)),
-        );
+                .add(diaries_diarytag::Column::Text.contains(text));
+        }
+        self.query = self.query.filter(cond);
         self
     }
 
