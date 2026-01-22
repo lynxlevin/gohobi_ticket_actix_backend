@@ -18,6 +18,7 @@ enum User2 {
     Username,
 }
 
+#[derive(Clone)]
 pub struct UserRelationQuery<'a> {
     pub db: &'a DbConn,
 }

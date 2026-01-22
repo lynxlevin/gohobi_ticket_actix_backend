@@ -1,4 +1,6 @@
+use diary::DiaryVisible;
 use serde::{Deserialize, Serialize};
+use ticket::TicketVisible;
 
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct ListUserRelationsResponse {
@@ -44,4 +46,16 @@ impl SpecialTicketAvailabilityQueryParam {
 
         Ok(())
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SearchRequest {
+    pub text: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SearchResponse {
+    pub giving_tickets: Vec<TicketVisible>,
+    pub receiving_tickets: Vec<TicketVisible>,
+    pub diaries: Vec<DiaryVisible>,
 }

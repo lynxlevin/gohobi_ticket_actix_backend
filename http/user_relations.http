@@ -20,3 +20,13 @@ GET {{endpoint}}/api/user_relations/
 ###
 # @name special_ticket_availability
 GET {{endpoint}}/api/user_relations/{{user_relation_id}}/special_ticket_availability/?year=2025&month=6
+
+###
+# @name search
+POST {{endpoint}}/api/user_relations/{{user_relation_id}}/search/
+Content-Type: application/json
+
+{
+  "text": "Find me"
+}
+

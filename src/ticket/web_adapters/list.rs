@@ -19,7 +19,7 @@ async fn list_tickets_endpoint(
     match user {
         Some(user) => {
             let ticket_query = TicketQuery::init_query(&db);
-            match list_tickets(user.into_inner(), ticket_query, query.into_inner()).await {
+            match list_tickets(user.into_inner(), ticket_query, query.into_inner(), None).await {
                 Ok(tickets) => HttpResponse::Ok().json(tickets),
                 Err(_) => response_500(),
             }

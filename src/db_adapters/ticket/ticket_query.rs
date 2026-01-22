@@ -9,6 +9,7 @@ pub use sea_orm::Order;
 
 use super::types::TicketStatus;
 
+#[derive(Clone)]
 pub struct TicketQuery<'a> {
     pub db: &'a DbConn,
     pub query: Select<tickets_ticket::Entity>,
@@ -41,6 +42,20 @@ impl<'a> TicketQuery<'a> {
             .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id));
         self
     }
+
+    pub fn filter_contains_texts(mut self, texts: Vec<&str>) -> Self {
+        let mut cond = Condition::all();
+        for text in texts {
+            cond = cond.add(
+                Condition::any()
+                    .add(tickets_ticket::Column::Description.contains(text))
+                    .add(tickets_ticket::Column::UseDescription.contains(text)),
+            )
+        }
+        self.query = self.query.filter(cond);
+        self
+    }
+
     pub fn exclude_draft_tickets(mut self) -> Self {
         self.query = self
             .query
@@ -50,6 +65,13 @@ impl<'a> TicketQuery<'a> {
 
     pub fn order_by_gift_date(mut self, order: Order) -> Self {
         self.query = self.query.order_by(tickets_ticket::Column::GiftDate, order);
+        self
+    }
+
+    pub fn order_by_created_at(mut self, order: Order) -> Self {
+        self.query = self
+            .query
+            .order_by(tickets_ticket::Column::CreatedAt, order);
         self
     }
 
