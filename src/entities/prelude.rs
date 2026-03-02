@@ -6,3 +6,4 @@ pub use super::diaries_diarytagrelation::Entity as DiariesDiarytagrelation;
 pub use super::tickets_ticket::Entity as TicketsTicket;
 pub use super::user_relations_userrelation::Entity as UserRelationsUserrelation;
 pub use super::users_user::Entity as UsersUser;
+pub use super::web_push_subscription::Entity as WebPushSubscription;

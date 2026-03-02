@@ -19,11 +19,19 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(has_many = "super::tickets_ticket::Entity")]
     TicketsTicket,
+    #[sea_orm(has_one = "super::web_push_subscription::Entity")]
+    WebPushSubscription,
 }
 
 impl Related<super::tickets_ticket::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::TicketsTicket.def()
+    }
+}
+
+impl Related<super::web_push_subscription::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::WebPushSubscription.def()
     }
 }
 
