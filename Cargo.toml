@@ -12,6 +12,7 @@ members = [
     "src/ticket",
     "src/diary",
     "src/diary_tag",
+    "src/web_push_subscription",
     "src/server",
     "tests",
 ]

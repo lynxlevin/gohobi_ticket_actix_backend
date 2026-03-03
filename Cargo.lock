@@ -926,6 +926,8 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "aes-gcm",
+ "base64 0.22.1",
  "chrono",
  "deadpool-redis",
  "dotenvy",
@@ -3217,6 +3219,7 @@ dependencies = [
  "ticket",
  "user",
  "user_relation",
+ "web_push_subscription",
 ]
 
 [[package]]
@@ -3650,8 +3653,10 @@ dependencies = [
  "diary",
  "diary_tag",
  "entities",
+ "env_logger",
  "mockito",
  "sea-orm",
+ "serde",
  "serde_json",
  "server",
  "ticket",
@@ -4157,6 +4162,18 @@ checksum = "9b32828d774c412041098d182a8b38b16ea816958e07cf40eec2bc080ae137ac"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "web_push_subscription"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "common",
+ "db_adapters",
+ "entities",
+ "sea-orm",
+ "serde",
 ]
 
 [[package]]
