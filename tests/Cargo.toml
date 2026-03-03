@@ -21,7 +21,9 @@ server = { path = "../src/server" }
 actix-session.workspace = true
 actix-web.workspace = true
 chrono.workspace = true
+env_logger.workspace = true
 sea-orm.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
 
