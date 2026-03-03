@@ -21,6 +21,7 @@ default-members = ["src/gohobi_ticket"]
 actix-tls = { version = "3.4.0", default-features = false }
 actix-session = { version = "0.10.1", features = ["redis-session"] }
 actix-web = "4.10.2"
+aes-gcm = { version = "0.10.3", default-features = false, features = ["aes", "alloc", "getrandom", "rand_core"]}
 argon2 = { version = "0.5.3", default-features = false, features = [
     "password-hash",
     "rand",

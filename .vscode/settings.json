@@ -10,6 +10,7 @@
     "deadpool",
     "dotenv",
     "dotenvy",
+    "encryptor",
     "hmac",
     "iden",
     "serde",
