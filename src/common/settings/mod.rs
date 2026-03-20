@@ -61,6 +61,8 @@ fn merge_env(s: Settings) -> Result<Settings, String> {
                 .parse::<u64>()
                 .map_err(|e| e.to_string())?,
             slack_incoming_webhook_path: get_env_var("SLACK_INCOMING_WEBHOOK_PATH")?,
+            vapid_private_key: get_env_var("VAPID_PRIVATE_KEY")?,
+            app_owner_email: get_env_var("APP_OWNER_EMAIL")?,
             ..s.application
         },
         database: DatabaseSettings {
