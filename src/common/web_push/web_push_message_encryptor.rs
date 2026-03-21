@@ -168,17 +168,17 @@ mod tests {
         factory::{self, *},
         settings::get_test_settings,
     };
-    use base64::prelude::BASE64_URL_SAFE_NO_PAD;
 
     #[test]
     fn test_message_encryptor() {
-        let (key_pair, auth) = ece::generate_keypair_and_auth_secret().unwrap();
+        let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
         let p256dh_key = key_pair.pub_as_raw().unwrap();
 
         let settings = get_test_settings();
-        let subscription = factory::web_push_subscription(1, &settings)
-            .encrypt_and_save_p256dh_key(BASE64_URL_SAFE_NO_PAD.encode(p256dh_key), &settings)
-            .encrypt_and_save_auth_key(BASE64_URL_SAFE_NO_PAD.encode(auth), &settings)
+        let subscription = factory::web_push_subscription(1)
+            .set_raw_p256dh_key(p256dh_key)
+            .set_raw_auth_key(auth_key)
+            .encrypt_and_encode_sensitive_fields(&settings)
             .get_model();
         let message = "Encrypt this message, please.";
 
@@ -187,7 +187,7 @@ mod tests {
 
         assert_eq!(
             message.as_bytes(),
-            ece::decrypt(&key_pair.raw_components().unwrap(), &auth, &encrypted).unwrap()
+            ece::decrypt(&key_pair.raw_components().unwrap(), &auth_key, &encrypted).unwrap()
         );
     }
 }

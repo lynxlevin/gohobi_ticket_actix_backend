@@ -36,7 +36,7 @@ ece.workspace = true
 [features]
 db = ["dep:sea-orm", "dep:migration", "settings", "dep:aes-gcm", "dep:base64"]
 errors = ["dep:actix-web", "dep:serde"]
-factory = ["dep:entities", "dep:sea-orm", "dep:uuid", "dep:chrono"]
+factory = ["dep:entities", "dep:sea-orm", "dep:uuid", "dep:chrono", "dep:base64"]
 redis = ["dep:deadpool-redis", "settings"]
 settings = []
 web_push = ["settings", "dep:http", "dep:jwt-simple", "dep:base64", "dep:thiserror", "dep:reqwest", "dep:serde_json", "dep:hkdf", "dep:p256", "dep:sha2"]

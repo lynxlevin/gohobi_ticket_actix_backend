@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::utils::{init_app, Connections};
 use common::{
     db::{decode_and_decrypt, encrypt_and_encode},
-    factory,
+    factory::{self, WebPushSubscriptionFactory},
 };
 
 const URI: &str = "/api/web_push_subscription";
@@ -99,7 +99,8 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn happy_path_conflict_handling() -> Result<(), DbErr> {
     let Connections { app, db, settings } = init_app().await?;
     let user = factory::user().insert(&db).await?;
-    let _subscription = factory::web_push_subscription(user.id, &settings)
+    let _subscription = factory::web_push_subscription(user.id)
+        .encrypt_and_encode_sensitive_fields(&settings)
         .insert(&db)
         .await?;
 

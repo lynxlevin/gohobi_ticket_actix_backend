@@ -3,7 +3,7 @@ use entities::web_push_subscription;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter};
 
 use crate::utils::{init_app, Connections};
-use common::factory;
+use common::factory::{self, WebPushSubscriptionFactory};
 
 const URI: &str = "/api/web_push_subscription";
 
@@ -11,7 +11,8 @@ const URI: &str = "/api/web_push_subscription";
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, settings } = init_app().await?;
     let user = factory::user().insert(&db).await?;
-    let _subscription = factory::web_push_subscription(user.id, &settings)
+    let _subscription = factory::web_push_subscription(user.id)
+        .encrypt_and_encode_sensitive_fields(&settings)
         .insert(&db)
         .await?;
 

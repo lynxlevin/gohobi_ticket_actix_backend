@@ -3,7 +3,7 @@ use sea_orm::{ActiveModelTrait, DbErr};
 use serde::{Deserialize, Serialize};
 
 use crate::utils::{init_app, Connections};
-use common::factory;
+use common::factory::{self, WebPushSubscriptionFactory};
 
 const URI: &str = "/api/web_push_subscription";
 
@@ -17,7 +17,8 @@ pub struct Response {
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, settings } = init_app().await?;
     let user = factory::user().insert(&db).await?;
-    let subscription = factory::web_push_subscription(user.id, &settings)
+    let subscription = factory::web_push_subscription(user.id)
+        .encrypt_and_encode_sensitive_fields(&settings)
         .insert(&db)
         .await?;
 
