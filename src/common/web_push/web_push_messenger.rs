@@ -17,17 +17,18 @@ use crate::web_push::{
 
 const TTL_SECONDS: u64 = 60 * 60 * 23;
 
+#[derive(Debug, Serialize)]
+pub enum MessageType {
+    UseTicket,
+}
+
 #[derive(Serialize, Debug)]
 pub struct Message {
     pub title: Option<String>,
     pub body: String,
-    pub path: Option<String>,
-}
-
-pub struct WebPushMessenger {
-    endpoint: String,
-    message_encryptor: MessageEncryptor,
-    vapid_signature_builder: VapidSignatureBuilder,
+    pub message_type: MessageType,
+    pub user_relation_id: Option<i64>,
+    pub ticket_id: Option<i64>,
 }
 
 pub enum WebPushMessengerResult {
@@ -47,6 +48,12 @@ pub enum WebPushMessengerError {
     InvalidHeaderValue(InvalidHeaderValue),
     #[error("WebPushMessengerError:RequestError:{0}")]
     RequestError(ReqwestError),
+}
+
+pub struct WebPushMessenger {
+    endpoint: String,
+    message_encryptor: MessageEncryptor,
+    vapid_signature_builder: VapidSignatureBuilder,
 }
 
 impl WebPushMessenger {
