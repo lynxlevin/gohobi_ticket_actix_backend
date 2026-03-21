@@ -9,15 +9,13 @@ use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
 
 #[actix_web::test]
-async fn happy_path_no_slack_message() -> Result<(), DbErr> {
+async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .use_slack(false)
         .insert(&db)
         .await?;
     let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
-        .status(TicketStatus::Read.to_value())
         .insert(&db)
         .await?;
 
@@ -136,4 +134,133 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
 
     Ok(())
+}
+
+mod web_push_message {
+    use common::web_push::{Message, MessageType};
+    use ece;
+    use serde_json::json;
+
+    use super::*;
+
+    fn get_encrypted_message(
+        p256dh_key: &Vec<u8>,
+        auth_key: &[u8; 16],
+        message: &Message,
+    ) -> Vec<u8> {
+        ece::encrypt(p256dh_key, auth_key, json!(message).to_string().as_bytes()).unwrap()
+    }
+
+    #[actix_web::test]
+    async fn normal_message() -> Result<(), DbErr> {
+        let Connections { app, db, settings } = init_app().await?;
+        let mut mock_server = mockito::Server::new_async().await;
+
+        let [user_0, user_1, ..] = factory::get_users(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id)
+            .insert(&db)
+            .await?;
+        let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
+            .insert(&db)
+            .await?;
+        let endpoint = format!("{}/message", mock_server.url());
+        let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
+        let p256dh_key = key_pair.pub_as_raw().unwrap();
+        let _giving_user_web_push_sub = factory::web_push_subscription(user_1.id)
+            .set_raw_endpoint(&endpoint)
+            .set_raw_p256dh_key(p256dh_key.clone())
+            .set_raw_auth_key(auth_key)
+            .encrypt_and_encode_sensitive_fields(&settings)
+            .insert(&db)
+            .await?;
+
+        let message = Message {
+            title: Some(format!("{}からのおねがい", user_0.username)),
+            body: "お願いします。".to_string(),
+            message_type: MessageType::UseTicket,
+            user_relation_id: Some(user_relation.id),
+            ticket_id: Some(receiving_ticket.id),
+        };
+        // NOTE: headers should be tested in unit tests.
+        let web_push_request_mock = mock_server
+            .mock("POST", endpoint.split('/').last().unwrap())
+            .match_body(get_encrypted_message(&p256dh_key, &auth_key, &message))
+            .expect(1)
+            .with_status(200)
+            .create_async()
+            .await;
+
+        let req = test::TestRequest::put()
+            .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
+            .set_json(UseTicketRequest {
+                ticket: UseTicketParams {
+                    use_description: message.body.clone(),
+                },
+            })
+            .to_request();
+        req.extensions_mut().insert(user_0.clone());
+        let res = test::call_service(&app, req).await;
+        assert_eq!(res.status(), http::StatusCode::OK);
+
+        web_push_request_mock.assert_async().await;
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn special_message() -> Result<(), DbErr> {
+        let Connections { app, db, settings } = init_app().await?;
+        let mut mock_server = mockito::Server::new_async().await;
+
+        let [user_0, user_1, ..] = factory::get_users(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id)
+            .insert(&db)
+            .await?;
+        let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
+            .is_special(true)
+            .insert(&db)
+            .await?;
+        let endpoint = format!("{}/message", mock_server.url());
+        let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
+        let p256dh_key = key_pair.pub_as_raw().unwrap();
+        let _giving_user_web_push_sub = factory::web_push_subscription(user_1.id)
+            .set_raw_endpoint(&endpoint)
+            .set_raw_p256dh_key(p256dh_key.clone())
+            .set_raw_auth_key(auth_key)
+            .encrypt_and_encode_sensitive_fields(&settings)
+            .insert(&db)
+            .await?;
+
+        let message = Message {
+            title: Some(format!("⭐️{}からの特別なおねがい⭐️", user_0.username)),
+            body: "お願いします。".to_string(),
+            message_type: MessageType::UseTicket,
+            user_relation_id: Some(user_relation.id),
+            ticket_id: Some(receiving_ticket.id),
+        };
+        // NOTE: headers should be tested in unit tests.
+        let web_push_request_mock = mock_server
+            .mock("POST", endpoint.split('/').last().unwrap())
+            .match_body(get_encrypted_message(&p256dh_key, &auth_key, &message))
+            .expect(1)
+            .with_status(200)
+            .create_async()
+            .await;
+
+        let req = test::TestRequest::put()
+            .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
+            .set_json(UseTicketRequest {
+                ticket: UseTicketParams {
+                    use_description: message.body.clone(),
+                },
+            })
+            .to_request();
+        req.extensions_mut().insert(user_0.clone());
+        let res = test::call_service(&app, req).await;
+        assert_eq!(res.status(), http::StatusCode::OK);
+
+        web_push_request_mock.assert_async().await;
+
+        Ok(())
+    }
 }
