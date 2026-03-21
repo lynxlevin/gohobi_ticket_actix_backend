@@ -9,7 +9,7 @@ path = "lib.rs"
 
 [dependencies]
 entities = { path = "../entities" }
-common = { path = "../common", features = ["errors", "settings", "db", "factory"] }
+common = { path = "../common", features = ["errors", "settings", "db"] }
 
 actix-session = { workspace = true, features = [] }
 actix-web.workspace = true
@@ -22,3 +22,6 @@ sea-orm.workspace = true
 serde.workspace = true
 sha2.workspace = true
 uuid.workspace = true
+
+[dev-dependencies]
+common = { path = "../common", features = ["errors", "settings", "db", "factory"] }
