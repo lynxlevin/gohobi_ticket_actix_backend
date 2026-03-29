@@ -13,6 +13,7 @@ common = { path = "../common", features = [
     "errors",
     "settings",
     "db",
+    "web_push",
 ] }
 db_adapters = { path = "../db_adapters" }
 

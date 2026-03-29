@@ -24,4 +24,11 @@ impl<'a> WebPushSubscriptionQuery<'a> {
             .one(self.db)
             .await
     }
+
+    pub async fn get_by_user_id(self, user_id: i64) -> Result<Option<Model>, DbErr> {
+        self.query
+            .filter(Column::UserId.eq(user_id))
+            .one(self.db)
+            .await
+    }
 }

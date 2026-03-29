@@ -13,6 +13,7 @@ use common::{
 use db_adapters::{
     ticket::{TicketMutation, TicketQuery},
     user_relation::UserRelationQuery,
+    web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
 use entities::users_user;
 use sea_orm::DbConn;
@@ -35,14 +36,13 @@ async fn use_ticket_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let user_relation_query = UserRelationQuery { db: &db };
-            let ticket_query = TicketQuery::init_query(&db);
-            let ticket_mutation = TicketMutation { db: &db };
             match use_ticket(
                 user.into_inner(),
-                user_relation_query,
-                ticket_query,
-                ticket_mutation,
+                UserRelationQuery { db: &db },
+                TicketQuery::init_query(&db),
+                TicketMutation { db: &db },
+                WebPushSubscriptionQuery::init_query(&db),
+                WebPushSubscriptionMutation { db: &db },
                 path_param.ticket_id,
                 params.ticket.clone(),
                 &settings,
