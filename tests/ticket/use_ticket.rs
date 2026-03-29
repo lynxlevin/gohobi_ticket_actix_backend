@@ -3,7 +3,7 @@ use chrono::Utc;
 use db_adapters::ticket::types::TicketStatus;
 use entities::tickets_ticket;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
-use ticket::{TicketVisible, UpsertTicketResponse, UseTicketParams, UseTicketRequest};
+use ticket::{TicketVisible, UseTicketParams, UseTicketRequest, UseTicketResponse, WebPushResult};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
@@ -32,15 +32,21 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
     let res = test::call_service(&app, req).await;
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
+    let UseTicketResponse {
+        ticket,
+        web_push_result,
+    } = test::read_body_json(res).await;
     let expected = TicketVisible {
         use_description: use_description.clone(),
         use_date: Some(Utc::now().date_naive()),
         ..TicketVisible::from(&receiving_ticket)
     };
-    assert_eq!(res, expected);
+    assert_eq!(ticket, expected);
+    assert_eq!(web_push_result, WebPushResult::NotSent);
 
-    let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
+    let ticket_in_db = tickets_ticket::Entity::find_by_id(ticket.id)
+        .one(&db)
+        .await?;
     assert!(ticket_in_db.is_some());
     let ticket_in_db = ticket_in_db.unwrap();
     assert_eq!(TicketVisible::from(&ticket_in_db), expected);
@@ -208,6 +214,12 @@ mod web_push_message {
 
         web_push_request_mock.assert_async().await;
 
+        let UseTicketResponse {
+            ticket: _,
+            web_push_result,
+        } = test::read_body_json(res).await;
+        assert_eq!(web_push_result, WebPushResult::Sent);
+
         Ok(())
     }
 
@@ -275,6 +287,12 @@ mod web_push_message {
         assert_eq!(res.status(), http::StatusCode::OK);
 
         web_push_request_mock.assert_async().await;
+
+        let UseTicketResponse {
+            ticket: _,
+            web_push_result,
+        } = test::read_body_json(res).await;
+        assert_eq!(web_push_result, WebPushResult::Sent);
 
         Ok(())
     }

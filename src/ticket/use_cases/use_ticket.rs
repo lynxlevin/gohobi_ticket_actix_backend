@@ -1,4 +1,7 @@
-use crate::slack_adapter;
+use crate::{
+    slack_adapter,
+    types::{UseTicketResponse, WebPushResult},
+};
 use chrono::Utc;
 use common::{
     errors::use_case_errors::UseCaseError,
@@ -24,7 +27,7 @@ pub async fn use_ticket(
     ticket_id: i64,
     params: UseTicketParams,
     settings: &Settings,
-) -> Result<TicketVisible, UseCaseError> {
+) -> Result<UseTicketResponse, UseCaseError> {
     let ticket = ticket_query
         .filter_which_user_has_access(user.id)
         .exclude_draft_tickets()
@@ -76,15 +79,17 @@ pub async fn use_ticket(
                 settings,
             )
             .await;
-            if result == SendWebPushResult::Invalid {
-                let _ = web_push_subscription_mutation.delete(sub).await;
+            match result {
+                SendWebPushResult::Sent => WebPushResult::Sent,
+                SendWebPushResult::Invalid => {
+                    let _ = web_push_subscription_mutation.delete(sub).await;
+                    WebPushResult::NotSent
+                }
+                _ => WebPushResult::NotSent,
             }
-            Some(result)
         }
-        None => None,
+        None => WebPushResult::NotSent,
     };
-
-    // MYMEMO: It may be nice to let the user know if the other user has web_push on or not. Send info if related user does not have web_push_subscription
 
     ticket_mutation
         .update(
@@ -96,6 +101,9 @@ pub async fn use_ticket(
             },
         )
         .await
-        .map(|ticket| TicketVisible::from(ticket))
+        .map(|ticket| UseTicketResponse {
+            ticket: TicketVisible::from(ticket),
+            web_push_result,
+        })
         .map_err(|_| UseCaseError::InternalServerError)
 }

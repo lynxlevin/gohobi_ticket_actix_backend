@@ -19,7 +19,7 @@ use entities::users_user;
 use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 
-use crate::{use_cases::use_ticket::use_ticket, UpsertTicketResponse, UseTicketRequest};
+use crate::{use_cases::use_ticket::use_ticket, UseTicketRequest};
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
@@ -49,7 +49,7 @@ async fn use_ticket_endpoint(
             )
             .await
             {
-                Ok(ticket) => HttpResponse::Ok().json(UpsertTicketResponse { ticket }),
+                Ok(res) => HttpResponse::Ok().json(res),
                 Err(e) => match e {
                     UseCaseError::Forbidden => response_403("You cannot use this ticket."),
                     UseCaseError::NotFound => response_404("Ticket not found."),
