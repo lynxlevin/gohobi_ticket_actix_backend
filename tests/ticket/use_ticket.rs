@@ -137,19 +137,12 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 }
 
 mod web_push_message {
+    use actix_http::Uri;
     use common::web_push::{Message, MessageType};
     use ece;
     use serde_json::json;
 
     use super::*;
-
-    fn get_encrypted_message(
-        p256dh_key: &Vec<u8>,
-        auth_key: &[u8; 16],
-        message: &Message,
-    ) -> Vec<u8> {
-        ece::encrypt(p256dh_key, auth_key, json!(message).to_string().as_bytes()).unwrap()
-    }
 
     #[actix_web::test]
     async fn normal_message() -> Result<(), DbErr> {
@@ -165,6 +158,7 @@ mod web_push_message {
             .await?;
         let endpoint = format!("{}/message", mock_server.url());
         let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
+        let private_key = key_pair.raw_components().unwrap();
         let p256dh_key = key_pair.pub_as_raw().unwrap();
         let _giving_user_web_push_sub = factory::web_push_subscription(user_1.id)
             .set_raw_endpoint(&endpoint)
@@ -181,10 +175,20 @@ mod web_push_message {
             user_relation_id: Some(user_relation.id),
             ticket_id: Some(receiving_ticket.id),
         };
+        let message_json = json!(&message).to_string();
         // NOTE: headers should be tested in unit tests.
         let web_push_request_mock = mock_server
-            .mock("POST", endpoint.split('/').last().unwrap())
-            .match_body(get_encrypted_message(&p256dh_key, &auth_key, &message))
+            .mock("POST", endpoint.parse::<Uri>().unwrap().path())
+            .with_body_from_request(move |request| {
+                assert_eq!(
+                    String::from_utf8(
+                        ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap()
+                    )
+                    .unwrap(),
+                    message_json,
+                );
+                "Request_body is as expected.".into()
+            })
             .expect(1)
             .with_status(200)
             .create_async()
@@ -223,6 +227,7 @@ mod web_push_message {
         let endpoint = format!("{}/message", mock_server.url());
         let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
         let p256dh_key = key_pair.pub_as_raw().unwrap();
+        let private_key = key_pair.raw_components().unwrap();
         let _giving_user_web_push_sub = factory::web_push_subscription(user_1.id)
             .set_raw_endpoint(&endpoint)
             .set_raw_p256dh_key(p256dh_key.clone())
@@ -238,10 +243,20 @@ mod web_push_message {
             user_relation_id: Some(user_relation.id),
             ticket_id: Some(receiving_ticket.id),
         };
+        let message_json = json!(&message).to_string();
         // NOTE: headers should be tested in unit tests.
         let web_push_request_mock = mock_server
-            .mock("POST", endpoint.split('/').last().unwrap())
-            .match_body(get_encrypted_message(&p256dh_key, &auth_key, &message))
+            .mock("POST", endpoint.parse::<Uri>().unwrap().path())
+            .with_body_from_request(move |request| {
+                assert_eq!(
+                    String::from_utf8(
+                        ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap()
+                    )
+                    .unwrap(),
+                    message_json,
+                );
+                "Request_body is as expected.".into()
+            })
             .expect(1)
             .with_status(200)
             .create_async()
