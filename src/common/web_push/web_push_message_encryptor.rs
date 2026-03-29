@@ -186,8 +186,11 @@ mod tests {
         let encrypted = encryptor.encrypt(message.to_string()).unwrap();
 
         assert_eq!(
-            message.as_bytes(),
-            ece::decrypt(&key_pair.raw_components().unwrap(), &auth_key, &encrypted).unwrap()
+            message,
+            &String::from_utf8(
+                ece::decrypt(&key_pair.raw_components().unwrap(), &auth_key, &encrypted).unwrap()
+            )
+            .unwrap()
         );
     }
 }
