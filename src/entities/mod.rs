@@ -10,3 +10,4 @@ pub mod tickets_ticket;
 pub mod user_relations_userrelation;
 pub mod users_user;
 pub mod web_push_subscription;
+pub mod wish;

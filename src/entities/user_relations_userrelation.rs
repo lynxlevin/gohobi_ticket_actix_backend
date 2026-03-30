@@ -41,6 +41,8 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     UsersUser1,
+    #[sea_orm(has_many = "super::wish::Entity")]
+    Wish,
 }
 
 impl Related<super::diaries_diary::Entity> for Entity {
@@ -58,6 +60,12 @@ impl Related<super::diaries_diarytag::Entity> for Entity {
 impl Related<super::tickets_ticket::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::TicketsTicket.def()
+    }
+}
+
+impl Related<super::wish::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Wish.def()
     }
 }
 
