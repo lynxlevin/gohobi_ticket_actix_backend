@@ -68,6 +68,12 @@ pub struct UpdateTicketRequest {
     pub ticket: UpdateTicketParams,
 }
 
+#[derive(Deserialize, Debug, Serialize, PartialEq)]
+pub enum WebPushResult {
+    Sent,
+    NotSent,
+}
+
 #[derive(Deserialize, Debug, Serialize, Clone)]
 pub struct UseTicketParams {
     pub use_description: String,
@@ -76,4 +82,10 @@ pub struct UseTicketParams {
 #[derive(Deserialize, Debug, Serialize)]
 pub struct UseTicketRequest {
     pub ticket: UseTicketParams,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct UseTicketResponse {
+    pub ticket: TicketVisible,
+    pub web_push_result: WebPushResult,
 }

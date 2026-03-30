@@ -10,6 +10,7 @@ use ticket::ticket_routes;
 pub use user::auth_middleware::AuthenticateUser;
 use user::auth_routes;
 use user_relation::user_relation_routes;
+use web_push_subscription::web_push_subscription_routes;
 
 pub async fn get_preps_for_redis_session_store(
     settings: &Settings,
@@ -50,6 +51,7 @@ pub fn get_routes() -> Scope {
         .configure(ticket_routes)
         .configure(diary_routes)
         .configure(diary_tag_routes)
+        .configure(web_push_subscription_routes)
 }
 
 #[actix_web::get("/health-check")]

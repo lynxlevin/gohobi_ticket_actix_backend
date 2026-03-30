@@ -10,9 +10,13 @@
     "deadpool",
     "dotenv",
     "dotenvy",
+    "encryptor",
+    "hkdf",
     "hmac",
     "iden",
+    "reqwest",
     "serde",
+    "thiserror",
     "urlencoding",
     "userrelation"
   ]

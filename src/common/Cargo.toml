@@ -12,16 +12,31 @@ entities = { path = "../entities", optional = true }
 migration = { path = "../../migration", optional = true }
 
 actix-web = { workspace = true, optional = true }
+aes-gcm = { workspace = true, optional = true }
+base64 = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
 deadpool-redis = { workspace = true, optional = true }
 dotenvy.workspace = true
+hkdf = { workspace = true, optional = true }
+http = { workspace = true, optional = true }
+jwt-simple = { workspace = true, optional = true }
+p256 = { workspace = true, optional = true }
+reqwest = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 sea-orm = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true }
 
+[dev-dependencies]
+ece.workspace = true
+
+
 [features]
-db = ["dep:sea-orm", "dep:migration", "settings"]
+db = ["dep:sea-orm", "dep:migration", "settings", "dep:aes-gcm", "dep:base64"]
 errors = ["dep:actix-web", "dep:serde"]
-factory = ["dep:entities", "dep:sea-orm", "dep:uuid", "dep:chrono"]
+factory = ["dep:entities", "dep:sea-orm", "dep:uuid", "dep:chrono", "dep:base64"]
 redis = ["dep:deadpool-redis", "settings"]
 settings = []
+web_push = ["settings", "dep:entities", "dep:http", "dep:jwt-simple", "dep:base64", "dep:thiserror", "dep:reqwest", "dep:serde_json", "dep:hkdf", "dep:p256", "dep:sha2"]

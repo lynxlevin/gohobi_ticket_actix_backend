@@ -8,3 +8,5 @@ pub mod factory;
 pub mod redis;
 #[cfg(feature = "settings")]
 pub mod settings;
+#[cfg(feature = "web_push")]
+pub mod web_push;

@@ -34,6 +34,7 @@ pub async fn init_app() -> Result<
     DbErr,
 > {
     let settings = get_test_settings();
+    // let _ = env_logger::try_init();
     init_app_with_settings(settings).await
 }
 

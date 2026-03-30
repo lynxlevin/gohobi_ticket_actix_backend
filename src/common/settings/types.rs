@@ -29,11 +29,15 @@ pub struct ApplicationSettings {
     pub login_attempts_cool_time_seconds: u64,
     pub slack_host: String,
     pub slack_incoming_webhook_path: String,
+    pub vapid_private_key: String,
+    pub app_owner_email: String,
 }
 
 #[derive(Deserialize, Clone, Default, Debug)]
 pub struct DatabaseSettings {
     pub url: String,
+    pub encryption_key: String,
+    pub encryption_nonce: String,
 }
 
 #[derive(Deserialize, Clone, Debug, Default)]

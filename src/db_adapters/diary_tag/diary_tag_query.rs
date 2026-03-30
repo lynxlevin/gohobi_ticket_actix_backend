@@ -2,17 +2,12 @@ use entities::{
     diaries_diary, diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation,
 };
 use sea_orm::{
-    ColumnTrait, Condition, DbConn, DbErr, DeriveColumn, EntityTrait, EnumIter, JoinType::LeftJoin,
-    QueryFilter, QueryOrder, QuerySelect, RelationTrait, Select,
+    ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter,
+    QueryOrder, QuerySelect, RelationTrait, Select,
 };
 use uuid::Uuid;
 
 use super::types::DiaryTagVisible;
-
-#[derive(DeriveColumn, Copy, Debug, Clone, EnumIter)]
-enum TagId {
-    Id,
-}
 
 pub struct DiaryTagQuery<'a> {
     pub db: &'a DbConn,

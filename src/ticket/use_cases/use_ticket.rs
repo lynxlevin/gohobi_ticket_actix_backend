@@ -1,9 +1,17 @@
-use crate::slack_adapter;
+use crate::{
+    slack_adapter,
+    types::{UseTicketResponse, WebPushResult},
+};
 use chrono::Utc;
-use common::{errors::use_case_errors::UseCaseError, settings::types::Settings};
+use common::{
+    errors::use_case_errors::UseCaseError,
+    settings::types::Settings,
+    web_push::{send_web_push, Message, MessageType, SendWebPushResult},
+};
 use db_adapters::{
     ticket::{types::UpdateTicketParams, TicketMutation, TicketQuery},
     user_relation::UserRelationQuery,
+    web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
 use entities::users_user;
 
@@ -14,10 +22,12 @@ pub async fn use_ticket(
     user_relation_query: UserRelationQuery<'_>,
     ticket_query: TicketQuery<'_>,
     ticket_mutation: TicketMutation<'_>,
+    web_push_subscription_query: WebPushSubscriptionQuery<'_>,
+    web_push_subscription_mutation: WebPushSubscriptionMutation<'_>,
     ticket_id: i64,
     params: UseTicketParams,
     settings: &Settings,
-) -> Result<TicketVisible, UseCaseError> {
+) -> Result<UseTicketResponse, UseCaseError> {
     let ticket = ticket_query
         .filter_which_user_has_access(user.id)
         .exclude_draft_tickets()
@@ -41,6 +51,46 @@ pub async fn use_ticket(
         slack_adapter::send_slack_message(&message, &settings).await?;
     }
 
+    let related_user_id = match user.id == user_relation.user_1_id {
+        true => user_relation.user_2_id,
+        false => user_relation.user_1_id,
+    };
+    let web_push_subscription = match web_push_subscription_query
+        .get_by_user_id(related_user_id)
+        .await
+    {
+        Ok(sub) => sub,
+        Err(_) => None,
+    };
+    let web_push_result = match web_push_subscription {
+        Some(sub) => {
+            let result = send_web_push(
+                Message {
+                    title: match ticket.is_special {
+                        true => Some(format!("⭐️{}からの特別なおねがい⭐️", user.username)),
+                        false => Some(format!("{}からのおねがい", user.username)),
+                    },
+                    body: params.use_description.clone(),
+                    message_type: MessageType::UseTicket,
+                    user_relation_id: Some(user_relation.id),
+                    ticket_id: Some(ticket.id),
+                },
+                &sub,
+                settings,
+            )
+            .await;
+            match result {
+                SendWebPushResult::Sent => WebPushResult::Sent,
+                SendWebPushResult::Invalid => {
+                    let _ = web_push_subscription_mutation.delete(sub).await;
+                    WebPushResult::NotSent
+                }
+                _ => WebPushResult::NotSent,
+            }
+        }
+        None => WebPushResult::NotSent,
+    };
+
     ticket_mutation
         .update(
             ticket,
@@ -51,6 +101,9 @@ pub async fn use_ticket(
             },
         )
         .await
-        .map(|ticket| TicketVisible::from(ticket))
+        .map(|ticket| UseTicketResponse {
+            ticket: TicketVisible::from(ticket),
+            web_push_result,
+        })
         .map_err(|_| UseCaseError::InternalServerError)
 }
