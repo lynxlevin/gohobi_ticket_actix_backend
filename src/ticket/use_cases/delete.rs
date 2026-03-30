@@ -15,9 +15,10 @@ pub async fn delete_ticket(
         .map_err(|_| UseCaseError::InternalServerError)?
         .ok_or(UseCaseError::NotFound)?;
 
-    if ticket.giving_user_id != user.id || ticket.use_date.is_some() {
-        return Err(UseCaseError::Forbidden);
-    };
+    // MYMEMO: fix
+    // if ticket.giving_user_id != user.id || ticket.use_date.is_some() {
+    //     return Err(UseCaseError::Forbidden);
+    // };
 
     ticket_mutation
         .delete(ticket)

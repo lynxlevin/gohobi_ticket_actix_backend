@@ -7,8 +7,6 @@ pub fn ticket(giving_user_id: i64, user_relation_id: i64) -> tickets_ticket::Act
     tickets_ticket::ActiveModel {
         description: Set("ticket".to_string()),
         gift_date: Set(now.date_naive()),
-        use_description: Set(String::default()),
-        use_date: Set(None),
         status: Set("unread".to_string()),
         is_special: Set(false),
         giving_user_id: Set(giving_user_id),
@@ -21,9 +19,7 @@ pub fn ticket(giving_user_id: i64, user_relation_id: i64) -> tickets_ticket::Act
 
 pub trait TicketFactory {
     fn description(self, description: String) -> tickets_ticket::ActiveModel;
-    fn use_description(self, use_description: String) -> tickets_ticket::ActiveModel;
     fn gift_date(self, gift_date: NaiveDate) -> tickets_ticket::ActiveModel;
-    fn use_date(self, use_date: Option<NaiveDate>) -> tickets_ticket::ActiveModel;
     fn status(self, status: String) -> tickets_ticket::ActiveModel;
     fn is_special(self, is_special: bool) -> tickets_ticket::ActiveModel;
 }
@@ -34,18 +30,8 @@ impl TicketFactory for tickets_ticket::ActiveModel {
         self
     }
 
-    fn use_description(mut self, use_description: String) -> tickets_ticket::ActiveModel {
-        self.use_description = Set(use_description);
-        self
-    }
-
     fn gift_date(mut self, gift_date: NaiveDate) -> tickets_ticket::ActiveModel {
         self.gift_date = Set(gift_date);
-        self
-    }
-
-    fn use_date(mut self, use_date: Option<NaiveDate>) -> tickets_ticket::ActiveModel {
-        self.use_date = Set(use_date);
         self
     }
 

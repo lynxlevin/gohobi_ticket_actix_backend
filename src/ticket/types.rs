@@ -15,8 +15,6 @@ pub struct TicketVisible {
     pub giving_user_id: i64,
     pub description: String,
     pub gift_date: NaiveDate,
-    pub use_description: String,
-    pub use_date: Option<NaiveDate>,
     pub status: TicketStatus,
     pub is_special: bool,
 }
@@ -29,8 +27,6 @@ impl From<tickets_ticket::Model> for TicketVisible {
             giving_user_id: value.giving_user_id,
             description: value.description,
             gift_date: value.gift_date,
-            use_description: value.use_description,
-            use_date: value.use_date,
             status: (&value.status).into(),
             is_special: value.is_special,
         }
@@ -45,8 +41,6 @@ impl From<&tickets_ticket::Model> for TicketVisible {
             giving_user_id: value.giving_user_id,
             description: value.description.to_owned(),
             gift_date: value.gift_date,
-            use_description: value.use_description.to_owned(),
-            use_date: value.use_date,
             status: (&value.status).into(),
             is_special: value.is_special,
         }
