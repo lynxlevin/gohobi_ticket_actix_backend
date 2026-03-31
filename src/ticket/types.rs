@@ -1,13 +1,17 @@
-use chrono::NaiveDate;
-use db_adapters::ticket::types::{CreateTicketParams, TicketStatus, UpdateTicketParams};
-use entities::tickets_ticket;
+use chrono::{DateTime, FixedOffset, NaiveDate};
+use db_adapters::ticket::types::{
+    CreateTicketParams, TicketStatus, UpdateTicketParams, WishStatus,
+};
+use entities::{tickets_ticket, wish};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct ListTicketResponse {
     pub tickets: Vec<TicketVisible>,
 }
 
+// MYMEMO: Add wish, maybe
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct TicketVisible {
     pub id: i64,
@@ -17,6 +21,16 @@ pub struct TicketVisible {
     pub gift_date: NaiveDate,
     pub status: TicketStatus,
     pub is_special: bool,
+    pub wish: Option<WishInner>,
+}
+
+#[derive(Deserialize, Debug, Serialize, PartialEq)]
+pub struct WishInner {
+    pub id: Uuid,
+    pub description: String,
+    pub date: NaiveDate,
+    pub status: WishStatus,
+    pub create_at: DateTime<FixedOffset>,
 }
 
 impl From<tickets_ticket::Model> for TicketVisible {
@@ -29,10 +43,10 @@ impl From<tickets_ticket::Model> for TicketVisible {
             gift_date: value.gift_date,
             status: (&value.status).into(),
             is_special: value.is_special,
+            wish: None,
         }
     }
 }
-
 impl From<&tickets_ticket::Model> for TicketVisible {
     fn from(value: &tickets_ticket::Model) -> Self {
         Self {
@@ -43,7 +57,20 @@ impl From<&tickets_ticket::Model> for TicketVisible {
             gift_date: value.gift_date,
             status: (&value.status).into(),
             is_special: value.is_special,
+            wish: None,
         }
+    }
+}
+impl TicketVisible {
+    pub fn with_wish(mut self, wish: &wish::Model) -> Self {
+        self.wish = Some(WishInner {
+            id: wish.id,
+            description: wish.description.clone(),
+            date: wish.date,
+            status: (&wish.status).into(),
+            create_at: wish.created_at,
+        });
+        self
     }
 }
 

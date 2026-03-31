@@ -1,5 +1,4 @@
 use actix_web::{http, test, HttpMessage};
-use chrono::Utc;
 use entities::tickets_ticket;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 
@@ -45,9 +44,8 @@ async fn forbidden_responses() -> Result<(), DbErr> {
     let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
         .insert(&db)
         .await?;
-    let used_ticket = factory::ticket(user_0.id, user_relation.id)
-        .use_date(Some(Utc::now().date_naive()))
-        .insert(&db)
+    let (used_ticket, _) = factory::ticket(user_0.id, user_relation.id)
+        .insert_with_wish(&db)
         .await?;
 
     for (id, case) in vec![

@@ -29,16 +29,22 @@ async fn happy_path() -> Result<(), DbErr> {
         .description("Let me now Find you".to_string())
         .insert(&db)
         .await?;
-    let giving_ticket_use_description_hit = factory::ticket(user_0.id, user_relation.id)
-        .use_description(format!("aa{}bb", search_text))
+    let giving_ticket_wish_hit = factory::ticket(user_0.id, user_relation.id)
+        .insert(&db)
+        .await?;
+    let giving_ticket_wish_hit_wish = factory::wish(&giving_ticket_wish_hit)
+        .description(format!("aa{}bb", search_text))
         .insert(&db)
         .await?;
     let receiving_ticket_description_hit = factory::ticket(user_1.id, user_relation.id)
         .description(format!("aa{}bb", search_text))
         .insert(&db)
         .await?;
-    let receiving_ticket_use_description_hit = factory::ticket(user_1.id, user_relation.id)
-        .use_description(format!("aa{}bb", search_text))
+    let receiving_ticket_wish_hit = factory::ticket(user_1.id, user_relation.id)
+        .insert(&db)
+        .await?;
+    let receiving_ticket_wish_hit_wish = factory::wish(&receiving_ticket_wish_hit)
+        .description(format!("aa{}bb", search_text))
         .insert(&db)
         .await?;
     let diary_entry_hit = factory::diary(user_relation.id)
@@ -96,11 +102,12 @@ async fn happy_path() -> Result<(), DbErr> {
 
     let expected = SearchResponse {
         giving_tickets: vec![
-            TicketVisible::from(giving_ticket_use_description_hit),
+            TicketVisible::from(giving_ticket_wish_hit).with_wish(&giving_ticket_wish_hit_wish),
             TicketVisible::from(giving_ticket_description_hit),
         ],
         receiving_tickets: vec![
-            TicketVisible::from(receiving_ticket_use_description_hit),
+            TicketVisible::from(receiving_ticket_wish_hit)
+                .with_wish(&receiving_ticket_wish_hit_wish),
             TicketVisible::from(receiving_ticket_description_hit),
         ],
         diaries: vec![
