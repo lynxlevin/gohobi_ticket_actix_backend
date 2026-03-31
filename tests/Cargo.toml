@@ -9,7 +9,7 @@ path = "lib.rs"
 
 [dependencies]
 entities = { path = "../src/entities" }
-common = { path = "../src/common", features = ["db", "redis", "settings"] }
+common = { path = "../src/common", features = ["db", "redis", "settings", "factory"] }
 db_adapters = { path = "../src/db_adapters" }
 user = { path = "../src/user" }
 user_relation = { path = "../src/user_relation" }
