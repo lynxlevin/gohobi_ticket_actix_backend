@@ -9,7 +9,7 @@ use common::{
     web_push::{send_web_push, Message, MessageType, SendWebPushResult},
 };
 use db_adapters::{
-    ticket::{types::UpdateTicketParams, TicketMutation, TicketQuery},
+    ticket::{types::CreateWishParams, TicketQuery, WishMutation},
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
@@ -21,7 +21,7 @@ pub async fn use_ticket(
     user: users_user::Model,
     user_relation_query: UserRelationQuery<'_>,
     ticket_query: TicketQuery<'_>,
-    ticket_mutation: TicketMutation<'_>,
+    wish_mutation: WishMutation<'_>,
     web_push_subscription_query: WebPushSubscriptionQuery<'_>,
     web_push_subscription_mutation: WebPushSubscriptionMutation<'_>,
     ticket_id: i64,
@@ -91,19 +91,21 @@ pub async fn use_ticket(
         None => WebPushResult::NotSent,
     };
 
-    ticket_mutation
-        .update(
-            ticket,
-            UpdateTicketParams {
-                use_description: Some(params.use_description),
-                use_date: Some(Utc::now().date_naive()),
-                ..Default::default()
-            },
-        )
-        .await
-        .map(|ticket| UseTicketResponse {
-            ticket: TicketVisible::from(ticket),
-            web_push_result,
+    let wish = match wish_mutation
+        .create(CreateWishParams {
+            use_description: params.use_description,
+            use_date: Utc::now().date_naive(),
+            ticket_id: ticket.id,
+            user_relation_id: user_relation.id,
         })
-        .map_err(|_| UseCaseError::InternalServerError)
+        .await
+    {
+        Ok(wish) => wish,
+        Err(_) => return Err(UseCaseError::InternalServerError),
+    };
+
+    Ok(UseTicketResponse {
+        ticket: TicketVisible::from(ticket).with_wish(&wish),
+        web_push_result,
+    })
 }

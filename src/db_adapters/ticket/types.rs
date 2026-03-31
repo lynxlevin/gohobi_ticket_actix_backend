@@ -100,3 +100,11 @@ pub struct UpdateTicketParams {
     pub use_description: Option<String>,
     pub use_date: Option<NaiveDate>,
 }
+
+#[derive(Deserialize, Debug, Serialize, Clone, Default)]
+pub struct CreateWishParams {
+    pub use_description: String,
+    pub use_date: NaiveDate,
+    pub ticket_id: i64,
+    pub user_relation_id: i64,
+}
