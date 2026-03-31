@@ -84,6 +84,16 @@ impl<'a> TicketQuery<'a> {
             .one(self.db)
             .await
     }
+    pub async fn get_with_wish_by_id(
+        self,
+        ticket_id: i64,
+    ) -> Result<Option<(Model, Option<wish::Model>)>, DbErr> {
+        self.query
+            .filter(Column::Id.eq(ticket_id))
+            .select_also(wish::Entity)
+            .one(self.db)
+            .await
+    }
 
     pub async fn get_tickets(self, user_id: i64, is_giving: bool) -> Result<Vec<Model>, DbErr> {
         match is_giving {
