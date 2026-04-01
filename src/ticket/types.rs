@@ -30,7 +30,7 @@ pub struct WishInner {
     pub description: String,
     pub date: NaiveDate,
     pub status: WishStatus,
-    pub create_at: DateTime<FixedOffset>,
+    pub created_at: DateTime<FixedOffset>,
 }
 
 impl From<tickets_ticket::Model> for TicketVisible {
@@ -68,7 +68,7 @@ impl TicketVisible {
             description: wish.description.clone(),
             date: wish.date,
             status: (&wish.status).into(),
-            create_at: wish.created_at,
+            created_at: wish.created_at,
         });
         self
     }
