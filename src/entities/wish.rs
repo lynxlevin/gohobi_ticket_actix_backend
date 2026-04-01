@@ -10,7 +10,6 @@ pub struct Model {
     pub id: Uuid,
     #[sea_orm(column_type = "Text")]
     pub description: String,
-    pub date: Date,
     pub status: String,
     #[sea_orm(unique)]
     pub ticket_id: i64,

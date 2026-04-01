@@ -2,7 +2,6 @@ use crate::{
     slack_adapter,
     types::{UseTicketResponse, WebPushResult},
 };
-use chrono::Utc;
 use common::{
     errors::use_case_errors::UseCaseError,
     settings::types::Settings,
@@ -94,7 +93,6 @@ pub async fn use_ticket(
     let wish = match wish_mutation
         .create(CreateWishParams {
             use_description: params.use_description,
-            use_date: Utc::now().date_naive(),
             ticket_id: ticket.id,
             user_relation_id: user_relation.id,
         })

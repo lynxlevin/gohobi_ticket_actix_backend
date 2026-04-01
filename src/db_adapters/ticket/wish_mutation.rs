@@ -17,7 +17,6 @@ impl<'a> WishMutation<'a> {
         let wish = ActiveModel {
             id: Set(Uuid::now_v7()),
             description: Set(params.use_description),
-            date: Set(params.use_date),
             ticket_id: Set(params.ticket_id),
             user_relation_id: Set(params.user_relation_id),
             status: Set(WishStatus::Unread.to_value()),

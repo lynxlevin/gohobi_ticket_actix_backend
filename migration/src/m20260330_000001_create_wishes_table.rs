@@ -5,8 +5,7 @@ use sea_orm_migration::{
         DbErr, DeriveMigrationName, ForeignKey, Index, MigrationTrait, SchemaManager, Table,
     },
     schema::{
-        big_integer, big_integer_uniq, date, date_null, string_len, text, timestamp_with_time_zone,
-        uuid,
+        big_integer, big_integer_uniq, date_null, string_len, text, timestamp_with_time_zone, uuid,
     },
     sea_orm::ConnectionTrait,
 };
@@ -29,7 +28,6 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(uuid(Wish::Id).primary_key())
                     .col(text(Wish::Description))
-                    .col(date(Wish::Date))
                     .col(string_len(Wish::Status, 8))
                     .col(big_integer_uniq(Wish::TicketId))
                     .col(big_integer(Wish::UserRelationId))
@@ -76,11 +74,10 @@ impl MigrationTrait for Migration {
 
         let db = manager.get_connection();
         db.execute_unprepared(
-            "INSERT INTO wish (id, description, date, status, ticket_id, user_relation_id, created_at, updated_at)
+            "INSERT INTO wish (id, description, status, ticket_id, user_relation_id, created_at, updated_at)
                 SELECT
                     gen_random_uuid(),
                     use_description,
-                    use_date,
                     'read',
                     id,
                     user_relation_id,
@@ -139,7 +136,6 @@ pub enum Wish {
     Table,
     Id,
     Description,
-    Date,
     Status,
     TicketId,
     UserRelationId,

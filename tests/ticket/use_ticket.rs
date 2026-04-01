@@ -1,5 +1,4 @@
 use actix_web::{http, test, HttpMessage};
-use chrono::Utc;
 use db_adapters::ticket::types::TicketStatus;
 use entities::tickets_ticket;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
@@ -45,7 +44,6 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
     assert_eq!(ticket.is_special, receiving_ticket.is_special);
     let wish = ticket.wish.unwrap();
     assert_eq!(wish.description, use_description);
-    assert_eq!(wish.date, Utc::now().date_naive());
     assert_eq!(web_push_result, WebPushResult::NotSent);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(ticket.id)

@@ -28,7 +28,6 @@ pub struct TicketVisible {
 pub struct WishInner {
     pub id: Uuid,
     pub description: String,
-    pub date: NaiveDate,
     pub status: WishStatus,
     pub created_at: DateTime<FixedOffset>,
 }
@@ -66,7 +65,6 @@ impl TicketVisible {
         self.wish = Some(WishInner {
             id: wish.id,
             description: wish.description.clone(),
-            date: wish.date,
             status: (&wish.status).into(),
             created_at: wish.created_at,
         });
