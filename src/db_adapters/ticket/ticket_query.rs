@@ -106,6 +106,22 @@ impl<'a> TicketQuery<'a> {
         .all(self.db)
         .await
     }
+    pub async fn get_tickets_with_wish(
+        self,
+        user_id: i64,
+        is_giving: bool,
+    ) -> Result<Vec<(Model, Option<wish::Model>)>, DbErr> {
+        match is_giving {
+            true => self.query.filter(Column::GivingUserId.eq(user_id)),
+            false => self
+                .query
+                .filter(Column::GivingUserId.ne(user_id))
+                .filter(Column::Status.ne(TicketStatus::Draft.to_value())),
+        }
+        .select_also(wish::Entity)
+        .all(self.db)
+        .await
+    }
 
     pub async fn exists_other_special_ticket(
         self,

@@ -30,12 +30,16 @@ pub async fn list_tickets(
     ticket_query
         .order_by_gift_date(Order::Desc)
         .order_by_created_at(Order::Desc)
-        .get_tickets(user.id, is_giving)
+        .join_wish()
+        .get_tickets_with_wish(user.id, is_giving)
         .await
         .map(|tickets| ListTicketResponse {
             tickets: tickets
                 .iter()
-                .map(|ticket| TicketVisible::from(ticket))
+                .map(|(ticket, wish)| match wish {
+                    Some(wish) => TicketVisible::from(ticket).with_wish(wish),
+                    None => TicketVisible::from(ticket),
+                })
                 .collect(),
         })
         .map_err(|_| UseCaseError::InternalServerError)
