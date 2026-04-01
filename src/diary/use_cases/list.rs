@@ -17,7 +17,10 @@ pub async fn list_diary<'a>(
     let user_relation = user_relation_query
         .find_by_id(user_relation_id, user.id)
         .await
-        .map_err(|_| UseCaseError::InternalServerError)?
+        .map_err(|e| {
+            dbg!(e);
+            UseCaseError::InternalServerError
+        })?
         .ok_or(UseCaseError::NotFound)?;
 
     let mut diary_query = diary_query
@@ -53,6 +56,9 @@ pub async fn list_diary<'a>(
                     .collect(),
             })
             .collect()),
-        Err(_) => Err(UseCaseError::InternalServerError),
+        Err(e) => {
+            dbg!(e);
+            Err(UseCaseError::InternalServerError)
+        }
     }
 }
