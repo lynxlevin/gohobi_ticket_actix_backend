@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{DateTime, FixedOffset, Utc};
 use entities::{tickets_ticket, wish::ActiveModel};
 use sea_orm::Set;
 use uuid::Uuid;
@@ -20,6 +20,7 @@ pub fn wish(ticket: &tickets_ticket::Model) -> ActiveModel {
 pub trait WishFactory {
     fn description(self, description: String) -> ActiveModel;
     fn status(self, status: String) -> ActiveModel;
+    fn created_at(self, created_at: DateTime<FixedOffset>) -> ActiveModel;
 }
 
 impl WishFactory for ActiveModel {
@@ -30,6 +31,11 @@ impl WishFactory for ActiveModel {
 
     fn status(mut self, status: String) -> ActiveModel {
         self.status = Set(status);
+        self
+    }
+
+    fn created_at(mut self, created_at: DateTime<FixedOffset>) -> ActiveModel {
+        self.created_at = Set(created_at);
         self
     }
 }

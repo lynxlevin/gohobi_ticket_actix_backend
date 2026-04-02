@@ -1,5 +1,5 @@
 use common::errors::use_case_errors::UseCaseError;
-use db_adapters::ticket::WishQuery;
+use db_adapters::ticket::{Order, WishQuery};
 use entities::users_user;
 
 use crate::WishVisible;
@@ -14,6 +14,7 @@ pub async fn list_wishes(
         .join_user_relation()
         .filter_which_user_has_access(user.id)
         .filter_by_relation(user_relation_id)
+        .order_by_created_at(Order::Desc)
         .get_all_with_ticket()
         .await
         .map(|wishes| {
