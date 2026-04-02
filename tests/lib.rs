@@ -7,3 +7,4 @@ mod ticket;
 mod user;
 mod user_relation;
 mod web_push_subscription;
+mod wish;
