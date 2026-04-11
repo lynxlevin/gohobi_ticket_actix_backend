@@ -50,6 +50,18 @@ pub async fn use_ticket(
         slack_adapter::send_slack_message(&message, &settings).await?;
     }
 
+    let wish = match wish_mutation
+        .create(CreateWishParams {
+            use_description: params.use_description.clone(),
+            ticket_id: ticket.id,
+            user_relation_id: user_relation.id,
+        })
+        .await
+    {
+        Ok(wish) => wish,
+        Err(_) => return Err(UseCaseError::InternalServerError),
+    };
+
     let related_user_id = match user.id == user_relation.user_1_id {
         true => user_relation.user_2_id,
         false => user_relation.user_1_id,
@@ -69,10 +81,11 @@ pub async fn use_ticket(
                         true => Some(format!("⭐️{}からの特別なおねがい⭐️", user.username)),
                         false => Some(format!("{}からのおねがい", user.username)),
                     },
-                    body: params.use_description.clone(),
+                    body: params.use_description,
                     message_type: MessageType::UseTicket,
                     user_relation_id: Some(user_relation.id),
-                    ticket_id: Some(ticket.id),
+                    ticket_id: None,
+                    wish_id: Some(wish.id),
                 },
                 &sub,
                 settings,
@@ -88,18 +101,6 @@ pub async fn use_ticket(
             }
         }
         None => WebPushResult::NotSent,
-    };
-
-    let wish = match wish_mutation
-        .create(CreateWishParams {
-            use_description: params.use_description,
-            ticket_id: ticket.id,
-            user_relation_id: user_relation.id,
-        })
-        .await
-    {
-        Ok(wish) => wish,
-        Err(_) => return Err(UseCaseError::InternalServerError),
     };
 
     Ok(UseTicketResponse {
