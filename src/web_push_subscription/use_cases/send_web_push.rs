@@ -11,11 +11,6 @@ use entities::users_user;
 
 use crate::types::SendWebPushRequest;
 
-enum WebPushResult {
-    Sent,
-    NotSent,
-}
-
 pub async fn send_web_push_use_case(
     user: users_user::Model,
     wish_query: WishQuery<'_>,
@@ -68,9 +63,9 @@ async fn handle_use_ticket_case(
         Ok(sub) => sub,
         Err(_) => return Err(UseCaseError::InternalServerError),
     };
-    let web_push_result = match web_push_subscription {
+    match web_push_subscription {
         Some(sub) => {
-            let result = send_web_push(
+            match send_web_push(
                 Message {
                     title: match ticket.is_special {
                         true => Some(format!("⭐️{}からの特別なおねがい⭐️", user.username)),
@@ -85,14 +80,12 @@ async fn handle_use_ticket_case(
                 &sub,
                 settings,
             )
-            .await;
-            match result {
-                SendWebPushResult::Sent => WebPushResult::Sent,
+            .await
+            {
                 SendWebPushResult::Invalid => {
                     let _ = web_push_subscription_mutation.delete(sub).await;
-                    WebPushResult::NotSent
                 }
-                _ => WebPushResult::NotSent,
+                _ => (),
             }
         }
         None => return Err(UseCaseError::NotFound),
