@@ -3,8 +3,10 @@ use entities::{
     wish::{Column, Entity, Model, Relation},
 };
 use sea_orm::{
-    ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter,
-    QueryOrder, QuerySelect, RelationTrait, Select,
+    sea_query::{Func, SimpleExpr},
+    ColumnTrait, Condition, DbConn, DbErr, EntityTrait,
+    JoinType::LeftJoin,
+    QueryFilter, QueryOrder, QuerySelect, RelationTrait, Select,
 };
 
 pub use sea_orm::Order;
@@ -61,6 +63,17 @@ impl<'a> WishQuery<'a> {
         self.query
             .select_also(tickets_ticket::Entity)
             .all(self.db)
+            .await
+    }
+
+    pub async fn get_random_with_ticket(
+        self,
+    ) -> Result<Option<(Model, Option<tickets_ticket::Model>)>, DbErr> {
+        self.query
+            .select_also(tickets_ticket::Entity)
+            .order_by(SimpleExpr::FunctionCall(Func::random()), Order::Asc)
+            .limit(1)
+            .one(self.db)
             .await
     }
 }
