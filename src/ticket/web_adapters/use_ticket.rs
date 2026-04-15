@@ -11,7 +11,7 @@ use common::{
     settings::types::Settings,
 };
 use db_adapters::{
-    ticket::{TicketMutation, TicketQuery},
+    ticket::{TicketQuery, WishMutation},
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
@@ -40,7 +40,7 @@ async fn use_ticket_endpoint(
                 user.into_inner(),
                 UserRelationQuery { db: &db },
                 TicketQuery::init_query(&db),
-                TicketMutation { db: &db },
+                WishMutation { db: &db },
                 WebPushSubscriptionQuery::init_query(&db),
                 WebPushSubscriptionMutation { db: &db },
                 path_param.ticket_id,

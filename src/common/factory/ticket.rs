@@ -1,14 +1,19 @@
-use chrono::{NaiveDate, Utc};
-use entities::tickets_ticket;
-use sea_orm::Set;
+use std::future::Future;
 
-pub fn ticket(giving_user_id: i64, user_relation_id: i64) -> tickets_ticket::ActiveModel {
+use chrono::{NaiveDate, Utc};
+use entities::{
+    tickets_ticket::{ActiveModel, Model},
+    wish,
+};
+use sea_orm::{ActiveModelTrait, DbConn, DbErr, Set};
+
+use crate::factory::wish as wish_factory;
+
+pub fn ticket(giving_user_id: i64, user_relation_id: i64) -> ActiveModel {
     let now = Utc::now();
-    tickets_ticket::ActiveModel {
+    ActiveModel {
         description: Set("ticket".to_string()),
         gift_date: Set(now.date_naive()),
-        use_description: Set(String::default()),
-        use_date: Set(None),
         status: Set("unread".to_string()),
         is_special: Set(false),
         giving_user_id: Set(giving_user_id),
@@ -20,42 +25,40 @@ pub fn ticket(giving_user_id: i64, user_relation_id: i64) -> tickets_ticket::Act
 }
 
 pub trait TicketFactory {
-    fn description(self, description: String) -> tickets_ticket::ActiveModel;
-    fn use_description(self, use_description: String) -> tickets_ticket::ActiveModel;
-    fn gift_date(self, gift_date: NaiveDate) -> tickets_ticket::ActiveModel;
-    fn use_date(self, use_date: Option<NaiveDate>) -> tickets_ticket::ActiveModel;
-    fn status(self, status: String) -> tickets_ticket::ActiveModel;
-    fn is_special(self, is_special: bool) -> tickets_ticket::ActiveModel;
+    fn description(self, description: String) -> ActiveModel;
+    fn gift_date(self, gift_date: NaiveDate) -> ActiveModel;
+    fn status(self, status: String) -> ActiveModel;
+    fn is_special(self, is_special: bool) -> ActiveModel;
+    fn insert_with_wish(
+        self,
+        db: &DbConn,
+    ) -> impl Future<Output = Result<(Model, wish::Model), DbErr>> + Send;
 }
 
-impl TicketFactory for tickets_ticket::ActiveModel {
-    fn description(mut self, description: String) -> tickets_ticket::ActiveModel {
+impl TicketFactory for ActiveModel {
+    fn description(mut self, description: String) -> ActiveModel {
         self.description = Set(description);
         self
     }
 
-    fn use_description(mut self, use_description: String) -> tickets_ticket::ActiveModel {
-        self.use_description = Set(use_description);
-        self
-    }
-
-    fn gift_date(mut self, gift_date: NaiveDate) -> tickets_ticket::ActiveModel {
+    fn gift_date(mut self, gift_date: NaiveDate) -> ActiveModel {
         self.gift_date = Set(gift_date);
         self
     }
 
-    fn use_date(mut self, use_date: Option<NaiveDate>) -> tickets_ticket::ActiveModel {
-        self.use_date = Set(use_date);
-        self
-    }
-
-    fn status(mut self, status: String) -> tickets_ticket::ActiveModel {
+    fn status(mut self, status: String) -> ActiveModel {
         self.status = Set(status);
         self
     }
 
-    fn is_special(mut self, is_special: bool) -> tickets_ticket::ActiveModel {
+    fn is_special(mut self, is_special: bool) -> ActiveModel {
         self.is_special = Set(is_special);
         self
+    }
+
+    async fn insert_with_wish(self, db: &DbConn) -> Result<(Model, wish::Model), DbErr> {
+        let ticket = self.insert(db).await?;
+        let wish = wish_factory(&ticket).insert(db).await?;
+        Ok((ticket, wish))
     }
 }

@@ -1,5 +1,8 @@
 use chrono::{Datelike, NaiveDate};
-use entities::{tickets_ticket, user_relations_userrelation};
+use entities::{
+    tickets_ticket::{Column, Entity, Model, Relation},
+    user_relations_userrelation, wish,
+};
 use sea_orm::{
     ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, PaginatorTrait,
     QueryFilter, QueryOrder, QuerySelect, RelationTrait, Select,
@@ -12,23 +15,25 @@ use super::types::TicketStatus;
 #[derive(Clone)]
 pub struct TicketQuery<'a> {
     pub db: &'a DbConn,
-    pub query: Select<tickets_ticket::Entity>,
+    pub query: Select<Entity>,
 }
 
 impl<'a> TicketQuery<'a> {
     pub fn init_query(db: &'a DbConn) -> Self {
         Self {
             db,
-            query: tickets_ticket::Entity::find(),
+            query: Entity::find(),
         }
     }
+    pub fn join_wish(mut self) -> Self {
+        self.query = self.query.join(LeftJoin, Relation::Wish.def());
+        self
+    }
+
     pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
         self.query = self
             .query
-            .join(
-                LeftJoin,
-                tickets_ticket::Relation::UserRelationsUserrelation.def(),
-            )
+            .join(LeftJoin, Relation::UserRelationsUserrelation.def())
             .filter(
                 Condition::any()
                     .add(user_relations_userrelation::Column::User1Id.eq(user_id))
@@ -39,7 +44,7 @@ impl<'a> TicketQuery<'a> {
     pub fn filter_by_relation(mut self, user_relation_id: i64) -> Self {
         self.query = self
             .query
-            .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id));
+            .filter(Column::UserRelationId.eq(user_relation_id));
         self
     }
 
@@ -48,8 +53,8 @@ impl<'a> TicketQuery<'a> {
         for text in texts {
             cond = cond.add(
                 Condition::any()
-                    .add(tickets_ticket::Column::Description.contains(text))
-                    .add(tickets_ticket::Column::UseDescription.contains(text)),
+                    .add(Column::Description.contains(text))
+                    .add(wish::Column::Description.contains(text)),
             )
         }
         self.query = self.query.filter(cond);
@@ -59,43 +64,61 @@ impl<'a> TicketQuery<'a> {
     pub fn exclude_draft_tickets(mut self) -> Self {
         self.query = self
             .query
-            .filter(tickets_ticket::Column::Status.ne(TicketStatus::Draft.to_value()));
+            .filter(Column::Status.ne(TicketStatus::Draft.to_value()));
         self
     }
 
     pub fn order_by_gift_date(mut self, order: Order) -> Self {
-        self.query = self.query.order_by(tickets_ticket::Column::GiftDate, order);
+        self.query = self.query.order_by(Column::GiftDate, order);
         self
     }
 
     pub fn order_by_created_at(mut self, order: Order) -> Self {
-        self.query = self
-            .query
-            .order_by(tickets_ticket::Column::CreatedAt, order);
+        self.query = self.query.order_by(Column::CreatedAt, order);
         self
     }
 
-    pub async fn get_by_id(self, ticket_id: i64) -> Result<Option<tickets_ticket::Model>, DbErr> {
+    pub async fn get_by_id(self, ticket_id: i64) -> Result<Option<Model>, DbErr> {
         self.query
-            .filter(tickets_ticket::Column::Id.eq(ticket_id))
+            .filter(Column::Id.eq(ticket_id))
+            .one(self.db)
+            .await
+    }
+    pub async fn get_with_wish_by_id(
+        self,
+        ticket_id: i64,
+    ) -> Result<Option<(Model, Option<wish::Model>)>, DbErr> {
+        self.query
+            .filter(Column::Id.eq(ticket_id))
+            .select_also(wish::Entity)
             .one(self.db)
             .await
     }
 
-    pub async fn get_tickets(
+    pub async fn get_tickets(self, user_id: i64, is_giving: bool) -> Result<Vec<Model>, DbErr> {
+        match is_giving {
+            true => self.query.filter(Column::GivingUserId.eq(user_id)),
+            false => self
+                .query
+                .filter(Column::GivingUserId.ne(user_id))
+                .filter(Column::Status.ne(TicketStatus::Draft.to_value())),
+        }
+        .all(self.db)
+        .await
+    }
+    pub async fn get_tickets_with_wish(
         self,
         user_id: i64,
         is_giving: bool,
-    ) -> Result<Vec<tickets_ticket::Model>, DbErr> {
+    ) -> Result<Vec<(Model, Option<wish::Model>)>, DbErr> {
         match is_giving {
-            true => self
-                .query
-                .filter(tickets_ticket::Column::GivingUserId.eq(user_id)),
+            true => self.query.filter(Column::GivingUserId.eq(user_id)),
             false => self
                 .query
-                .filter(tickets_ticket::Column::GivingUserId.ne(user_id))
-                .filter(tickets_ticket::Column::Status.ne(TicketStatus::Draft.to_value())),
+                .filter(Column::GivingUserId.ne(user_id))
+                .filter(Column::Status.ne(TicketStatus::Draft.to_value())),
         }
+        .select_also(wish::Entity)
         .all(self.db)
         .await
     }
@@ -125,10 +148,10 @@ impl<'a> TicketQuery<'a> {
             };
         let count = self
             .query
-            .filter(tickets_ticket::Column::GivingUserId.eq(giving_user_id))
-            .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id))
-            .filter(tickets_ticket::Column::IsSpecial.eq(true))
-            .filter(tickets_ticket::Column::GiftDate.between(start_of_month, end_of_month))
+            .filter(Column::GivingUserId.eq(giving_user_id))
+            .filter(Column::UserRelationId.eq(user_relation_id))
+            .filter(Column::IsSpecial.eq(true))
+            .filter(Column::GiftDate.between(start_of_month, end_of_month))
             .count(self.db)
             .await?;
         Ok(count > 0)

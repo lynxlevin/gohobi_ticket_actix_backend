@@ -6,6 +6,9 @@ mod list;
 mod partial_update;
 mod read;
 mod use_ticket;
+mod wish;
+
+pub use wish::wish_routes;
 
 pub fn ticket_routes(cfg: &mut ServiceConfig) {
     cfg.service(

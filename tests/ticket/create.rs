@@ -42,9 +42,8 @@ async fn happy_path() -> Result<(), DbErr> {
     assert_eq!(res.giving_user_id, user_0.id);
     assert_eq!(res.is_special, false);
     assert_eq!(res.status, TicketStatus::Unread);
-    assert_eq!(res.use_date, None);
-    assert_eq!(res.use_description, String::default());
     assert_eq!(res.user_relation_id, user_relation.id);
+    assert_eq!(res.wish, None);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
     assert!(ticket_in_db.is_some());
@@ -87,9 +86,8 @@ async fn create_draft() -> Result<(), DbErr> {
     assert_eq!(res.giving_user_id, user_0.id);
     assert_eq!(res.is_special, false);
     assert_eq!(res.status, TicketStatus::Draft);
-    assert_eq!(res.use_date, None);
-    assert_eq!(res.use_description, String::default());
     assert_eq!(res.user_relation_id, user_relation.id);
+    assert_eq!(res.wish, None);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
     assert!(ticket_in_db.is_some());
@@ -141,9 +139,8 @@ async fn create_special() -> Result<(), DbErr> {
     assert_eq!(res.giving_user_id, user_0.id);
     assert_eq!(res.is_special, true);
     assert_eq!(res.status, TicketStatus::Unread);
-    assert_eq!(res.use_date, None);
-    assert_eq!(res.use_description, String::default());
     assert_eq!(res.user_relation_id, user_relation.id);
+    assert_eq!(res.wish, None);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
     assert!(ticket_in_db.is_some());
@@ -191,9 +188,8 @@ async fn create_special_already_exists() -> Result<(), DbErr> {
     assert_eq!(res.giving_user_id, user_0.id);
     assert_eq!(res.is_special, false);
     assert_eq!(res.status, TicketStatus::Unread);
-    assert_eq!(res.use_date, None);
-    assert_eq!(res.use_description, String::default());
     assert_eq!(res.user_relation_id, user_relation.id);
+    assert_eq!(res.wish, None);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
     assert!(ticket_in_db.is_some());

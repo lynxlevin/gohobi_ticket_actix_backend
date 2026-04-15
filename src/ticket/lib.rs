@@ -6,7 +6,8 @@ mod web_adapters;
 pub use types::{
     CreateTicketRequest, ListTicketResponse, TicketVisible, UpdateTicketRequest,
     UpsertTicketResponse, UseTicketParams, UseTicketRequest, UseTicketResponse, WebPushResult,
+    WishVisible,
 };
-pub use web_adapters::ticket_routes;
+pub use web_adapters::{ticket_routes, wish_routes};
 // FIXME: This should not be accessed publicly. Need to change crate structure.
 pub use use_cases::list;

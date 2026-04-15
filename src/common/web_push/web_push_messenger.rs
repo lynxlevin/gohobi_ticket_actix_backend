@@ -3,9 +3,10 @@ use http::{
     HeaderMap, HeaderValue, StatusCode,
 };
 use reqwest::Error as ReqwestError;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use thiserror::Error;
+use uuid::Uuid;
 
 use crate::{db::decode_and_decrypt, settings::types::Settings};
 use entities::web_push_subscription;
@@ -17,18 +18,19 @@ use crate::web_push::{
 
 const TTL_SECONDS: u64 = 60 * 60 * 23;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum MessageType {
     UseTicket,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Message {
     pub title: Option<String>,
     pub body: String,
     pub message_type: MessageType,
     pub user_relation_id: Option<i64>,
     pub ticket_id: Option<i64>,
+    pub wish_id: Option<Uuid>,
 }
 
 pub enum WebPushMessengerResult {

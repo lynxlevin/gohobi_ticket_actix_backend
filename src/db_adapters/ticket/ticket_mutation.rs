@@ -20,7 +20,6 @@ impl<'a> TicketMutation<'a> {
             description: Set(params.description),
             user_relation_id: Set(params.user_relation_id),
             gift_date: Set(params.gift_date),
-            use_description: Set(String::default()),
             status: Set(TicketStatus::Unread.to_value()),
             is_special: Set(false),
             created_at: Set(now.into()),
@@ -47,12 +46,6 @@ impl<'a> TicketMutation<'a> {
         };
         if let Some(status) = params.status {
             ticket.status = Set(status.to_value());
-        };
-        if let Some(use_description) = params.use_description {
-            ticket.use_description = Set(use_description);
-        };
-        if let Some(use_date) = params.use_date {
-            ticket.use_date = Set(Some(use_date));
         };
         if let Some(is_special) = params.is_special {
             ticket.is_special = Set(is_special);

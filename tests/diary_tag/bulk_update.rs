@@ -89,6 +89,7 @@ async fn happy_path() -> Result<(), DbErr> {
     let tags_in_db = diaries_diarytag::Entity::find()
         .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation.id))
         .order_by_asc(diaries_diarytag::Column::SortNo)
+        .order_by_asc(diaries_diarytag::Column::CreatedAt)
         .all(&db)
         .await?;
 

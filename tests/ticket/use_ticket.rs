@@ -1,9 +1,8 @@
 use actix_web::{http, test, HttpMessage};
-use chrono::Utc;
 use db_adapters::ticket::types::TicketStatus;
 use entities::tickets_ticket;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
-use ticket::{TicketVisible, UseTicketParams, UseTicketRequest, UseTicketResponse, WebPushResult};
+use ticket::{UseTicketParams, UseTicketRequest, UseTicketResponse, WebPushResult};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
@@ -36,12 +35,15 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
         ticket,
         web_push_result,
     } = test::read_body_json(res).await;
-    let expected = TicketVisible {
-        use_description: use_description.clone(),
-        use_date: Some(Utc::now().date_naive()),
-        ..TicketVisible::from(&receiving_ticket)
-    };
-    assert_eq!(ticket, expected);
+    assert_eq!(ticket.id, receiving_ticket.id);
+    assert_eq!(ticket.user_relation_id, receiving_ticket.user_relation_id);
+    assert_eq!(ticket.giving_user_id, receiving_ticket.giving_user_id);
+    assert_eq!(ticket.description, receiving_ticket.description);
+    assert_eq!(ticket.gift_date, receiving_ticket.gift_date);
+    assert_eq!(ticket.status, (&receiving_ticket.status).into());
+    assert_eq!(ticket.is_special, receiving_ticket.is_special);
+    let wish = ticket.wish.unwrap();
+    assert_eq!(wish.description, use_description);
     assert_eq!(web_push_result, WebPushResult::NotSent);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(ticket.id)
@@ -49,8 +51,7 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
         .await?;
     assert!(ticket_in_db.is_some());
     let ticket_in_db = ticket_in_db.unwrap();
-    assert_eq!(TicketVisible::from(&ticket_in_db), expected);
-    assert!(ticket_in_db.updated_at > receiving_ticket.updated_at);
+    assert_eq!(ticket_in_db, receiving_ticket);
 
     Ok(())
 }
@@ -146,7 +147,6 @@ mod web_push_message {
     use actix_http::Uri;
     use common::web_push::{Message, MessageType};
     use ece;
-    use serde_json::json;
 
     use super::*;
 
@@ -174,25 +174,29 @@ mod web_push_message {
             .insert(&db)
             .await?;
 
-        let message = Message {
-            title: Some(format!("{}からのおねがい", user_0.username)),
-            body: "お願いします。".to_string(),
-            message_type: MessageType::UseTicket,
-            user_relation_id: Some(user_relation.id),
-            ticket_id: Some(receiving_ticket.id),
-        };
-        let message_json = json!(&message).to_string();
+        let expected_title = Some(format!("{}からのおねがい", user_0.username));
+        let expected_body = "お願いします。".to_string();
+        let expected_message_type = MessageType::UseTicket;
+        let expected_user_relation_id = Some(user_relation.id);
+        let expected_ticket_id = None;
+        let use_description = expected_body.clone();
+
         // NOTE: headers should be tested in unit tests.
         let web_push_request_mock = mock_server
             .mock("POST", endpoint.parse::<Uri>().unwrap().path())
             .with_body_from_request(move |request| {
-                assert_eq!(
-                    String::from_utf8(
-                        ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap()
-                    )
-                    .unwrap(),
-                    message_json,
-                );
+                let message_string = String::from_utf8(
+                    ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap(),
+                )
+                .unwrap();
+                let message: Message = serde_json::from_str(&message_string).unwrap();
+                assert_eq!(message.title, expected_title);
+                assert_eq!(message.body, expected_body);
+                assert_eq!(message.message_type, expected_message_type);
+                assert_eq!(message.user_relation_id, expected_user_relation_id);
+                assert_eq!(message.ticket_id, expected_ticket_id);
+                assert!(message.wish_id.is_some());
+
                 "Request_body is as expected.".into()
             })
             .expect(1)
@@ -203,9 +207,7 @@ mod web_push_message {
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
             .set_json(UseTicketRequest {
-                ticket: UseTicketParams {
-                    use_description: message.body.clone(),
-                },
+                ticket: UseTicketParams { use_description },
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
@@ -248,25 +250,29 @@ mod web_push_message {
             .insert(&db)
             .await?;
 
-        let message = Message {
-            title: Some(format!("⭐️{}からの特別なおねがい⭐️", user_0.username)),
-            body: "お願いします。".to_string(),
-            message_type: MessageType::UseTicket,
-            user_relation_id: Some(user_relation.id),
-            ticket_id: Some(receiving_ticket.id),
-        };
-        let message_json = json!(&message).to_string();
+        let expected_title = Some(format!("⭐️{}からの特別なおねがい⭐️", user_0.username));
+        let expected_body = "お願いします。".to_string();
+        let expected_message_type = MessageType::UseTicket;
+        let expected_user_relation_id = Some(user_relation.id);
+        let expected_ticket_id = None;
+        let use_description = expected_body.clone();
+
         // NOTE: headers should be tested in unit tests.
         let web_push_request_mock = mock_server
             .mock("POST", endpoint.parse::<Uri>().unwrap().path())
             .with_body_from_request(move |request| {
-                assert_eq!(
-                    String::from_utf8(
-                        ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap()
-                    )
-                    .unwrap(),
-                    message_json,
-                );
+                let message_string = String::from_utf8(
+                    ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap(),
+                )
+                .unwrap();
+                let message: Message = serde_json::from_str(&message_string).unwrap();
+                assert_eq!(message.title, expected_title);
+                assert_eq!(message.body, expected_body);
+                assert_eq!(message.message_type, expected_message_type);
+                assert_eq!(message.user_relation_id, expected_user_relation_id);
+                assert_eq!(message.ticket_id, expected_ticket_id);
+                assert!(message.wish_id.is_some());
+
                 "Request_body is as expected.".into()
             })
             .expect(1)
@@ -277,9 +283,7 @@ mod web_push_message {
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
             .set_json(UseTicketRequest {
-                ticket: UseTicketParams {
-                    use_description: message.body.clone(),
-                },
+                ticket: UseTicketParams { use_description },
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());

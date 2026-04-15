@@ -11,9 +11,6 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub description: String,
     pub gift_date: Date,
-    #[sea_orm(column_type = "Text")]
-    pub use_description: String,
-    pub use_date: Option<Date>,
     pub status: String,
     pub is_special: bool,
     pub created_at: DateTimeWithTimeZone,
@@ -40,6 +37,8 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     UsersUser,
+    #[sea_orm(has_one = "super::wish::Entity")]
+    Wish,
 }
 
 impl Related<super::user_relations_userrelation::Entity> for Entity {
@@ -51,6 +50,12 @@ impl Related<super::user_relations_userrelation::Entity> for Entity {
 impl Related<super::users_user::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::UsersUser.def()
+    }
+}
+
+impl Related<super::wish::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Wish.def()
     }
 }
 

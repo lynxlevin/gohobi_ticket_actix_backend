@@ -8,14 +8,15 @@ pub async fn delete_ticket(
     ticket_mutation: TicketMutation<'_>,
     ticket_id: i64,
 ) -> Result<(), UseCaseError> {
-    let ticket = ticket_query
+    let (ticket, wish) = ticket_query
         .filter_which_user_has_access(user.id)
-        .get_by_id(ticket_id)
+        .join_wish()
+        .get_with_wish_by_id(ticket_id)
         .await
         .map_err(|_| UseCaseError::InternalServerError)?
         .ok_or(UseCaseError::NotFound)?;
 
-    if ticket.giving_user_id != user.id || ticket.use_date.is_some() {
+    if ticket.giving_user_id != user.id || wish.is_some() {
         return Err(UseCaseError::Forbidden);
     };
 

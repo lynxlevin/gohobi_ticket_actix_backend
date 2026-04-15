@@ -34,11 +34,10 @@ async fn list_giving_tickets() -> Result<(), DbErr> {
         .status(TicketStatus::Edited.to_value())
         .insert(&db)
         .await?;
-    let ticket_3 = factory::ticket(user_0.id, user_relation.id)
+    let (ticket_3, wish_3) = factory::ticket(user_0.id, user_relation.id)
         .gift_date((now - Duration::days(3)).date_naive())
-        .use_date(Some(now.date_naive()))
         .status(TicketStatus::Read.to_value())
-        .insert(&db)
+        .insert_with_wish(&db)
         .await?;
     let ticket_4 = factory::ticket(user_0.id, user_relation.id)
         .gift_date((now - Duration::days(4)).date_naive())
@@ -68,7 +67,7 @@ async fn list_giving_tickets() -> Result<(), DbErr> {
             TicketVisible::from(ticket_0),
             TicketVisible::from(ticket_1),
             TicketVisible::from(ticket_2),
-            TicketVisible::from(ticket_3),
+            TicketVisible::from(ticket_3).with_wish(&wish_3),
             TicketVisible::from(ticket_4),
         ],
     };
@@ -104,11 +103,10 @@ async fn list_receiving_tickets() -> Result<(), DbErr> {
         .status(TicketStatus::Edited.to_value())
         .insert(&db)
         .await?;
-    let ticket_3 = factory::ticket(user_1.id, user_relation.id)
+    let (ticket_3, wish_3) = factory::ticket(user_1.id, user_relation.id)
         .gift_date((now - Duration::days(3)).date_naive())
-        .use_date(Some(now.date_naive()))
         .status(TicketStatus::Read.to_value())
-        .insert(&db)
+        .insert_with_wish(&db)
         .await?;
     let ticket_4 = factory::ticket(user_1.id, user_relation.id)
         .gift_date((now - Duration::days(4)).date_naive())
@@ -140,7 +138,7 @@ async fn list_receiving_tickets() -> Result<(), DbErr> {
             tickets: vec![
                 TicketVisible::from(ticket_1.clone()),
                 TicketVisible::from(ticket_2.clone()),
-                TicketVisible::from(ticket_3.clone()),
+                TicketVisible::from(ticket_3.clone()).with_wish(&wish_3),
                 TicketVisible::from(ticket_4.clone()),
             ],
         };
