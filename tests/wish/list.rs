@@ -76,23 +76,76 @@ async fn happy_path_created_at_gte_lte() -> Result<(), DbErr> {
         .all(&db)
         .await?;
     let expected = &wishes.iter().zip(&tickets).collect::<Vec<_>>()[3..7];
+    let oldest_wish = expected.last().unwrap().0;
+    let newest_wish = expected.first().unwrap().0;
 
     let req = test::TestRequest::get()
         .uri(&format!(
             "{}?created_at_gte={}&created_at_lte={}",
             URI.replace("{relation_id}", &user_relation.id.to_string()),
-            expected
-                .last()
-                .unwrap()
-                .0
+            oldest_wish.created_at.format("%Y-%m-%dT%H:%M:%S%.fZ"),
+            newest_wish.created_at.format("%Y-%m-%dT%H:%M:%S%.fZ"),
+        ))
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let res: Vec<WishVisible> = test::read_body_json(res).await;
+    assert_eq!(
+        res,
+        expected
+            .into_iter()
+            .map(|(wish, ticket)| WishVisible::from((*wish, *ticket)))
+            .collect::<Vec<_>>()
+    );
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn happy_path_created_at_gte_lt() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .insert(&db)
+        .await?;
+
+    let now = Utc::now().fixed_offset();
+    let tickets = (1..10).map(|_| factory::ticket(user_0.id, user_relation.id));
+    tickets_ticket::Entity::insert_many(tickets)
+        .exec(&db)
+        .await?;
+    let tickets = tickets_ticket::Entity::find()
+        .filter(tickets_ticket::Column::GivingUserId.eq(user_0.id))
+        .order_by_desc(tickets_ticket::Column::GiftDate)
+        .all(&db)
+        .await?;
+
+    let wishes = (1..10).map(|i: i64| {
+        factory::wish(&tickets[(i as usize) - 1]).created_at(now - TimeDelta::days(i))
+    });
+    wish::Entity::insert_many(wishes).exec(&db).await?;
+    let wishes = wish::Entity::find()
+        .filter(wish::Column::UserRelationId.eq(user_relation.id))
+        .order_by_desc(wish::Column::CreatedAt)
+        .all(&db)
+        .await?;
+    let expected = &wishes.iter().zip(&tickets).collect::<Vec<_>>()[3..7];
+    let oldest_wish = expected.last().unwrap().0;
+    let newest_wish = expected.first().unwrap().0;
+
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "{}?created_at_gte={}&created_at_lt={}",
+            URI.replace("{relation_id}", &user_relation.id.to_string()),
+            oldest_wish.created_at.format("%Y-%m-%dT%H:%M:%SZ"),
+            newest_wish
                 .created_at
-                .format("%Y-%m-%dT%H:%M:%S%.fZ"),
-            expected
-                .first()
+                .checked_add_days(Days::new(1))
                 .unwrap()
-                .0
-                .created_at
-                .format("%Y-%m-%dT%H:%M:%S%.fZ"),
+                .format("%Y-%m-%dT00:00:00Z"),
         ))
         .to_request();
     req.extensions_mut().insert(user_0.clone());

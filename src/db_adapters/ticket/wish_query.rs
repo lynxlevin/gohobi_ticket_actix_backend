@@ -60,6 +60,10 @@ impl<'a> WishQuery<'a> {
         self.query = self.query.filter(Column::CreatedAt.lte(created_at));
         self
     }
+    pub fn filter_created_at_lt(mut self, created_at: DateTime<FixedOffset>) -> Self {
+        self.query = self.query.filter(Column::CreatedAt.lt(created_at));
+        self
+    }
 
     pub fn order_by_created_at(mut self, order: Order) -> Self {
         self.query = self.query.order_by(Column::CreatedAt, order);

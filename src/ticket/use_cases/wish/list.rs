@@ -10,6 +10,7 @@ use crate::WishVisible;
 pub struct ListWishesQueryParam {
     created_at_gte: Option<DateTime<FixedOffset>>,
     created_at_lte: Option<DateTime<FixedOffset>>,
+    created_at_lt: Option<DateTime<FixedOffset>>,
 }
 
 pub async fn list_wishes(
@@ -29,6 +30,9 @@ pub async fn list_wishes(
     }
     if let Some(created_at_lte) = params.created_at_lte {
         query = query.filter_created_at_lte(created_at_lte);
+    }
+    if let Some(created_at_lt) = params.created_at_lt {
+        query = query.filter_created_at_lt(created_at_lt);
     }
 
     query
