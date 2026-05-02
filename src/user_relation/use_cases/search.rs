@@ -30,6 +30,7 @@ pub async fn search(
         ListTicketsQueryParam {
             user_relation_id,
             is_giving: Some("true".to_string()),
+            ..Default::default()
         },
         text_query.clone(),
     );
@@ -40,6 +41,7 @@ pub async fn search(
         ListTicketsQueryParam {
             user_relation_id,
             is_giving: Some("false".to_string()),
+            ..Default::default()
         },
         text_query.clone(),
     );

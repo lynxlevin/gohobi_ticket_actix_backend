@@ -61,6 +61,15 @@ impl<'a> TicketQuery<'a> {
         self
     }
 
+    pub fn filter_gift_date_gte(mut self, gift_date: NaiveDate) -> Self {
+        self.query = self.query.filter(Column::GiftDate.gte(gift_date));
+        self
+    }
+    pub fn filter_gift_date_lte(mut self, gift_date: NaiveDate) -> Self {
+        self.query = self.query.filter(Column::GiftDate.lte(gift_date));
+        self
+    }
+
     pub fn exclude_draft_tickets(mut self) -> Self {
         self.query = self
             .query
