@@ -1,8 +1,9 @@
 use actix_web::{http, test, HttpMessage};
-use chrono::{Duration, Utc};
+use chrono::{Duration, TimeDelta, Utc};
 use db_adapters::diary::types::DiaryStatus;
 use diary::{DiaryTag, DiaryVisible};
-use sea_orm::{ActiveModelTrait, DbErr};
+use entities::diaries_diary;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, QueryOrder};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
@@ -79,6 +80,59 @@ async fn happy_path() -> Result<(), DbErr> {
     for (res_diary, expected_diary) in res.iter().zip(expected) {
         assert_eq!(res_diary, &expected_diary);
     }
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn happy_path_date_gte_lte() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .insert(&db)
+        .await?;
+
+    let now = Utc::now();
+    let diaries = (1..10)
+        .map(|i| factory::diary(user_relation.id).date((now - TimeDelta::days(i)).date_naive()))
+        .collect::<Vec<diaries_diary::ActiveModel>>();
+    diaries_diary::Entity::insert_many(diaries)
+        .exec(&db)
+        .await?;
+    let diaries = diaries_diary::Entity::find()
+        .filter(diaries_diary::Column::UserRelationId.eq(user_relation.id))
+        .order_by_desc(diaries_diary::Column::Date)
+        .all(&db)
+        .await?;
+    let expected = &diaries[3..7];
+
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/diaries/?user_relation_id={}&date_gte={}&date_lte={}",
+            user_relation.id,
+            expected.last().unwrap().date.format("%Y-%m-%d"),
+            expected.first().unwrap().date.format("%Y-%m-%d"),
+        ))
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let res: Vec<DiaryVisible> = test::read_body_json(res).await;
+    assert_eq!(
+        res,
+        expected
+            .iter()
+            .map(|diary| DiaryVisible {
+                id: diary.id,
+                entry: diary.entry.clone(),
+                date: diary.date,
+                tags: vec![],
+                status: (&diary.user_1_status).into(),
+            })
+            .collect::<Vec<_>>()
+    );
 
     Ok(())
 }
