@@ -1,3 +1,4 @@
+use chrono::{DateTime, FixedOffset};
 use entities::{
     tickets_ticket, user_relations_userrelation,
     wish::{Column, Entity, Model, Relation},
@@ -49,6 +50,14 @@ impl<'a> WishQuery<'a> {
         self.query = self
             .query
             .filter(Column::UserRelationId.eq(user_relation_id));
+        self
+    }
+    pub fn filter_created_at_gte(mut self, created_at: DateTime<FixedOffset>) -> Self {
+        self.query = self.query.filter(Column::CreatedAt.gte(created_at));
+        self
+    }
+    pub fn filter_created_at_lte(mut self, created_at: DateTime<FixedOffset>) -> Self {
+        self.query = self.query.filter(Column::CreatedAt.lte(created_at));
         self
     }
 

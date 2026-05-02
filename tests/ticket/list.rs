@@ -212,12 +212,10 @@ mod gift_date_lte_gte {
             .await?;
 
         let now = Utc::now();
-        let tickets = (1..10)
-            .map(|i| {
-                factory::ticket(user_0.id, user_relation.id)
-                    .gift_date((now - TimeDelta::days(i)).date_naive())
-            })
-            .collect::<Vec<tickets_ticket::ActiveModel>>();
+        let tickets = (1..10).map(|i| {
+            factory::ticket(user_0.id, user_relation.id)
+                .gift_date((now - TimeDelta::days(i)).date_naive())
+        });
         tickets_ticket::Entity::insert_many(tickets)
             .exec(&db)
             .await?;

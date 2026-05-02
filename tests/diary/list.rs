@@ -94,8 +94,7 @@ async fn happy_path_date_gte_lte() -> Result<(), DbErr> {
 
     let now = Utc::now();
     let diaries = (1..10)
-        .map(|i| factory::diary(user_relation.id).date((now - TimeDelta::days(i)).date_naive()))
-        .collect::<Vec<diaries_diary::ActiveModel>>();
+        .map(|i| factory::diary(user_relation.id).date((now - TimeDelta::days(i)).date_naive()));
     diaries_diary::Entity::insert_many(diaries)
         .exec(&db)
         .await?;
