@@ -10,20 +10,14 @@ use common::errors::{
 use db_adapters::{diary::DiaryQuery, user_relation::UserRelationQuery};
 use entities::users_user;
 use sea_orm::DbConn;
-use serde::Deserialize;
 
-use crate::use_cases::list::list_diary;
-
-#[derive(Deserialize)]
-struct QueryParams {
-    user_relation_id: i64,
-}
+use crate::{list::ListDiaryQueryParam, use_cases::list::list_diary};
 
 #[get("/")]
 async fn list_diary_endpoint(
     db: Data<DbConn>,
     user: Option<ReqData<users_user::Model>>,
-    query_params: Query<QueryParams>,
+    query_params: Query<ListDiaryQueryParam>,
 ) -> HttpResponse {
     match user {
         Some(user) => {
@@ -31,7 +25,7 @@ async fn list_diary_endpoint(
             let diary_query = DiaryQuery::init(&db);
             match list_diary(
                 user.into_inner(),
-                query_params.user_relation_id,
+                query_params.into_inner(),
                 user_relation_query,
                 diary_query,
                 None,

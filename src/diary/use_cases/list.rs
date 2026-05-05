@@ -1,21 +1,30 @@
+use chrono::NaiveDate;
 use common::errors::use_case_errors::UseCaseError;
 use db_adapters::{
     diary::{DiaryQuery, Order},
     user_relation::UserRelationQuery,
 };
 use entities::users_user;
+use serde::Deserialize;
 
 use crate::{DiaryTag, DiaryVisible};
 
+#[derive(Deserialize, Default)]
+pub struct ListDiaryQueryParam {
+    pub user_relation_id: i64,
+    pub date_gte: Option<NaiveDate>,
+    pub date_lte: Option<NaiveDate>,
+}
+
 pub async fn list_diary<'a>(
     user: users_user::Model,
-    user_relation_id: i64,
+    params: ListDiaryQueryParam,
     user_relation_query: UserRelationQuery<'a>,
     diary_query: DiaryQuery<'a>,
     text_query: Option<Vec<&str>>,
 ) -> Result<Vec<DiaryVisible>, UseCaseError> {
     let user_relation = user_relation_query
-        .find_by_id(user_relation_id, user.id)
+        .find_by_id(params.user_relation_id, user.id)
         .await
         .map_err(|e| {
             dbg!(e);
@@ -25,10 +34,16 @@ pub async fn list_diary<'a>(
 
     let mut diary_query = diary_query
         .filter_which_user_has_access(user.id)
-        .filter_by_relation(user_relation_id);
+        .filter_by_relation(params.user_relation_id);
 
     if let Some(text_query) = text_query {
         diary_query = diary_query.filter_contains_texts(text_query);
+    }
+    if let Some(date_gte) = params.date_gte {
+        diary_query = diary_query.filter_date_gte(date_gte);
+    }
+    if let Some(date_lte) = params.date_lte {
+        diary_query = diary_query.filter_date_lte(date_lte);
     }
 
     match diary_query

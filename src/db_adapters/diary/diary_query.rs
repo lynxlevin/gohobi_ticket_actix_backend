@@ -1,5 +1,7 @@
+use chrono::NaiveDate;
 use entities::{
-    diaries_diary, diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation,
+    diaries_diary::{Column, Entity, Model, Relation},
+    diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation,
 };
 use sea_orm::{
     ColumnTrait, Condition, DbConn, DbErr, DeriveColumn, EntityTrait, EnumIter, JoinType::LeftJoin,
@@ -17,23 +19,20 @@ enum TagId {
 #[derive(Clone)]
 pub struct DiaryQuery<'a> {
     pub db: &'a DbConn,
-    pub query: Select<diaries_diary::Entity>,
+    pub query: Select<Entity>,
 }
 
 impl<'a> DiaryQuery<'a> {
     pub fn init(db: &'a DbConn) -> Self {
         Self {
             db,
-            query: diaries_diary::Entity::find(),
+            query: Entity::find(),
         }
     }
     pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
         self.query = self
             .query
-            .join(
-                LeftJoin,
-                diaries_diary::Relation::UserRelationsUserrelation.def(),
-            )
+            .join(LeftJoin, Relation::UserRelationsUserrelation.def())
             .filter(
                 Condition::any()
                     .add(user_relations_userrelation::Column::User1Id.eq(user_id))
@@ -44,11 +43,11 @@ impl<'a> DiaryQuery<'a> {
     pub fn filter_by_relation(mut self, user_relation_id: i64) -> Self {
         self.query = self
             .query
-            .filter(diaries_diary::Column::UserRelationId.eq(user_relation_id));
+            .filter(Column::UserRelationId.eq(user_relation_id));
         self
     }
     pub fn filter_by_id(mut self, diary_id: Uuid) -> Self {
-        self.query = self.query.filter(diaries_diary::Column::Id.eq(diary_id));
+        self.query = self.query.filter(Column::Id.eq(diary_id));
         self
     }
     pub fn filter_contains_texts(mut self, texts: Vec<&str>) -> Self {
@@ -56,28 +55,30 @@ impl<'a> DiaryQuery<'a> {
         for text in texts {
             cond = cond.add(
                 Condition::any()
-                    .add(diaries_diary::Column::Entry.contains(text))
+                    .add(Column::Entry.contains(text))
                     .add(diaries_diarytag::Column::Text.contains(text)),
             )
         }
         self.query = self.query.filter(cond);
         self
     }
+    pub fn filter_date_gte(mut self, date: NaiveDate) -> Self {
+        self.query = self.query.filter(Column::Date.gte(date));
+        self
+    }
+    pub fn filter_date_lte(mut self, date: NaiveDate) -> Self {
+        self.query = self.query.filter(Column::Date.lte(date));
+        self
+    }
 
     pub fn order_by_date(mut self, order: Order) -> Self {
-        self.query = self.query.order_by(diaries_diary::Column::Date, order);
+        self.query = self.query.order_by(Column::Date, order);
         self
     }
 
     pub async fn get_also_relation(
         self,
-    ) -> Result<
-        Option<(
-            diaries_diary::Model,
-            Option<user_relations_userrelation::Model>,
-        )>,
-        DbErr,
-    > {
+    ) -> Result<Option<(Model, Option<user_relations_userrelation::Model>)>, DbErr> {
         self.query
             .select_also(user_relations_userrelation::Entity)
             .one(self.db)
@@ -86,7 +87,7 @@ impl<'a> DiaryQuery<'a> {
 
     pub async fn get_all_with_tags(
         self,
-    ) -> Result<Vec<(diaries_diary::Model, Vec<diaries_diarytag::Model>)>, DbErr> {
+    ) -> Result<Vec<(Model, Vec<diaries_diarytag::Model>)>, DbErr> {
         self.query
             .find_with_related(diaries_diarytag::Entity)
             .all(self.db)
@@ -96,10 +97,7 @@ impl<'a> DiaryQuery<'a> {
     pub async fn get_tag_ids(self) -> Result<Vec<Uuid>, DbErr> {
         match self
             .query
-            .join(
-                LeftJoin,
-                diaries_diary::Relation::DiariesDiarytagrelation.def(),
-            )
+            .join(LeftJoin, Relation::DiariesDiarytagrelation.def())
             .select_only()
             .column(diaries_diarytagrelation::Column::TagMasterId)
             .into_values::<_, TagId>()

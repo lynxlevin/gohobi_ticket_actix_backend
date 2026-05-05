@@ -196,3 +196,111 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
     Ok(())
 }
+
+mod gift_date_lte_gte {
+    use chrono::TimeDelta;
+    use entities::tickets_ticket;
+    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
+
+    use super::*;
+    #[actix_web::test]
+    async fn list_giving_tickets() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_0, user_1, ..] = factory::get_users(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id)
+            .insert(&db)
+            .await?;
+
+        let now = Utc::now();
+        let tickets = (1..10).map(|i| {
+            factory::ticket(user_0.id, user_relation.id)
+                .gift_date((now - TimeDelta::days(i)).date_naive())
+        });
+        tickets_ticket::Entity::insert_many(tickets)
+            .exec(&db)
+            .await?;
+        let tickets = tickets_ticket::Entity::find()
+            .filter(tickets_ticket::Column::GivingUserId.eq(user_0.id))
+            .order_by_desc(tickets_ticket::Column::GiftDate)
+            .all(&db)
+            .await?;
+        let expected = &tickets[3..7];
+
+        let req = test::TestRequest::get()
+            .uri(&format!(
+                "/api/tickets/?user_relation_id={}&is_giving&gift_date_gte={}&gift_date_lte={}",
+                user_relation.id,
+                expected.last().unwrap().gift_date.format("%Y-%m-%d"),
+                expected.first().unwrap().gift_date.format("%Y-%m-%d"),
+            ))
+            .to_request();
+        req.extensions_mut().insert(user_0.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::OK);
+
+        let res: ListTicketResponse = test::read_body_json(res).await;
+        assert_eq!(
+            res,
+            ListTicketResponse {
+                tickets: expected
+                    .iter()
+                    .map(|ticket| TicketVisible::from(ticket))
+                    .collect::<Vec<_>>()
+            }
+        );
+
+        Ok(())
+    }
+    #[actix_web::test]
+    async fn list_receiving_tickets() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_0, user_1, ..] = factory::get_users(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id)
+            .insert(&db)
+            .await?;
+
+        let now = Utc::now();
+        let tickets = (1..10)
+            .map(|i| {
+                factory::ticket(user_1.id, user_relation.id)
+                    .gift_date((now - TimeDelta::days(i)).date_naive())
+            })
+            .collect::<Vec<tickets_ticket::ActiveModel>>();
+        tickets_ticket::Entity::insert_many(tickets)
+            .exec(&db)
+            .await?;
+        let tickets = tickets_ticket::Entity::find()
+            .filter(tickets_ticket::Column::GivingUserId.eq(user_1.id))
+            .order_by_desc(tickets_ticket::Column::GiftDate)
+            .all(&db)
+            .await?;
+        let expected = &tickets[3..7];
+
+        let req = test::TestRequest::get()
+            .uri(&format!(
+                "/api/tickets/?user_relation_id={}&is_receiving&gift_date_gte={}&gift_date_lte={}",
+                user_relation.id,
+                expected.last().unwrap().gift_date.format("%Y-%m-%d"),
+                expected.first().unwrap().gift_date.format("%Y-%m-%d"),
+            ))
+            .to_request();
+        req.extensions_mut().insert(user_0.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::OK);
+
+        let res: ListTicketResponse = test::read_body_json(res).await;
+        assert_eq!(
+            res,
+            ListTicketResponse {
+                tickets: expected
+                    .iter()
+                    .map(|ticket| TicketVisible::from(ticket))
+                    .collect::<Vec<_>>()
+            }
+        );
+
+        Ok(())
+    }
+}
