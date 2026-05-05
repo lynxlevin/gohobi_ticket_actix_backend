@@ -5,6 +5,7 @@ use db_adapters::{
         DiaryMutation, DiaryQuery,
     },
     diary_tag::DiaryTagQuery,
+    user_relation::UserRelationMutation,
 };
 use entities::{diaries_diary, users_user};
 use uuid::Uuid;
@@ -16,6 +17,7 @@ pub async fn update_diary<'a>(
     diary_query: DiaryQuery<'a>,
     diary_mutation: DiaryMutation<'a>,
     diary_tag_query: DiaryTagQuery<'a>,
+    user_relation_mutation: UserRelationMutation<'a>,
     diary_id: Uuid,
     req_param: UpdateDiaryRequest,
 ) -> Result<DiaryVisible, UseCaseError> {
@@ -95,6 +97,15 @@ pub async fn update_diary<'a>(
         }
         None => vec![],
     };
+    if user_relation
+        .first_diary_date
+        .is_none_or(|date| date > diary.date)
+    {
+        user_relation_mutation
+            .update_first_diary_date(user_relation, Some(diary.date))
+            .await
+            .map_err(|_| UseCaseError::InternalServerError)?;
+    }
 
     Ok(DiaryVisible {
         id: diary.id,
