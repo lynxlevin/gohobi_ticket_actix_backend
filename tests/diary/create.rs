@@ -1,8 +1,8 @@
 use actix_web::{http, test, HttpMessage};
-use chrono::Utc;
+use chrono::{Days, Utc};
 use db_adapters::diary::types::DiaryStatus;
 use diary::{CreateDiaryRequest, DiaryTag, DiaryVisible};
-use entities::{diaries_diary, diaries_diarytagrelation};
+use entities::{diaries_diary, diaries_diarytagrelation, user_relations_userrelation};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbErr, DeriveColumn, EntityTrait, EnumIter, QueryFilter,
     QuerySelect,
@@ -10,7 +10,7 @@ use sea_orm::{
 use uuid::Uuid;
 
 use crate::utils::{init_app, Connections};
-use common::factory;
+use common::factory::{self, DiaryFactory, UserRelationFactory};
 
 #[derive(DeriveColumn, Copy, Debug, Clone, EnumIter)]
 enum TagLinkTagId {
@@ -64,6 +64,12 @@ async fn happy_path() -> Result<(), DbErr> {
         .await?;
     assert_eq!(tag_link_in_db.len(), tag_ids.len());
 
+    let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+        .one(&db)
+        .await?
+        .unwrap();
+    assert_eq!(user_relation_in_db.first_diary_date, Some(today));
+
     Ok(())
 }
 
@@ -115,6 +121,45 @@ async fn happy_path_with_tag_ids() -> Result<(), DbErr> {
         linked_tag_ids_in_db,
         tags.iter().map(|tag| tag.id).collect::<Vec<_>>()
     );
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn happy_path_when_first_diary() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
+    let today = Utc::now().date_naive();
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .first_diary_date(Some(today))
+        .insert(&db)
+        .await?;
+    let _existing_diary = factory::diary(user_relation.id)
+        .date(today)
+        .insert(&db)
+        .await?;
+
+    let new_diary_date = today.checked_sub_days(Days::new(1)).unwrap();
+
+    let req = test::TestRequest::post()
+        .uri("/api/diaries/")
+        .set_json(CreateDiaryRequest {
+            user_relation_id: user_relation.id,
+            entry: String::default(),
+            date: new_diary_date,
+            tag_ids: vec![],
+        })
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::CREATED);
+
+    let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+        .one(&db)
+        .await?
+        .unwrap();
+    assert_eq!(user_relation_in_db.first_diary_date, Some(new_diary_date));
 
     Ok(())
 }

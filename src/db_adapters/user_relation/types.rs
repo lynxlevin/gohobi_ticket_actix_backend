@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use sea_orm::FromQueryResult;
 
 #[derive(FromQueryResult)]
@@ -10,4 +11,5 @@ pub struct UserRelationWithName {
     pub user_1_name: String,
     pub user_2_name: String,
     pub use_slack: bool,
+    pub first_diary_date: Option<NaiveDate>,
 }

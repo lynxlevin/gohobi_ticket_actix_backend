@@ -15,6 +15,7 @@ pub struct Model {
     pub user_1_id: i64,
     pub user_2_id: i64,
     pub use_slack: bool,
+    pub first_diary_date: Option<Date>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

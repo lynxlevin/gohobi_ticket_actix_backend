@@ -1,8 +1,8 @@
 use actix_web::{http, test, HttpMessage};
-use chrono::{Duration, Utc};
+use chrono::{Days, Duration, Utc};
 use db_adapters::diary::types::DiaryStatus;
 use diary::{DiaryTag, DiaryVisible, UpdateDiaryRequest};
-use entities::{diaries_diary, diaries_diarytagrelation};
+use entities::{diaries_diary, diaries_diarytagrelation, user_relations_userrelation};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbErr, DeriveColumn, EntityTrait, EnumIter, QueryFilter,
     QuerySelect,
@@ -169,6 +169,45 @@ async fn assert_user_2_status_changes() -> Result<(), DbErr> {
         assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read.to_value());
         assert_eq!(diary_in_db.user_2_status, expected_status.to_value());
     }
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn happy_path_change_date_to_oldest() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
+    let today = Utc::now().date_naive();
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .first_diary_date(Some(today))
+        .insert(&db)
+        .await?;
+    let _existing_diary = factory::diary(user_relation.id)
+        .date(today)
+        .insert(&db)
+        .await?;
+    let diary = factory::diary(user_relation.id).insert(&db).await?;
+
+    let new_diary_date = today.checked_sub_days(Days::new(1)).unwrap();
+
+    let req = test::TestRequest::put()
+        .uri(&format!("/api/diaries/{}/", diary.id))
+        .set_json(UpdateDiaryRequest {
+            entry: diary.entry,
+            date: new_diary_date,
+            tag_ids: None,
+        })
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+        .one(&db)
+        .await?
+        .unwrap();
+    assert_eq!(user_relation_in_db.first_diary_date, Some(new_diary_date));
 
     Ok(())
 }

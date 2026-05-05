@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use diary::DiaryVisible;
 use serde::{Deserialize, Serialize};
 use ticket::TicketVisible;
@@ -14,6 +15,7 @@ pub struct UserRelationVisible {
     pub giving_ticket_img: Option<String>,
     pub receiving_ticket_img: Option<String>,
     pub use_slack: bool,
+    pub first_diary_date: Option<NaiveDate>,
 }
 
 #[derive(Debug, Deserialize)]
