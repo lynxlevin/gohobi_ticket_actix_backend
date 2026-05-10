@@ -2,7 +2,7 @@ use common::errors::use_case_errors::UseCaseError;
 use db_adapters::{
     diary::{
         types::{DiaryStatus, UpdateDiaryParams},
-        DiaryMutation, DiaryQuery,
+        DiaryMutation, DiaryQuery, Order,
     },
     diary_tag::DiaryTagQuery,
     user_relation::UserRelationMutation,
@@ -35,6 +35,7 @@ pub async fn update_diary<'a>(
         },
         None => return Err(UseCaseError::NotFound),
     };
+    let original_date = diary.date;
 
     let (user_1_status, user_2_status) = match user_relation.user_1_id == user.id {
         true => (
@@ -72,6 +73,7 @@ pub async fn update_diary<'a>(
                 .map_err(|_| UseCaseError::InternalServerError)?;
             let clean_tag_ids = clean_tags.iter().map(|tag| tag.id).collect::<Vec<_>>();
             let current_linked_tag_ids = diary_query
+                .clone()
                 .filter_by_id(diary.id)
                 .get_tag_ids()
                 .await
@@ -97,6 +99,7 @@ pub async fn update_diary<'a>(
         }
         None => vec![],
     };
+
     if user_relation
         .first_diary_date
         .is_none_or(|date| date > diary.date)
@@ -105,6 +108,24 @@ pub async fn update_diary<'a>(
             .update_first_diary_date(user_relation, Some(diary.date))
             .await
             .map_err(|_| UseCaseError::InternalServerError)?;
+    } else if user_relation
+        .first_diary_date
+        .is_some_and(|date| date == original_date)
+    {
+        let first_diary = diary_query
+            .clone()
+            .filter_by_relation(user_relation.id)
+            .filter_which_user_has_access(user.id)
+            .order_by_date(Order::Asc)
+            .get_one()
+            .await
+            .unwrap_or(None);
+        if first_diary.is_some() {
+            user_relation_mutation
+                .update_first_diary_date(user_relation, Some(first_diary.unwrap().date))
+                .await
+                .map_err(|_| UseCaseError::InternalServerError)?;
+        }
     }
 
     Ok(DiaryVisible {

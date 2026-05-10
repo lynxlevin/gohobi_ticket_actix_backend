@@ -76,6 +76,10 @@ impl<'a> DiaryQuery<'a> {
         self
     }
 
+    pub async fn get_one(self) -> Result<Option<Model>, DbErr> {
+        self.query.one(self.db).await
+    }
+
     pub async fn get_also_relation(
         self,
     ) -> Result<Option<(Model, Option<user_relations_userrelation::Model>)>, DbErr> {
