@@ -16,26 +16,28 @@ pub async fn list_user_relations(
         user_relations: user_relations
             .iter()
             .map(|r| {
-                let (related_username, giving_ticket_img, receiving_ticket_img) =
-                    match user.id == r.user_1_id {
-                        true => (
-                            r.user_2_name.clone(),
-                            r.user_1_giving_ticket_img.clone(),
-                            r.user_2_giving_ticket_img.clone(),
-                        ),
-                        false => (
-                            r.user_1_name.clone(),
-                            r.user_2_giving_ticket_img.clone(),
-                            r.user_1_giving_ticket_img.clone(),
-                        ),
-                    };
-                UserRelationVisible {
-                    id: r.id,
-                    related_username,
-                    giving_ticket_img,
-                    receiving_ticket_img,
-                    use_slack: r.use_slack,
-                    first_diary_date: r.first_diary_date,
+                if user.id == r.user_1_id {
+                    UserRelationVisible {
+                        id: r.id,
+                        related_username: r.user_2_name.clone(),
+                        giving_ticket_img: r.user_1_giving_ticket_img.clone(),
+                        receiving_ticket_img: r.user_2_giving_ticket_img.clone(),
+                        use_slack: r.use_slack,
+                        first_giving_ticket_date: r.first_user_1_giving_ticket_date,
+                        first_receiving_ticket_date: r.first_user_2_giving_ticket_date,
+                        first_diary_date: r.first_diary_date,
+                    }
+                } else {
+                    UserRelationVisible {
+                        id: r.id,
+                        related_username: r.user_1_name.clone(),
+                        giving_ticket_img: r.user_2_giving_ticket_img.clone(),
+                        receiving_ticket_img: r.user_1_giving_ticket_img.clone(),
+                        use_slack: r.use_slack,
+                        first_giving_ticket_date: r.first_user_2_giving_ticket_date,
+                        first_receiving_ticket_date: r.first_user_1_giving_ticket_date,
+                        first_diary_date: r.first_diary_date,
+                    }
                 }
             })
             .collect(),

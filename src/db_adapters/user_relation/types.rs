@@ -11,5 +11,7 @@ pub struct UserRelationWithName {
     pub user_1_name: String,
     pub user_2_name: String,
     pub use_slack: bool,
+    pub first_user_1_giving_ticket_date: Option<NaiveDate>,
+    pub first_user_2_giving_ticket_date: Option<NaiveDate>,
     pub first_diary_date: Option<NaiveDate>,
 }
