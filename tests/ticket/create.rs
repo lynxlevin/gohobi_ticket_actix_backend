@@ -1,5 +1,5 @@
 use actix_web::{http, test, HttpMessage};
-use chrono::{Duration, Utc};
+use chrono::{Days, Utc};
 use db_adapters::ticket::types::{CreateTicketParams, TicketStatus};
 use entities::tickets_ticket;
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
@@ -16,7 +16,10 @@ async fn happy_path() -> Result<(), DbErr> {
         .insert(&db)
         .await?;
 
-    let gift_date = Utc::now().date_naive() - Duration::days(2);
+    let gift_date = Utc::now()
+        .date_naive()
+        .checked_sub_days(Days::new(2))
+        .unwrap();
     let description = "new ticket".to_string();
 
     let req = test::TestRequest::post()
@@ -60,7 +63,10 @@ async fn create_draft() -> Result<(), DbErr> {
         .insert(&db)
         .await?;
 
-    let gift_date = Utc::now().date_naive() - Duration::days(2);
+    let gift_date = Utc::now()
+        .date_naive()
+        .checked_sub_days(Days::new(2))
+        .unwrap();
     let description = "new ticket".to_string();
 
     let req = test::TestRequest::post()
@@ -104,7 +110,10 @@ async fn create_special() -> Result<(), DbErr> {
         .insert(&db)
         .await?;
 
-    let gift_date = Utc::now().date_naive() - Duration::days(2);
+    let gift_date = Utc::now()
+        .date_naive()
+        .checked_sub_days(Days::new(2))
+        .unwrap();
     let _receiving_special_ticket = factory::ticket(user_1.id, user_relation.id)
         .is_special(true)
         .gift_date(gift_date)
@@ -157,7 +166,10 @@ async fn create_special_already_exists() -> Result<(), DbErr> {
         .insert(&db)
         .await?;
 
-    let gift_date = Utc::now().date_naive() - Duration::days(2);
+    let gift_date = Utc::now()
+        .date_naive()
+        .checked_sub_days(Days::new(2))
+        .unwrap();
     let description = "new ticket".to_string();
     let _other_special_ticket = factory::ticket(user_0.id, user_relation.id)
         .is_special(true)
@@ -247,4 +259,168 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
 
     Ok(())
+}
+
+mod first_ticket_date {
+    use entities::user_relations_userrelation;
+
+    use super::*;
+
+    #[actix_web::test]
+    async fn first_user_1_ticket_when_originally_none() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_1, user_2, ..] = factory::get_users(&db).await?;
+        let user_relation = factory::user_relation(user_1.id, user_2.id)
+            .insert(&db)
+            .await?;
+
+        let today = Utc::now().date_naive();
+
+        let req = test::TestRequest::post()
+            .uri("/api/tickets/")
+            .set_json(CreateTicketRequest {
+                ticket: CreateTicketParams {
+                    gift_date: today,
+                    description: String::default(),
+                    user_relation_id: user_relation.id,
+                    is_special: None,
+                    status: None,
+                },
+            })
+            .to_request();
+        req.extensions_mut().insert(user_1.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::CREATED);
+
+        let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+            .one(&db)
+            .await?
+            .unwrap();
+        assert_eq!(
+            user_relation_in_db.first_user_1_giving_ticket_date,
+            Some(today)
+        );
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn first_user_2_ticket_when_originally_none() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_1, user_2, ..] = factory::get_users(&db).await?;
+        let user_relation = factory::user_relation(user_1.id, user_2.id)
+            .insert(&db)
+            .await?;
+
+        let today = Utc::now().date_naive();
+
+        let req = test::TestRequest::post()
+            .uri("/api/tickets/")
+            .set_json(CreateTicketRequest {
+                ticket: CreateTicketParams {
+                    gift_date: today,
+                    description: String::default(),
+                    user_relation_id: user_relation.id,
+                    is_special: None,
+                    status: None,
+                },
+            })
+            .to_request();
+        req.extensions_mut().insert(user_2.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::CREATED);
+
+        let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+            .one(&db)
+            .await?
+            .unwrap();
+        assert_eq!(
+            user_relation_in_db.first_user_2_giving_ticket_date,
+            Some(today)
+        );
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn first_user_1_ticket_when_older_than_existing() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_1, user_2, ..] = factory::get_users(&db).await?;
+        let today = Utc::now().date_naive();
+        let yesterday = today.checked_sub_days(Days::new(1)).unwrap();
+        let user_relation = factory::user_relation(user_1.id, user_2.id)
+            .first_user_1_giving_ticket_date(Some(today))
+            .insert(&db)
+            .await?;
+
+        let req = test::TestRequest::post()
+            .uri("/api/tickets/")
+            .set_json(CreateTicketRequest {
+                ticket: CreateTicketParams {
+                    gift_date: yesterday,
+                    description: String::default(),
+                    user_relation_id: user_relation.id,
+                    is_special: None,
+                    status: None,
+                },
+            })
+            .to_request();
+        req.extensions_mut().insert(user_1.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::CREATED);
+
+        let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+            .one(&db)
+            .await?
+            .unwrap();
+        assert_eq!(
+            user_relation_in_db.first_user_1_giving_ticket_date,
+            Some(yesterday)
+        );
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn first_user_2_ticket_when_older_than_existing() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_1, user_2, ..] = factory::get_users(&db).await?;
+        let today = Utc::now().date_naive();
+        let yesterday = today.checked_sub_days(Days::new(1)).unwrap();
+        let user_relation = factory::user_relation(user_1.id, user_2.id)
+            .first_user_2_giving_ticket_date(Some(today))
+            .insert(&db)
+            .await?;
+
+        let req = test::TestRequest::post()
+            .uri("/api/tickets/")
+            .set_json(CreateTicketRequest {
+                ticket: CreateTicketParams {
+                    gift_date: yesterday,
+                    description: String::default(),
+                    user_relation_id: user_relation.id,
+                    is_special: None,
+                    status: None,
+                },
+            })
+            .to_request();
+        req.extensions_mut().insert(user_2.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::CREATED);
+
+        let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+            .one(&db)
+            .await?
+            .unwrap();
+        assert_eq!(
+            user_relation_in_db.first_user_2_giving_ticket_date,
+            Some(yesterday)
+        );
+
+        Ok(())
+    }
 }
