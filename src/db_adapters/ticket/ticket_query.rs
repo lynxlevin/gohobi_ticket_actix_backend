@@ -47,6 +47,10 @@ impl<'a> TicketQuery<'a> {
             .filter(Column::UserRelationId.eq(user_relation_id));
         self
     }
+    pub fn filter_by_giving_user(mut self, user_id: i64) -> Self {
+        self.query = self.query.filter(Column::GivingUserId.eq(user_id));
+        self
+    }
 
     pub fn filter_contains_texts(mut self, texts: Vec<&str>) -> Self {
         let mut cond = Condition::all();
@@ -76,6 +80,10 @@ impl<'a> TicketQuery<'a> {
             .filter(Column::Status.ne(TicketStatus::Draft.to_value()));
         self
     }
+    pub fn exclude_id(mut self, id: i64) -> Self {
+        self.query = self.query.filter(Column::Id.ne(id));
+        self
+    }
 
     pub fn order_by_gift_date(mut self, order: Order) -> Self {
         self.query = self.query.order_by(Column::GiftDate, order);
@@ -85,6 +93,10 @@ impl<'a> TicketQuery<'a> {
     pub fn order_by_created_at(mut self, order: Order) -> Self {
         self.query = self.query.order_by(Column::CreatedAt, order);
         self
+    }
+
+    pub async fn get_one(self) -> Result<Option<Model>, DbErr> {
+        self.query.one(self.db).await
     }
 
     pub async fn get_by_id(self, ticket_id: i64) -> Result<Option<Model>, DbErr> {
