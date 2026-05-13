@@ -1,6 +1,5 @@
 use actix_web::{http, test, HttpMessage};
-use db_adapters::ticket::types::TicketStatus;
-use entities::tickets_ticket;
+use entities::{custom_types::TicketStatus, tickets_ticket};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{TicketVisible, UpsertTicketResponse};
 

@@ -1,8 +1,9 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
-use db_adapters::ticket::types::{
-    CreateTicketParams, TicketStatus, UpdateTicketParams, WishStatus,
+use db_adapters::{ticket::types::UpdateTicketParams, ticket_service::CreateTicketParams};
+use entities::{
+    custom_types::{TicketStatus, WishStatus},
+    tickets_ticket, wish,
 };
-use entities::{tickets_ticket, wish};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -105,6 +106,7 @@ impl From<(&wish::Model, &tickets_ticket::Model)> for WishVisible {
     }
 }
 
+// MYMEMO: front code needs to be changed
 #[derive(Deserialize, Debug, Serialize)]
 pub struct CreateTicketRequest {
     pub ticket: CreateTicketParams,

@@ -1,8 +1,8 @@
 use chrono::Utc;
-use entities::tickets_ticket;
+use entities::{custom_types::TicketStatus, tickets_ticket};
 use sea_orm::{ActiveModelTrait, DbConn, DbErr, IntoActiveModel, ModelTrait, Set};
 
-use super::types::{CreateTicketParams, TicketStatus, UpdateTicketParams};
+use super::types::{CreateTicketParams, UpdateTicketParams};
 
 pub struct TicketMutation<'a> {
     pub db: &'a DbConn,

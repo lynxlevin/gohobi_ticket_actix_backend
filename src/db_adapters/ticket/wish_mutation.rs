@@ -1,11 +1,12 @@
 use chrono::Utc;
-use entities::wish::{ActiveModel, Model};
+use entities::{
+    custom_types::WishStatus,
+    wish::{ActiveModel, Model},
+};
 use sea_orm::{ActiveModelTrait, DbConn, DbErr, Set};
 use uuid::Uuid;
 
 use crate::ticket::types::CreateWishParams;
-
-use super::types::WishStatus;
 
 pub struct WishMutation<'a> {
     pub db: &'a DbConn,

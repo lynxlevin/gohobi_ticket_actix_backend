@@ -1,5 +1,5 @@
 use actix_web::{http, test, HttpMessage};
-use db_adapters::ticket::types::TicketStatus;
+use entities::custom_types::TicketStatus;
 use sea_orm::{ActiveModelTrait, DbErr};
 use serde_json::json;
 use ticket::{UseTicketParams, UseTicketRequest};

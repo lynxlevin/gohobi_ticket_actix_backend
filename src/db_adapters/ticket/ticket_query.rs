@@ -1,5 +1,6 @@
 use chrono::{Datelike, NaiveDate};
 use entities::{
+    custom_types::TicketStatus,
     tickets_ticket::{Column, Entity, Model, Relation},
     user_relations_userrelation, wish,
 };
@@ -9,8 +10,6 @@ use sea_orm::{
 };
 
 pub use sea_orm::Order;
-
-use super::types::TicketStatus;
 
 #[derive(Clone)]
 pub struct TicketQuery<'a> {

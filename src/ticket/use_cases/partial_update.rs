@@ -1,9 +1,6 @@
 use common::errors::use_case_errors::UseCaseError;
-use db_adapters::ticket::{
-    types::{TicketStatus, UpdateTicketParams},
-    TicketMutation, TicketQuery,
-};
-use entities::users_user;
+use db_adapters::ticket::{types::UpdateTicketParams, TicketMutation, TicketQuery};
+use entities::{custom_types::TicketStatus, users_user};
 
 use crate::TicketVisible;
 
