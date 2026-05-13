@@ -2,15 +2,6 @@ use chrono::NaiveDate;
 use entities::custom_types::TicketStatus;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Debug, Serialize, Clone)]
-pub struct CreateTicketParams {
-    pub gift_date: NaiveDate,
-    pub description: String,
-    pub user_relation_id: i64,
-    pub is_special: Option<bool>,
-    pub status: Option<TicketStatus>,
-}
-
 #[derive(Deserialize, Debug, Serialize, Clone, Default)]
 pub struct UpdateTicketParams {
     pub description: Option<String>,

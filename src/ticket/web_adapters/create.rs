@@ -3,18 +3,15 @@ use actix_web::{
     web::{Data, Json, ReqData},
     HttpResponse,
 };
-use common::errors::{
-    error_responses::{response_401, response_404, response_500},
-    use_case_errors::UseCaseError,
-};
-use db_adapters::{
-    ticket::{TicketMutation, TicketQuery},
-    user_relation::{UserRelationMutation, UserRelationQuery},
-};
+use common::errors::error_responses::{response_401, response_404, response_500};
+use db_adapters::ticket_service::TicketService;
 use entities::users_user;
 use sea_orm::DbConn;
 
-use crate::{use_cases::create::create_ticket, CreateTicketRequest, UpsertTicketResponse};
+use crate::{
+    use_cases::create::{create_ticket, CreateTicketError},
+    CreateTicketRequest, UpsertTicketResponse,
+};
 
 #[post("/")]
 async fn create_ticket_endpoint(
@@ -24,24 +21,23 @@ async fn create_ticket_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let user_relation_query = UserRelationQuery { db: &db };
-            let user_relation_mutation = UserRelationMutation::init(&db);
-            let ticket_query = TicketQuery::init_query(&db);
-            let ticket_mutation = TicketMutation { db: &db };
             match create_ticket(
                 user.into_inner(),
-                user_relation_query,
-                user_relation_mutation,
-                ticket_query,
-                ticket_mutation,
                 &mut params.into_inner().ticket,
+                TicketService::init(&db),
             )
             .await
             {
                 Ok(ticket) => HttpResponse::Created().json(UpsertTicketResponse { ticket }),
                 Err(e) => match e {
-                    UseCaseError::NotFound => response_404("UserRelation not found."),
-                    _ => response_500(),
+                    CreateTicketError::NotFound(message) => {
+                        dbg!(message);
+                        response_404("UserRelation not found.")
+                    }
+                    CreateTicketError::InternalServerError(message) => {
+                        dbg!(message);
+                        response_500()
+                    }
                 },
             }
         }
