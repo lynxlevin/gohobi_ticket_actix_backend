@@ -27,10 +27,7 @@ pub async fn read_ticket(
     ticket_id: i64,
     ticket_service: TicketService<'_>,
 ) -> Result<TicketVisible, ReadTicketError> {
-    let ticket = ticket_service
-        .get_ticket_by_id(user.id, ticket_id)
-        .await
-        .map_err(ReadTicketError::from)?;
+    let ticket = ticket_service.get_ticket_by_id(user.id, ticket_id).await?;
 
     if ticket.giving_user_id == user.id {
         return Err(ReadTicketError::Forbidden(
@@ -43,10 +40,7 @@ pub async fn read_ticket(
         )));
     }
 
-    let ticket = ticket_service
-        .mark_ticket_read(ticket)
-        .await
-        .map_err(ReadTicketError::from)?;
+    let ticket = ticket_service.mark_ticket_read(ticket).await?;
 
     Ok(TicketVisible::from(ticket))
 }

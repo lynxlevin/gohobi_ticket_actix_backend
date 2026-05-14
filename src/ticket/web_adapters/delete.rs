@@ -3,19 +3,13 @@ use actix_web::{
     web::{Data, Path, ReqData},
     HttpResponse,
 };
-use common::errors::{
-    error_responses::{response_401, response_403, response_404, response_500},
-    use_case_errors::UseCaseError,
-};
-use db_adapters::{
-    ticket::{TicketMutation, TicketQuery},
-    user_relation::{UserRelationMutation, UserRelationQuery},
-};
+use common::errors::error_responses::{response_401, response_403, response_404, response_500};
+use db_adapters::ticket_service::TicketService;
 use entities::users_user;
 use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 
-use crate::use_cases::delete::delete_ticket;
+use crate::use_cases::delete::{delete_ticket, DeleteTicketError};
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
@@ -30,25 +24,22 @@ async fn delete_ticket_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let user_relation_query = UserRelationQuery { db: &db };
-            let user_relation_mutation = UserRelationMutation::init(&db);
-            let ticket_query = TicketQuery::init_query(&db);
-            let ticket_mutation = TicketMutation { db: &db };
+            let ticket_service = TicketService::init(&db);
             match delete_ticket(
                 user.into_inner(),
-                user_relation_query,
-                user_relation_mutation,
-                ticket_query,
-                ticket_mutation,
                 path_param.into_inner().ticket_id,
+                ticket_service,
             )
             .await
             {
                 Ok(_) => HttpResponse::NoContent().finish(),
                 Err(e) => match e {
-                    UseCaseError::Forbidden => response_403("You cannot delete this ticket."),
-                    UseCaseError::NotFound => response_404("Ticket not found."),
-                    _ => response_500(),
+                    DeleteTicketError::Forbidden(message) => response_403(&message),
+                    DeleteTicketError::NotFound(message) => response_404(&message),
+                    DeleteTicketError::InternalServerError(message) => {
+                        dbg!(message);
+                        response_500()
+                    }
                 },
             }
         }

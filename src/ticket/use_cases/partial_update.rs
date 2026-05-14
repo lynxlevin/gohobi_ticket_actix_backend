@@ -33,14 +33,11 @@ pub async fn partial_update_ticket(
     ticket_id: i64,
     params: &mut UpdateTicketParams,
 ) -> Result<TicketVisible, PartialUpdateTicketError> {
-    let ticket = ticket_service
-        .get_ticket_by_id(user.id, ticket_id)
-        .await
-        .map_err(PartialUpdateTicketError::from)?;
+    let ticket = ticket_service.get_ticket_by_id(user.id, ticket_id).await?;
 
     if ticket.giving_user_id != user.id {
         return Err(PartialUpdateTicketError::Forbidden(
-            "This user is not allowed to update this ticket.".to_string(),
+            "You cannot update a ticket you received.".to_string(),
         ));
     }
     if params
@@ -57,10 +54,7 @@ pub async fn partial_update_ticket(
         params.status = Some(TicketStatus::Edited);
     }
 
-    let ticket = ticket_service
-        .update_ticket(ticket, params.clone())
-        .await
-        .map_err(PartialUpdateTicketError::from)?;
+    let ticket = ticket_service.update_ticket(ticket, params.clone()).await?;
 
     Ok(TicketVisible::from(ticket))
 }

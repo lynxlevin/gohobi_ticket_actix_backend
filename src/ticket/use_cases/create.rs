@@ -30,15 +30,13 @@ pub async fn create_ticket(
     if params.is_special {
         let special_ticket_exists = ticket_service
             .check_special_ticket_existence(user.id, params.user_relation_id, params.gift_date)
-            .await
-            .map_err(CreateTicketError::from)?;
+            .await?;
         params.is_special = !special_ticket_exists;
     }
 
     let ticket = ticket_service
         .create_ticket(user.id, params.clone())
-        .await
-        .map_err(CreateTicketError::from)?;
+        .await?;
 
     Ok(TicketVisible::from(ticket))
 }

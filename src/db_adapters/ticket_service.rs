@@ -1,9 +1,9 @@
 use chrono::{Datelike, NaiveDate, Utc};
-use entities::{custom_types::TicketStatus, tickets_ticket, user_relations_userrelation};
+use entities::{custom_types::TicketStatus, tickets_ticket, user_relations_userrelation, wish};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, DbConn, EntityTrait, IntoActiveModel,
-    JoinType::LeftJoin, PaginatorTrait, QueryFilter, QuerySelect, RelationTrait, Set,
-    TransactionError, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseTransaction, DbConn, EntityTrait,
+    IntoActiveModel, JoinType::LeftJoin, ModelTrait, Order, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, RelationTrait, Set, TransactionError, TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -48,6 +48,22 @@ fn parse_transaction_error(e: TransactionError<TicketServiceError>) -> TicketSer
     }
 }
 
+async fn get_user_relation(
+    txn: &DatabaseTransaction,
+    user_id: i64,
+    user_relation_id: i64,
+) -> Result<user_relations_userrelation::Model, TicketServiceError> {
+    user_relations_userrelation::Entity::find_by_id(user_relation_id)
+        .filter(
+            Condition::any()
+                .add(user_relations_userrelation::Column::User1Id.eq(user_id))
+                .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
+        )
+        .one(txn)
+        .await?
+        .ok_or(TicketServiceError::UserRelationNotFound(user_relation_id))
+}
+
 impl<'a> TicketService<'a> {
     pub fn init(db: &'a DbConn) -> Self {
         Self { db }
@@ -69,6 +85,29 @@ impl<'a> TicketService<'a> {
                     .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
             )
             .filter(tickets_ticket::Column::Id.eq(ticket_id))
+            .one(self.db)
+            .await?
+            .ok_or(TicketServiceError::TicketNotFound(ticket_id))
+    }
+
+    pub async fn get_ticket_with_wish_by_id(
+        &self,
+        user_id: i64,
+        ticket_id: i64,
+    ) -> Result<(tickets_ticket::Model, Option<wish::Model>), TicketServiceError> {
+        tickets_ticket::Entity::find()
+            .join(
+                LeftJoin,
+                tickets_ticket::Relation::UserRelationsUserrelation.def(),
+            )
+            .join(LeftJoin, tickets_ticket::Relation::Wish.def())
+            .filter(
+                Condition::any()
+                    .add(user_relations_userrelation::Column::User1Id.eq(user_id))
+                    .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
+            )
+            .filter(tickets_ticket::Column::Id.eq(ticket_id))
+            .select_also(wish::Entity)
             .one(self.db)
             .await?
             .ok_or(TicketServiceError::TicketNotFound(ticket_id))
@@ -118,17 +157,7 @@ impl<'a> TicketService<'a> {
             .transaction(|txn| {
                 Box::pin(async move {
                     let user_relation =
-                        user_relations_userrelation::Entity::find_by_id(params.user_relation_id)
-                            .filter(
-                                Condition::any()
-                                    .add(user_relations_userrelation::Column::User1Id.eq(user_id))
-                                    .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
-                            )
-                            .one(txn)
-                            .await?
-                            .ok_or(TicketServiceError::UserRelationNotFound(
-                                params.user_relation_id,
-                            ))?;
+                        get_user_relation(txn, user_id, params.user_relation_id).await?;
                     let now = Utc::now();
                     let status = if params.is_draft {
                         TicketStatus::Draft
@@ -211,6 +240,63 @@ impl<'a> TicketService<'a> {
         let ticket = ticket.update(self.db).await?;
 
         Ok(ticket)
+    }
+
+    pub async fn delete_ticket(
+        &self,
+        user_id: i64,
+        ticket: tickets_ticket::Model,
+    ) -> Result<(), TicketServiceError> {
+        self.db
+            .transaction(|txn| {
+                Box::pin(async move {
+                    let user_relation =
+                        get_user_relation(txn, user_id, ticket.user_relation_id).await?;
+                    let gift_date = ticket.gift_date;
+                    let giving_user_id = ticket.giving_user_id;
+                    ticket.delete(txn).await?;
+
+                    if giving_user_id == user_relation.user_1_id {
+                        if user_relation
+                            .first_user_1_giving_ticket_date
+                            .is_some_and(|date| date == gift_date)
+                        {
+                            let oldest_ticket = tickets_ticket::Entity::find()
+                                .filter(tickets_ticket::Column::UserRelationId.eq(user_relation.id))
+                                .filter(tickets_ticket::Column::GivingUserId.eq(user_id))
+                                .order_by(tickets_ticket::Column::GiftDate, Order::Asc)
+                                .one(txn)
+                                .await?;
+                            let mut user_relation = user_relation.into_active_model();
+                            user_relation.first_user_1_giving_ticket_date =
+                                Set(oldest_ticket.and_then(|t| Some(t.gift_date)));
+                            user_relation.updated_at = Set(Utc::now().into());
+                            user_relation.update(txn).await?;
+                        }
+                    } else {
+                        if user_relation
+                            .first_user_2_giving_ticket_date
+                            .is_some_and(|date| date == gift_date)
+                        {
+                            let oldest_ticket = tickets_ticket::Entity::find()
+                                .filter(tickets_ticket::Column::UserRelationId.eq(user_relation.id))
+                                .filter(tickets_ticket::Column::GivingUserId.eq(user_id))
+                                .order_by(tickets_ticket::Column::GiftDate, Order::Asc)
+                                .one(txn)
+                                .await?;
+                            let mut user_relation = user_relation.into_active_model();
+                            user_relation.first_user_2_giving_ticket_date =
+                                Set(oldest_ticket.and_then(|t| Some(t.gift_date)));
+                            user_relation.updated_at = Set(Utc::now().into());
+                            user_relation.update(txn).await?;
+                        }
+                    }
+
+                    Ok(())
+                })
+            })
+            .await
+            .map_err(parse_transaction_error)
     }
 
     // pub async fn delete(self, ticket: tickets_ticket::Model) -> Result<(), DbErr> {
