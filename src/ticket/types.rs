@@ -1,5 +1,5 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
-use db_adapters::{ticket::types::UpdateTicketParams, ticket_service::CreateTicketParams};
+use db_adapters::ticket_service::{CreateTicketParams, UpdateTicketParams};
 use entities::{
     custom_types::{TicketStatus, WishStatus},
     tickets_ticket, wish,

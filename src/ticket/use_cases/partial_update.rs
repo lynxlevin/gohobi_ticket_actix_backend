@@ -1,49 +1,66 @@
-use common::errors::use_case_errors::UseCaseError;
-use db_adapters::ticket::{types::UpdateTicketParams, TicketMutation, TicketQuery};
-use entities::{custom_types::TicketStatus, users_user};
+use db_adapters::ticket_service::{TicketService, TicketServiceError, UpdateTicketParams};
+use entities::{
+    custom_types::{TicketStatus, PUBLISHED_STATUSES},
+    users_user,
+};
+use thiserror::Error;
 
 use crate::TicketVisible;
 
-const PUBLISHED_STATUSES: [TicketStatus; 3] = [
-    TicketStatus::Unread,
-    TicketStatus::Read,
-    TicketStatus::Edited,
-];
+#[derive(Debug, Error)]
+pub enum PartialUpdateTicketError {
+    #[error("{0}")]
+    NotFound(String),
+    #[error("{0}")]
+    Forbidden(String),
+    #[error("{0}")]
+    InternalServerError(String),
+}
+impl From<TicketServiceError> for PartialUpdateTicketError {
+    fn from(e: TicketServiceError) -> Self {
+        match e {
+            TicketServiceError::TicketNotFound(_) => {
+                PartialUpdateTicketError::NotFound(e.to_string())
+            }
+            _ => PartialUpdateTicketError::InternalServerError(e.to_string()),
+        }
+    }
+}
 
 pub async fn partial_update_ticket(
     user: users_user::Model,
-    ticket_query: TicketQuery<'_>,
-    ticket_mutation: TicketMutation<'_>,
+    ticket_service: TicketService<'_>,
     ticket_id: i64,
     params: &mut UpdateTicketParams,
-) -> Result<TicketVisible, UseCaseError> {
-    let ticket = ticket_query
-        .filter_which_user_has_access(user.id)
-        .get_by_id(ticket_id)
+) -> Result<TicketVisible, PartialUpdateTicketError> {
+    let ticket = ticket_service
+        .get_ticket_by_id(user.id, ticket_id)
         .await
-        .map_err(|_| UseCaseError::InternalServerError)?
-        .ok_or(UseCaseError::NotFound)?;
+        .map_err(PartialUpdateTicketError::from)?;
 
     if ticket.giving_user_id != user.id {
-        return Err(UseCaseError::Forbidden);
-    };
-
+        return Err(PartialUpdateTicketError::Forbidden(
+            "This user is not allowed to update this ticket.".to_string(),
+        ));
+    }
     if params
         .status
         .clone()
         .is_some_and(|status| status == TicketStatus::Draft)
         && PUBLISHED_STATUSES.contains(&(&ticket.status).into())
     {
-        return Err(UseCaseError::Forbidden);
+        return Err(PartialUpdateTicketError::Forbidden(
+            "This ticket cannot be turned back to draft state.".to_string(),
+        ));
     };
-
     if params.description.is_some() && ticket.status == TicketStatus::Read.to_value() {
         params.status = Some(TicketStatus::Edited);
     }
 
-    ticket_mutation
-        .update(ticket, params.clone())
+    let ticket = ticket_service
+        .update_ticket(ticket, params.clone())
         .await
-        .map(|ticket| TicketVisible::from(ticket))
-        .map_err(|_| UseCaseError::InternalServerError)
+        .map_err(PartialUpdateTicketError::from)?;
+
+    Ok(TicketVisible::from(ticket))
 }

@@ -3,17 +3,15 @@ use actix_web::{
     web::{Data, Json, Path, ReqData},
     HttpResponse,
 };
-use common::errors::{
-    error_responses::{response_401, response_403, response_404, response_500},
-    use_case_errors::UseCaseError,
-};
-use db_adapters::ticket::{TicketMutation, TicketQuery};
+use common::errors::error_responses::{response_401, response_403, response_404, response_500};
+use db_adapters::ticket_service::TicketService;
 use entities::users_user;
 use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    use_cases::partial_update::partial_update_ticket, UpdateTicketRequest, UpsertTicketResponse,
+    use_cases::partial_update::{partial_update_ticket, PartialUpdateTicketError},
+    UpdateTicketRequest, UpsertTicketResponse,
 };
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -30,12 +28,10 @@ async fn partial_update_ticket_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let ticket_query = TicketQuery::init_query(&db);
-            let ticket_mutation = TicketMutation { db: &db };
+            let ticket_service = TicketService::init(&db);
             match partial_update_ticket(
                 user.into_inner(),
-                ticket_query,
-                ticket_mutation,
+                ticket_service,
                 path_param.into_inner().ticket_id,
                 &mut params.into_inner().ticket,
             )
@@ -43,9 +39,12 @@ async fn partial_update_ticket_endpoint(
             {
                 Ok(ticket) => HttpResponse::Ok().json(UpsertTicketResponse { ticket }),
                 Err(e) => match e {
-                    UseCaseError::Forbidden => response_403("You cannot update this ticket."),
-                    UseCaseError::NotFound => response_404("Ticket not found."),
-                    _ => response_500(),
+                    PartialUpdateTicketError::Forbidden(message) => response_403(&message),
+                    PartialUpdateTicketError::NotFound(message) => response_404(&message),
+                    PartialUpdateTicketError::InternalServerError(message) => {
+                        dbg!(message);
+                        response_500()
+                    }
                 },
             }
         }

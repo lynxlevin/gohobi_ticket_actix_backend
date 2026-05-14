@@ -1,8 +1,9 @@
 use chrono::{Datelike, NaiveDate, Utc};
 use entities::{custom_types::TicketStatus, tickets_ticket, user_relations_userrelation};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, DbConn, EntityTrait, IntoActiveModel, PaginatorTrait,
-    QueryFilter, Set, TransactionError, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, Condition, DbConn, EntityTrait, IntoActiveModel,
+    JoinType::LeftJoin, PaginatorTrait, QueryFilter, QuerySelect, RelationTrait, Set,
+    TransactionError, TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -16,12 +17,22 @@ pub struct CreateTicketParams {
     pub is_draft: bool,
 }
 
+// MYMEMO: UpdateTicketParams changed
+#[derive(Deserialize, Debug, Serialize, Clone, Default)]
+pub struct UpdateTicketParams {
+    pub description: Option<String>,
+    pub status: Option<TicketStatus>,
+    pub is_special: Option<bool>,
+}
+
 #[derive(Debug, Error)]
 pub enum TicketServiceError {
     #[error(transparent)]
     DbErr(#[from] sea_orm::DbErr),
     #[error("UserRelation not found for id: {0}")]
     UserRelationNotFound(i64),
+    #[error("Ticket not found for id: {0}")]
+    TicketNotFound(i64),
     #[error("{0}")]
     ValidationError(String),
 }
@@ -40,6 +51,27 @@ fn parse_transaction_error(e: TransactionError<TicketServiceError>) -> TicketSer
 impl<'a> TicketService<'a> {
     pub fn init(db: &'a DbConn) -> Self {
         Self { db }
+    }
+
+    pub async fn get_ticket_by_id(
+        &self,
+        user_id: i64,
+        ticket_id: i64,
+    ) -> Result<tickets_ticket::Model, TicketServiceError> {
+        tickets_ticket::Entity::find()
+            .join(
+                LeftJoin,
+                tickets_ticket::Relation::UserRelationsUserrelation.def(),
+            )
+            .filter(
+                Condition::any()
+                    .add(user_relations_userrelation::Column::User1Id.eq(user_id))
+                    .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
+            )
+            .filter(tickets_ticket::Column::Id.eq(ticket_id))
+            .one(self.db)
+            .await?
+            .ok_or(TicketServiceError::TicketNotFound(ticket_id))
     }
 
     pub async fn check_special_ticket_existence(
@@ -78,14 +110,13 @@ impl<'a> TicketService<'a> {
     }
 
     pub async fn create_ticket(
-        self,
+        &self,
         user_id: i64,
         params: CreateTicketParams,
     ) -> Result<tickets_ticket::Model, TicketServiceError> {
         self.db
             .transaction(|txn| {
                 Box::pin(async move {
-                    // MYMEMO: execute inside transaction
                     let user_relation =
                         user_relations_userrelation::Entity::find_by_id(params.user_relation_id)
                             .filter(
@@ -149,24 +180,38 @@ impl<'a> TicketService<'a> {
             .map_err(parse_transaction_error)
     }
 
-    // pub async fn update(
-    //     self,
-    //     ticket: tickets_ticket::Model,
-    //     params: UpdateTicketParams,
-    // ) -> Result<tickets_ticket::Model, DbErr> {
-    //     let mut ticket = ticket.into_active_model();
-    //     if let Some(description) = params.description {
-    //         ticket.description = Set(description);
-    //     };
-    //     if let Some(status) = params.status {
-    //         ticket.status = Set(status.to_value());
-    //     };
-    //     if let Some(is_special) = params.is_special {
-    //         ticket.is_special = Set(is_special);
-    //     };
-    //     ticket.updated_at = Set(Utc::now().into());
-    //     ticket.update(self.db).await
-    // }
+    pub async fn update_ticket(
+        &self,
+        ticket: tickets_ticket::Model,
+        params: UpdateTicketParams,
+    ) -> Result<tickets_ticket::Model, TicketServiceError> {
+        let mut ticket = ticket.into_active_model();
+        if let Some(description) = params.description {
+            ticket.description = Set(description);
+        };
+        if let Some(status) = params.status {
+            ticket.status = Set(status.to_value());
+        };
+        if let Some(is_special) = params.is_special {
+            ticket.is_special = Set(is_special);
+        }
+        ticket.updated_at = Set(Utc::now().into());
+        let ticket = ticket.update(self.db).await?;
+
+        Ok(ticket)
+    }
+
+    pub async fn mark_ticket_read(
+        &self,
+        ticket: tickets_ticket::Model,
+    ) -> Result<tickets_ticket::Model, TicketServiceError> {
+        let mut ticket = ticket.into_active_model();
+        ticket.status = Set(TicketStatus::Read.to_value());
+        ticket.updated_at = Set(Utc::now().into());
+        let ticket = ticket.update(self.db).await?;
+
+        Ok(ticket)
+    }
 
     // pub async fn delete(self, ticket: tickets_ticket::Model) -> Result<(), DbErr> {
     //     ticket.delete(self.db).await.map(|_| ())

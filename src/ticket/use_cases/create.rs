@@ -11,29 +11,34 @@ pub enum CreateTicketError {
     #[error("{0}")]
     InternalServerError(String),
 }
-
-pub async fn create_ticket(
-    user: users_user::Model,
-    params: &mut CreateTicketParams,
-    ticket_repository: TicketService<'_>,
-) -> Result<TicketVisible, CreateTicketError> {
-    if params.is_special {
-        let special_ticket_exists = ticket_repository
-            .check_special_ticket_existence(user.id, params.user_relation_id, params.gift_date)
-            .await
-            .map_err(|e| CreateTicketError::InternalServerError(e.to_string()))?;
-        params.is_special = !special_ticket_exists;
-    }
-
-    let ticket = ticket_repository
-        .create_ticket(user.id, params.clone())
-        .await
-        .map_err(|e| match e {
+impl From<TicketServiceError> for CreateTicketError {
+    fn from(e: TicketServiceError) -> Self {
+        match e {
             TicketServiceError::UserRelationNotFound(_) => {
                 CreateTicketError::NotFound(e.to_string())
             }
             _ => CreateTicketError::InternalServerError(e.to_string()),
-        })?;
+        }
+    }
+}
+
+pub async fn create_ticket(
+    user: users_user::Model,
+    params: &mut CreateTicketParams,
+    ticket_service: TicketService<'_>,
+) -> Result<TicketVisible, CreateTicketError> {
+    if params.is_special {
+        let special_ticket_exists = ticket_service
+            .check_special_ticket_existence(user.id, params.user_relation_id, params.gift_date)
+            .await
+            .map_err(CreateTicketError::from)?;
+        params.is_special = !special_ticket_exists;
+    }
+
+    let ticket = ticket_service
+        .create_ticket(user.id, params.clone())
+        .await
+        .map_err(CreateTicketError::from)?;
 
     Ok(TicketVisible::from(ticket))
 }

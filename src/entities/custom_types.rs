@@ -44,6 +44,12 @@ impl FromStr for TicketStatus {
     }
 }
 
+pub const PUBLISHED_STATUSES: [TicketStatus; 3] = [
+    TicketStatus::Unread,
+    TicketStatus::Read,
+    TicketStatus::Edited,
+];
+
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum WishStatus {

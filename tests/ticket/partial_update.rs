@@ -1,5 +1,5 @@
 use actix_web::{http, test, HttpMessage};
-use db_adapters::ticket::types::UpdateTicketParams;
+use db_adapters::ticket_service::UpdateTicketParams;
 use entities::{custom_types::TicketStatus, tickets_ticket};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{TicketVisible, UpdateTicketRequest, UpsertTicketResponse};
