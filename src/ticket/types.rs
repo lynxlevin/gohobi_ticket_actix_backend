@@ -129,17 +129,17 @@ pub enum WebPushResult {
 }
 
 #[derive(Deserialize, Debug, Serialize, Clone)]
-pub struct UseTicketParams {
+pub struct MakeWishParams {
     pub use_description: String,
 }
 
 #[derive(Deserialize, Debug, Serialize)]
-pub struct UseTicketRequest {
-    pub ticket: UseTicketParams,
+pub struct MakeWishRequest {
+    pub ticket: MakeWishParams,
 }
 
 #[derive(Deserialize, Debug, Serialize)]
-pub struct UseTicketResponse {
+pub struct MakeWishResponse {
     pub ticket: TicketVisible,
     pub web_push_result: WebPushResult,
 }

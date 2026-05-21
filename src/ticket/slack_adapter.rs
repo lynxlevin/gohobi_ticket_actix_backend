@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use common::{errors::use_case_errors::UseCaseError, settings::types::Settings};
+use common::settings::types::Settings;
 use db_adapters::user_relation::types::UserRelationWithName;
 use entities::tickets_ticket;
 use serde_json::json;
@@ -52,7 +52,7 @@ pub fn get_message(
 pub async fn send_slack_message(
     message: &serde_json::Value,
     settings: &Settings,
-) -> Result<(), UseCaseError> {
+) -> Result<(), String> {
     let config = actix_tls::connect::rustls_0_23::reexports::ClientConfig::builder()
         .with_root_certificates(actix_tls::connect::rustls_0_23::webpki_roots_cert_store())
         .with_no_client_auth();
@@ -68,9 +68,6 @@ pub async fn send_slack_message(
         .content_type("application/json")
         .send_json(message)
         .await
-        .map_err(|e| {
-            dbg!(e);
-            UseCaseError::InternalServerError
-        })?;
+        .map_err(|e| e.to_string())?;
     Ok(())
 }

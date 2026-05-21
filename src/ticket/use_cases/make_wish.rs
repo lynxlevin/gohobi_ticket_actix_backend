@@ -1,53 +1,80 @@
 use crate::{
     slack_adapter,
-    types::{UseTicketResponse, WebPushResult},
+    types::{MakeWishResponse, WebPushResult},
 };
 use common::{
-    errors::use_case_errors::UseCaseError,
     settings::types::Settings,
     web_push::{send_web_push, Message, MessageType, SendWebPushResult},
 };
 use db_adapters::{
-    ticket::{types::CreateWishParams, TicketQuery, WishMutation},
+    ticket::{types::CreateWishParams, WishMutation},
+    ticket_service::{TicketService, TicketServiceError},
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
-use entities::users_user;
+use entities::{custom_types::TicketStatus, users_user};
+use thiserror::Error;
 
-use crate::{TicketVisible, UseTicketParams};
+use crate::{MakeWishParams, TicketVisible};
 
-pub async fn use_ticket(
+#[derive(Debug, Error)]
+pub enum MakeWishError {
+    #[error("{0}")]
+    NotFound(String),
+    #[error("{0}")]
+    Forbidden(String),
+    #[error("{0}")]
+    InternalServerError(String),
+}
+impl From<TicketServiceError> for MakeWishError {
+    fn from(e: TicketServiceError) -> Self {
+        match e {
+            TicketServiceError::TicketNotFound(_) => MakeWishError::NotFound(e.to_string()),
+            _ => MakeWishError::InternalServerError(e.to_string()),
+        }
+    }
+}
+
+pub async fn make_wish(
     user: users_user::Model,
     user_relation_query: UserRelationQuery<'_>,
-    ticket_query: TicketQuery<'_>,
+    ticket_service: TicketService<'_>,
     wish_mutation: WishMutation<'_>,
     web_push_subscription_query: WebPushSubscriptionQuery<'_>,
     web_push_subscription_mutation: WebPushSubscriptionMutation<'_>,
     ticket_id: i64,
-    params: UseTicketParams,
+    params: MakeWishParams,
     settings: &Settings,
-) -> Result<UseTicketResponse, UseCaseError> {
-    let ticket = ticket_query
-        .filter_which_user_has_access(user.id)
-        .exclude_draft_tickets()
-        .get_by_id(ticket_id)
-        .await
-        .map_err(|_| UseCaseError::InternalServerError)?
-        .ok_or(UseCaseError::NotFound)?;
+) -> Result<MakeWishResponse, MakeWishError> {
+    let ticket = ticket_service.get_ticket_by_id(user.id, ticket_id).await?;
 
+    if ticket.status == TicketStatus::Draft.to_value() {
+        return Err(MakeWishError::NotFound(format!(
+            "Ticket not found for id: {}",
+            ticket_id
+        )));
+    }
     if ticket.giving_user_id == user.id {
-        return Err(UseCaseError::Forbidden);
+        return Err(MakeWishError::Forbidden(
+            "You cannot delete a ticket you gave.".to_string(),
+        ));
     };
 
     let user_relation = user_relation_query
         .find_by_id_with_user_name(ticket.user_relation_id, user.id)
         .await
-        .map_err(|_| UseCaseError::InternalServerError)?
-        .ok_or(UseCaseError::NotFound)?;
+        .map_err(|e| MakeWishError::InternalServerError(e.to_string()))?
+        .ok_or(MakeWishError::InternalServerError(format!(
+            "UserRelation for ticket_id: {} not found. This should not happen.",
+            ticket_id
+        )))?;
 
     if user_relation.use_slack {
+        // TODO: When dropping Slack feature, user_relation can be retrieved alongside with ticket to reduce query.
         let message = slack_adapter::get_message(&ticket, &user_relation, &params.use_description);
-        slack_adapter::send_slack_message(&message, &settings).await?;
+        slack_adapter::send_slack_message(&message, &settings)
+            .await
+            .map_err(|e| MakeWishError::InternalServerError(e));
     }
 
     let wish = match wish_mutation
@@ -59,7 +86,7 @@ pub async fn use_ticket(
         .await
     {
         Ok(wish) => wish,
-        Err(_) => return Err(UseCaseError::InternalServerError),
+        Err(e) => return Err(MakeWishError::InternalServerError(e.to_string())),
     };
 
     let related_user_id = match user.id == user_relation.user_1_id {
@@ -82,7 +109,7 @@ pub async fn use_ticket(
                         false => Some(format!("{}からのおねがい", user.username)),
                     },
                     body: params.use_description,
-                    message_type: MessageType::UseTicket,
+                    message_type: MessageType::MakeWish,
                     user_relation_id: Some(user_relation.id),
                     ticket_id: None,
                     wish_id: Some(wish.id),
@@ -103,7 +130,7 @@ pub async fn use_ticket(
         None => WebPushResult::NotSent,
     };
 
-    Ok(UseTicketResponse {
+    Ok(MakeWishResponse {
         ticket: TicketVisible::from(ticket).with_wish(&wish),
         web_push_result,
     })
