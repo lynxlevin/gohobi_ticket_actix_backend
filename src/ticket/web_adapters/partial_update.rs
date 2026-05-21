@@ -28,10 +28,9 @@ async fn partial_update_ticket_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let ticket_service = TicketService::init(&db);
             match partial_update_ticket(
                 user.into_inner(),
-                ticket_service,
+                TicketService::init(&db),
                 path_param.into_inner().ticket_id,
                 &mut params.into_inner().ticket,
             )

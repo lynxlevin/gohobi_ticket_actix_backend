@@ -25,6 +25,14 @@ pub struct UpdateTicketParams {
     pub is_special: Option<bool>,
 }
 
+#[derive(Deserialize, Debug, Serialize, Clone, Default)]
+pub struct ListTicketsWithWishParams {
+    pub text_query: Option<Vec<String>>,
+    pub gift_date_gte: Option<NaiveDate>,
+    pub gift_date_lte: Option<NaiveDate>,
+    pub is_giving: bool,
+}
+
 #[derive(Debug, Error)]
 pub enum TicketServiceError {
     #[error(transparent)]
@@ -37,6 +45,7 @@ pub enum TicketServiceError {
     ValidationError(String),
 }
 
+#[derive(Clone)]
 pub struct TicketService<'a> {
     pub db: &'a DbConn,
 }
@@ -111,6 +120,59 @@ impl<'a> TicketService<'a> {
             .one(self.db)
             .await?
             .ok_or(TicketServiceError::TicketNotFound(ticket_id))
+    }
+
+    pub async fn list_tickets_with_wish(
+        &self,
+        user_id: i64,
+        user_relation_id: i64,
+        params: ListTicketsWithWishParams,
+    ) -> Result<Vec<(tickets_ticket::Model, Option<wish::Model>)>, TicketServiceError> {
+        let mut query = tickets_ticket::Entity::find()
+            .join(LeftJoin, tickets_ticket::Relation::Wish.def())
+            .join(
+                LeftJoin,
+                tickets_ticket::Relation::UserRelationsUserrelation.def(),
+            )
+            .filter(
+                Condition::any()
+                    .add(user_relations_userrelation::Column::User1Id.eq(user_id))
+                    .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
+            )
+            .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id));
+        if let Some(text_query) = params.text_query {
+            let mut cond = Condition::all();
+            for text in text_query {
+                cond = cond.add(
+                    Condition::any()
+                        .add(tickets_ticket::Column::Description.contains(&text))
+                        .add(wish::Column::Description.contains(&text)),
+                )
+            }
+            query = query.filter(cond);
+        }
+        if let Some(gift_date_gte) = params.gift_date_gte {
+            query = query.filter(tickets_ticket::Column::GiftDate.gte(gift_date_gte));
+        }
+        if let Some(gift_date_lte) = params.gift_date_lte {
+            query = query.filter(tickets_ticket::Column::GiftDate.lte(gift_date_lte));
+        }
+        if params.is_giving {
+            query = query.filter(tickets_ticket::Column::GivingUserId.eq(user_id));
+        } else {
+            query = query
+                .filter(tickets_ticket::Column::GivingUserId.ne(user_id))
+                .filter(tickets_ticket::Column::Status.ne(TicketStatus::Draft.to_value()));
+        }
+
+        let tickets = query
+            .order_by(tickets_ticket::Column::GiftDate, Order::Desc)
+            .order_by(tickets_ticket::Column::CreatedAt, Order::Desc)
+            .select_also(wish::Entity)
+            .all(self.db)
+            .await?;
+
+        Ok(tickets)
     }
 
     pub async fn check_special_ticket_existence(

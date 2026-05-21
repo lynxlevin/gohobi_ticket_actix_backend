@@ -1,58 +1,56 @@
 use chrono::NaiveDate;
-use common::errors::use_case_errors::UseCaseError;
-use db_adapters::ticket::{Order, TicketQuery};
+use db_adapters::ticket_service::{ListTicketsWithWishParams, TicketService, TicketServiceError};
 use entities::users_user;
 use serde::Deserialize;
+use thiserror::Error;
 
 use crate::{ListTicketResponse, TicketVisible};
 
-#[derive(Debug, Deserialize, Default)]
-pub struct ListTicketsQueryParam {
+#[derive(Deserialize, Debug, Default)]
+pub struct ListTicketsParams {
     pub user_relation_id: i64,
-    pub is_giving: Option<String>,
+    pub text_query: Option<Vec<String>>,
     pub gift_date_gte: Option<NaiveDate>,
     pub gift_date_lte: Option<NaiveDate>,
+    pub is_giving: bool,
+}
+
+#[derive(Debug, Error)]
+pub enum ListTicketsError {
+    #[error("{0}")]
+    InternalServerError(String),
+}
+impl From<TicketServiceError> for ListTicketsError {
+    fn from(e: TicketServiceError) -> Self {
+        ListTicketsError::InternalServerError(e.to_string())
+    }
 }
 
 pub async fn list_tickets(
     user: users_user::Model,
-    ticket_query: TicketQuery<'_>,
-    query_param: ListTicketsQueryParam,
-    text_query: Option<Vec<&str>>,
-) -> Result<ListTicketResponse, UseCaseError> {
-    let is_giving = query_param
-        .is_giving
-        .is_some_and(|x| x != "false".to_string());
+    ticket_service: TicketService<'_>,
+    params: ListTicketsParams,
+) -> Result<ListTicketResponse, ListTicketsError> {
+    let tickets_with_wish = ticket_service
+        .list_tickets_with_wish(
+            user.id,
+            params.user_relation_id,
+            ListTicketsWithWishParams {
+                text_query: params.text_query,
+                gift_date_gte: params.gift_date_gte,
+                gift_date_lte: params.gift_date_lte,
+                is_giving: params.is_giving,
+            },
+        )
+        .await?;
 
-    let mut ticket_query = ticket_query
-        .filter_which_user_has_access(user.id)
-        .filter_by_relation(query_param.user_relation_id)
-        .join_wish();
-    if let Some(text_query) = text_query {
-        ticket_query = ticket_query.filter_contains_texts(text_query);
-    }
-    if let Some(gift_date_gte) = query_param.gift_date_gte {
-        ticket_query = ticket_query.filter_gift_date_gte(gift_date_gte);
-    }
-    if let Some(gift_date_lte) = query_param.gift_date_lte {
-        ticket_query = ticket_query.filter_gift_date_lte(gift_date_lte);
-    }
-    ticket_query
-        .order_by_gift_date(Order::Desc)
-        .order_by_created_at(Order::Desc)
-        .get_tickets_with_wish(user.id, is_giving)
-        .await
-        .map(|tickets| ListTicketResponse {
-            tickets: tickets
-                .iter()
-                .map(|(ticket, wish)| match wish {
-                    Some(wish) => TicketVisible::from(ticket).with_wish(wish),
-                    None => TicketVisible::from(ticket),
-                })
-                .collect(),
-        })
-        .map_err(|e| {
-            dbg!(e);
-            UseCaseError::InternalServerError
-        })
+    Ok(ListTicketResponse {
+        tickets: tickets_with_wish
+            .iter()
+            .map(|(ticket, wish)| match wish {
+                Some(wish) => TicketVisible::from(ticket).with_wish(wish),
+                None => TicketVisible::from(ticket),
+            })
+            .collect(),
+    })
 }

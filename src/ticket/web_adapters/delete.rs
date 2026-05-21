@@ -24,11 +24,10 @@ async fn delete_ticket_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let ticket_service = TicketService::init(&db);
             match delete_ticket(
                 user.into_inner(),
                 path_param.into_inner().ticket_id,
-                ticket_service,
+                TicketService::init(&db),
             )
             .await
             {
