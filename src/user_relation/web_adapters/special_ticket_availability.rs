@@ -3,18 +3,17 @@ use actix_web::{
     web::{Data, Path, Query, ReqData},
     HttpResponse,
 };
-use common::errors::{
-    error_responses::{response_400, response_401, response_404, response_500},
-    use_case_errors::UseCaseError,
-};
-use db_adapters::{ticket::TicketQuery, user_relation::UserRelationQuery};
+use common::errors::error_responses::{response_400, response_401, response_404, response_500};
+use db_adapters::{ticket_service::TicketService, user_relation::UserRelationQuery};
 use entities::users_user;
 use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     types::SpecialTicketAvailabilityQueryParam,
-    use_cases::special_ticket_availability::check_special_ticket_availability,
+    use_cases::special_ticket_availability::{
+        check_special_ticket_availability, CheckSpecialTicketAvailabilityError,
+    },
 };
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -34,21 +33,28 @@ async fn special_ticket_availability_endpoint(
             let query = query.into_inner();
             match query.validate() {
                 Ok(()) => {
-                    let ticket_query = TicketQuery::init_query(&db);
                     let user_relation_query = UserRelationQuery { db: &db };
                     match check_special_ticket_availability(
                         user.id,
                         path_param.user_relation_id,
                         user_relation_query,
-                        ticket_query,
+                        TicketService::init(&db),
                         query,
                     )
                     .await
                     {
                         Ok(res) => HttpResponse::Ok().json(res),
                         Err(e) => match e {
-                            UseCaseError::NotFound => response_404("UserRelation not found."),
-                            _ => response_500(),
+                            CheckSpecialTicketAvailabilityError::NotFound(message) => {
+                                response_404(&message)
+                            }
+                            CheckSpecialTicketAvailabilityError::ValidationError(message) => {
+                                response_400(&message)
+                            }
+                            CheckSpecialTicketAvailabilityError::InternalServerError(message) => {
+                                dbg!(message);
+                                response_500()
+                            }
                         },
                     }
                 }
