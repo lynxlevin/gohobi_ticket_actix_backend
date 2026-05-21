@@ -60,7 +60,7 @@ PUT {{endpoint}}/api/tickets/{{ticket_id}}/read/
 Content-Type: application/json
 
 ###
-# @name use_ticket
+# @name make_wish
 PUT {{endpoint}}/api/tickets/{{ticket_id}}/use/
 Content-Type: application/json
 

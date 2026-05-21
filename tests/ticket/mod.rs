@@ -1,7 +1,7 @@
 mod create;
 mod delete;
 mod list;
+mod make_wish;
+mod make_wish_slack_message_test;
 mod partial_update;
 mod read;
-mod use_ticket;
-mod use_ticket_slack_message_test;

@@ -2,7 +2,7 @@ use actix_web::{http, test, HttpMessage};
 use entities::custom_types::TicketStatus;
 use sea_orm::{ActiveModelTrait, DbErr};
 use serde_json::json;
-use ticket::{UseTicketParams, UseTicketRequest};
+use ticket::{MakeWishParams, MakeWishRequest};
 
 use crate::utils::{init_app_with_settings, Connections};
 use common::{
@@ -57,8 +57,8 @@ async fn happy_path_with_slack_message() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-        .set_json(UseTicketRequest {
-            ticket: UseTicketParams {
+        .set_json(MakeWishRequest {
+            ticket: MakeWishParams {
                 use_description: use_description.clone(),
             },
         })
@@ -124,8 +124,8 @@ async fn happy_path_with_slack_message_special_ticket() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-        .set_json(UseTicketRequest {
-            ticket: UseTicketParams {
+        .set_json(MakeWishRequest {
+            ticket: MakeWishParams {
                 use_description: use_description.clone(),
             },
         })
@@ -168,8 +168,8 @@ async fn happy_path_with_slack_message_not_sent_if_not_use_slack() -> Result<(),
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-        .set_json(UseTicketRequest {
-            ticket: UseTicketParams {
+        .set_json(MakeWishRequest {
+            ticket: MakeWishParams {
                 use_description: String::default(),
             },
         })

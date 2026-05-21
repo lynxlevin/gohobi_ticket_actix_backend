@@ -74,7 +74,7 @@ pub async fn make_wish(
         let message = slack_adapter::get_message(&ticket, &user_relation, &params.use_description);
         slack_adapter::send_slack_message(&message, &settings)
             .await
-            .map_err(|e| MakeWishError::InternalServerError(e));
+            .map_err(|e| MakeWishError::InternalServerError(e))?;
     }
 
     let wish = match wish_mutation

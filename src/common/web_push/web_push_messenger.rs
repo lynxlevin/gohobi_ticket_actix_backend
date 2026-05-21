@@ -20,7 +20,7 @@ const TTL_SECONDS: u64 = 60 * 60 * 23;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum MessageType {
-    UseTicket,
+    MakeWish,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
