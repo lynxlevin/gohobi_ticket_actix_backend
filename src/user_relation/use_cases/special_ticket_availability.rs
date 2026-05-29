@@ -1,7 +1,7 @@
 use crate::types::SpecialTicketAvailabilityQueryParam;
 use chrono::NaiveDate;
 use db_adapters::{
-    ticket_service::{TicketService, TicketServiceError},
+    ticket_service::{TicketService, TicketServiceError, TicketServiceQuery},
     user_relation::UserRelationQuery,
 };
 use thiserror::Error;

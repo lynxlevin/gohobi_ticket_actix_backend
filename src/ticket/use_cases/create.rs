@@ -1,4 +1,7 @@
-use db_adapters::ticket_service::{CreateTicketParams, TicketService, TicketServiceError};
+use db_adapters::ticket_service::{
+    CreateTicketParams, TicketService, TicketServiceError, TicketServiceMutation,
+    TicketServiceQuery,
+};
 use entities::users_user;
 use thiserror::Error;
 

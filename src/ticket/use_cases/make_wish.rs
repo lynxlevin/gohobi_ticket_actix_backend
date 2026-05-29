@@ -8,7 +8,7 @@ use common::{
 };
 use db_adapters::{
     ticket::{types::CreateWishParams, WishMutation},
-    ticket_service::{TicketService, TicketServiceError},
+    ticket_service::{TicketService, TicketServiceError, TicketServiceQuery},
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
