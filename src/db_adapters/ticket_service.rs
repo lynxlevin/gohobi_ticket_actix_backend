@@ -72,6 +72,12 @@ pub trait TicketServiceQuery {
         user_id: i64,
         ticket_id: i64,
     ) -> impl Future<Output = Result<(tickets_ticket::Model, Option<wish::Model>), TicketServiceError>>;
+    fn get_oldest_available_ticket(
+        &self,
+        receiving_user_id: i64,
+        user_relation_id: i64,
+        is_special: bool,
+    ) -> impl Future<Output = Result<Option<tickets_ticket::Model>, TicketServiceError>>;
     fn list_tickets_with_wish(
         &self,
         user_id: i64,
@@ -110,6 +116,23 @@ impl TicketServiceQuery for TicketService<'_> {
             .one(self.db)
             .await?
             .ok_or(TicketServiceError::TicketNotFound(ticket_id))
+    }
+    async fn get_oldest_available_ticket(
+        &self,
+        receiving_user_id: i64,
+        user_relation_id: i64,
+        is_special: bool,
+    ) -> Result<Option<tickets_ticket::Model>, TicketServiceError> {
+        get_query_tickets_with_access_to_user(receiving_user_id)
+            .join(LeftJoin, tickets_ticket::Relation::Wish.def())
+            .filter(tickets_ticket::Column::GivingUserId.ne(receiving_user_id))
+            .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id))
+            .filter(tickets_ticket::Column::IsSpecial.eq(is_special))
+            .filter(wish::Column::Id.is_null())
+            .order_by_asc(tickets_ticket::Column::GiftDate)
+            .one(self.db)
+            .await
+            .map_err(|e| e.into())
     }
 
     async fn list_tickets_with_wish(

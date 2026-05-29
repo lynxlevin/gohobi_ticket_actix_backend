@@ -66,10 +66,10 @@ pub struct SearchResponse {
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct AvailableTicketsResponse {
-    pub oldest: AvailableTicketsInner,
+    pub oldest: AvailableTicketsOldest,
 }
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub struct AvailableTicketsInner {
+pub struct AvailableTicketsOldest {
     pub normal: Option<TicketVisible>,
     pub special: Option<TicketVisible>,
 }
