@@ -6,7 +6,7 @@ use ticket::TicketVisible;
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
-use user_relation::{AvailableTicketsInner, AvailableTicketsResponse};
+use user_relation::{AvailableTicketsOldest, AvailableTicketsResponse};
 
 fn get_uri(user_relation_id: i64) -> String {
     format!(
@@ -34,24 +34,15 @@ async fn happy_path() -> Result<(), DbErr> {
         user_relation.id,
         &db,
     )
-    .await?;
-    normal_tickets.reverse();
-    let _normal_giving_ticket_oldest = normal_tickets.pop().unwrap();
-    let normal_unavailable_receiving_ticket_oldest = normal_tickets.pop().unwrap();
+    .await?
+    .into_iter();
+    let _normal_giving_ticket_oldest = normal_tickets.next().unwrap();
+    let normal_unavailable_receiving_ticket_oldest = normal_tickets.next().unwrap();
     let _ = factory::wish(&normal_unavailable_receiving_ticket_oldest)
         .insert(&db)
         .await?;
-    let normal_available_receiving_ticket_oldest = normal_tickets.pop().unwrap();
-    let _normal_available_receiving_ticket_newest = normal_tickets.pop().unwrap();
-    // MYMEMO: This may be better
-    // let mut normal_tickets = normal_tickets.iter().rev();
-    // let _normal_giving_ticket_oldest = normal_tickets.next().unwrap();
-    // let normal_unavailable_receiving_ticket_oldest = normal_tickets.next().unwrap();
-    // let _ = factory::wish(&normal_unavailable_receiving_ticket_oldest)
-    //     .insert(&db)
-    //     .await?;
-    // let normal_available_receiving_ticket_oldest = normal_tickets.next().unwrap();
-    // let _normal_available_receiving_ticket_newest = normal_tickets.next().unwrap();
+    let normal_available_receiving_ticket_oldest = normal_tickets.next().unwrap();
+    let _normal_available_receiving_ticket_newest = normal_tickets.next().unwrap();
 
     let mut special_tickets = create_special_tickets(
         vec![
@@ -63,15 +54,15 @@ async fn happy_path() -> Result<(), DbErr> {
         user_relation.id,
         &db,
     )
-    .await?;
-    special_tickets.reverse();
-    let _special_giving_ticket_oldest = special_tickets.pop().unwrap();
-    let special_unavailable_receiving_ticket_oldest = special_tickets.pop().unwrap();
+    .await?
+    .into_iter();
+    let _special_giving_ticket_oldest = special_tickets.next().unwrap();
+    let special_unavailable_receiving_ticket_oldest = special_tickets.next().unwrap();
     let _ = factory::wish(&special_unavailable_receiving_ticket_oldest)
         .insert(&db)
         .await?;
-    let special_available_receiving_ticket_oldest = special_tickets.pop().unwrap();
-    let _special_available_receiving_ticket_newest = special_tickets.pop().unwrap();
+    let special_available_receiving_ticket_oldest = special_tickets.next().unwrap();
+    let _special_available_receiving_ticket_newest = special_tickets.next().unwrap();
 
     let req = test::TestRequest::get()
         .uri(&get_uri(user_relation.id))
@@ -84,7 +75,7 @@ async fn happy_path() -> Result<(), DbErr> {
     let res: AvailableTicketsResponse = test::read_body_json(res).await;
 
     let expected = AvailableTicketsResponse {
-        oldest: AvailableTicketsInner {
+        oldest: AvailableTicketsOldest {
             normal: Some(TicketVisible::from(
                 normal_available_receiving_ticket_oldest,
             )),
@@ -115,20 +106,13 @@ async fn happy_path_none_available() -> Result<(), DbErr> {
         user_relation.id,
         &db,
     )
-    .await?;
-    normal_tickets.reverse();
-    let _normal_giving_ticket_oldest = normal_tickets.pop().unwrap();
-    let normal_unavailable_receiving_ticket_oldest = normal_tickets.pop().unwrap();
+    .await?
+    .into_iter();
+    let _normal_giving_ticket_oldest = normal_tickets.next().unwrap();
+    let normal_unavailable_receiving_ticket_oldest = normal_tickets.next().unwrap();
     let _ = factory::wish(&normal_unavailable_receiving_ticket_oldest)
         .insert(&db)
         .await?;
-    // MYMEMO: This may be better
-    // let mut normal_tickets = normal_tickets.iter().rev();
-    // let _normal_giving_ticket_oldest = normal_tickets.next().unwrap();
-    // let normal_unavailable_receiving_ticket_oldest = normal_tickets.next().unwrap();
-    // let _ = factory::wish(&normal_unavailable_receiving_ticket_oldest)
-    //     .insert(&db)
-    //     .await?;
 
     let mut special_tickets = create_special_tickets(
         vec![
@@ -138,10 +122,10 @@ async fn happy_path_none_available() -> Result<(), DbErr> {
         user_relation.id,
         &db,
     )
-    .await?;
-    special_tickets.reverse();
-    let _special_giving_ticket_oldest = special_tickets.pop().unwrap();
-    let special_unavailable_receiving_ticket_oldest = special_tickets.pop().unwrap();
+    .await?
+    .into_iter();
+    let _special_giving_ticket_oldest = special_tickets.next().unwrap();
+    let special_unavailable_receiving_ticket_oldest = special_tickets.next().unwrap();
     let _ = factory::wish(&special_unavailable_receiving_ticket_oldest)
         .insert(&db)
         .await?;
@@ -157,7 +141,7 @@ async fn happy_path_none_available() -> Result<(), DbErr> {
     let res: AvailableTicketsResponse = test::read_body_json(res).await;
 
     let expected = AvailableTicketsResponse {
-        oldest: AvailableTicketsInner {
+        oldest: AvailableTicketsOldest {
             normal: None,
             special: None,
         },
