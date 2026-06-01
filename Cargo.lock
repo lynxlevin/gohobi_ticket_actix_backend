@@ -1274,6 +1274,7 @@ dependencies = [
  "entities",
  "sea-orm",
  "serde",
+ "thiserror 2.0.18",
  "uuid",
 ]
 
@@ -4544,6 +4545,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "thiserror 2.0.18",
  "uuid",
 ]
 
@@ -4915,6 +4917,7 @@ dependencies = [
  "futures",
  "sea-orm",
  "serde",
+ "thiserror 2.0.18",
  "ticket",
 ]
 

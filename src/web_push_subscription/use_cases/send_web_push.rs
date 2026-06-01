@@ -20,8 +20,8 @@ pub async fn send_web_push_use_case(
     params: SendWebPushRequest,
 ) -> Result<(), UseCaseError> {
     match params.r#type {
-        MessageType::UseTicket => {
-            handle_use_ticket_case(
+        MessageType::MakeWish => {
+            handle_make_wish_case(
                 user,
                 wish_query,
                 web_push_subscription_query,
@@ -33,7 +33,7 @@ pub async fn send_web_push_use_case(
     }
 }
 
-async fn handle_use_ticket_case(
+async fn handle_make_wish_case(
     user: users_user::Model,
     wish_query: WishQuery<'_>,
     web_push_subscription_query: WebPushSubscriptionQuery<'_>,
@@ -72,7 +72,7 @@ async fn handle_use_ticket_case(
                         false => Some(format!("{}からのおねがい", user.username)),
                     },
                     body: wish.description,
-                    message_type: MessageType::UseTicket,
+                    message_type: MessageType::MakeWish,
                     user_relation_id: Some(wish.user_relation_id),
                     ticket_id: None,
                     wish_id: Some(wish.id),

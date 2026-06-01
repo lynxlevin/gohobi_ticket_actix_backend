@@ -21,7 +21,7 @@ pub async fn list_diary<'a>(
     params: ListDiaryQueryParam,
     user_relation_query: UserRelationQuery<'a>,
     diary_query: DiaryQuery<'a>,
-    text_query: Option<Vec<&str>>,
+    text_query: Option<Vec<String>>,
 ) -> Result<Vec<DiaryVisible>, UseCaseError> {
     let user_relation = user_relation_query
         .find_by_id(params.user_relation_id, user.id)

@@ -1,8 +1,7 @@
 use actix_web::{http, test, HttpMessage};
-use db_adapters::ticket::types::TicketStatus;
-use entities::tickets_ticket;
+use entities::{custom_types::TicketStatus, tickets_ticket};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
-use ticket::{UseTicketParams, UseTicketRequest, UseTicketResponse, WebPushResult};
+use ticket::{MakeWishParams, MakeWishRequest, MakeWishResponse, WebPushResult};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
@@ -21,8 +20,8 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
     let use_description = "used".to_string();
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-        .set_json(UseTicketRequest {
-            ticket: UseTicketParams {
+        .set_json(MakeWishRequest {
+            ticket: MakeWishParams {
                 use_description: use_description.clone(),
             },
         })
@@ -31,7 +30,7 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
     let res = test::call_service(&app, req).await;
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    let UseTicketResponse {
+    let MakeWishResponse {
         ticket,
         web_push_result,
     } = test::read_body_json(res).await;
@@ -69,8 +68,8 @@ async fn forbidden_on_giving_ticket() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", giving_ticket.id))
-        .set_json(UseTicketRequest {
-            ticket: UseTicketParams {
+        .set_json(MakeWishRequest {
+            ticket: MakeWishParams {
                 use_description: String::default(),
             },
         })
@@ -109,8 +108,8 @@ async fn not_found_cases() -> Result<(), DbErr> {
         dbg!(case);
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/use/", ticket_id))
-            .set_json(UseTicketRequest {
-                ticket: UseTicketParams {
+            .set_json(MakeWishRequest {
+                ticket: MakeWishParams {
                     use_description: String::default(),
                 },
             })
@@ -130,8 +129,8 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri("/api/tickets/1/use/")
-        .set_json(UseTicketRequest {
-            ticket: UseTicketParams {
+        .set_json(MakeWishRequest {
+            ticket: MakeWishParams {
                 use_description: String::default(),
             },
         })
@@ -176,7 +175,7 @@ mod web_push_message {
 
         let expected_title = Some(format!("{}からのおねがい", user_0.username));
         let expected_body = "お願いします。".to_string();
-        let expected_message_type = MessageType::UseTicket;
+        let expected_message_type = MessageType::MakeWish;
         let expected_user_relation_id = Some(user_relation.id);
         let expected_ticket_id = None;
         let use_description = expected_body.clone();
@@ -206,8 +205,8 @@ mod web_push_message {
 
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-            .set_json(UseTicketRequest {
-                ticket: UseTicketParams { use_description },
+            .set_json(MakeWishRequest {
+                ticket: MakeWishParams { use_description },
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
@@ -216,7 +215,7 @@ mod web_push_message {
 
         web_push_request_mock.assert_async().await;
 
-        let UseTicketResponse {
+        let MakeWishResponse {
             ticket: _,
             web_push_result,
         } = test::read_body_json(res).await;
@@ -252,7 +251,7 @@ mod web_push_message {
 
         let expected_title = Some(format!("⭐️{}からの特別なおねがい⭐️", user_0.username));
         let expected_body = "お願いします。".to_string();
-        let expected_message_type = MessageType::UseTicket;
+        let expected_message_type = MessageType::MakeWish;
         let expected_user_relation_id = Some(user_relation.id);
         let expected_ticket_id = None;
         let use_description = expected_body.clone();
@@ -282,8 +281,8 @@ mod web_push_message {
 
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-            .set_json(UseTicketRequest {
-                ticket: UseTicketParams { use_description },
+            .set_json(MakeWishRequest {
+                ticket: MakeWishParams { use_description },
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
@@ -292,7 +291,7 @@ mod web_push_message {
 
         web_push_request_mock.assert_async().await;
 
-        let UseTicketResponse {
+        let MakeWishResponse {
             ticket: _,
             web_push_result,
         } = test::read_body_json(res).await;

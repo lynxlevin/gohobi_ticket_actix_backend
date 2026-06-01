@@ -1,8 +1,9 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
-use db_adapters::ticket::types::{
-    CreateTicketParams, TicketStatus, UpdateTicketParams, WishStatus,
+use db_adapters::ticket_service::{CreateTicketParams, UpdateTicketParams};
+use entities::{
+    custom_types::{TicketStatus, WishStatus},
+    tickets_ticket, wish,
 };
-use entities::{tickets_ticket, wish};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -105,6 +106,7 @@ impl From<(&wish::Model, &tickets_ticket::Model)> for WishVisible {
     }
 }
 
+// MYMEMO: front code needs to be changed
 #[derive(Deserialize, Debug, Serialize)]
 pub struct CreateTicketRequest {
     pub ticket: CreateTicketParams,
@@ -127,17 +129,17 @@ pub enum WebPushResult {
 }
 
 #[derive(Deserialize, Debug, Serialize, Clone)]
-pub struct UseTicketParams {
+pub struct MakeWishParams {
     pub use_description: String,
 }
 
 #[derive(Deserialize, Debug, Serialize)]
-pub struct UseTicketRequest {
-    pub ticket: UseTicketParams,
+pub struct MakeWishRequest {
+    pub ticket: MakeWishParams,
 }
 
 #[derive(Deserialize, Debug, Serialize)]
-pub struct UseTicketResponse {
+pub struct MakeWishResponse {
     pub ticket: TicketVisible,
     pub web_push_result: WebPushResult,
 }

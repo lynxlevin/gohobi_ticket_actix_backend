@@ -4,14 +4,12 @@ use actix_web::{
     HttpResponse,
 };
 use common::{
-    errors::{
-        error_responses::{response_401, response_403, response_404, response_500},
-        use_case_errors::UseCaseError,
-    },
+    errors::error_responses::{response_401, response_403, response_404, response_500},
     settings::types::Settings,
 };
 use db_adapters::{
-    ticket::{TicketQuery, WishMutation},
+    ticket::WishMutation,
+    ticket_service::TicketService,
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
@@ -19,7 +17,10 @@ use entities::users_user;
 use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 
-use crate::{use_cases::use_ticket::use_ticket, UseTicketRequest};
+use crate::{
+    use_cases::make_wish::{make_wish, MakeWishError},
+    MakeWishRequest,
+};
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
@@ -27,19 +28,19 @@ struct PathParam {
 }
 
 #[put("/{ticket_id}/use/")]
-async fn use_ticket_endpoint(
+async fn make_wish_endpoint(
     db: Data<DbConn>,
     settings: Data<Settings>,
     user: Option<ReqData<users_user::Model>>,
     path_param: Path<PathParam>,
-    params: Json<UseTicketRequest>,
+    params: Json<MakeWishRequest>,
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            match use_ticket(
+            match make_wish(
                 user.into_inner(),
                 UserRelationQuery { db: &db },
-                TicketQuery::init_query(&db),
+                TicketService::init(&db),
                 WishMutation { db: &db },
                 WebPushSubscriptionQuery::init_query(&db),
                 WebPushSubscriptionMutation { db: &db },
@@ -51,9 +52,12 @@ async fn use_ticket_endpoint(
             {
                 Ok(res) => HttpResponse::Ok().json(res),
                 Err(e) => match e {
-                    UseCaseError::Forbidden => response_403("You cannot use this ticket."),
-                    UseCaseError::NotFound => response_404("Ticket not found."),
-                    _ => response_500(),
+                    MakeWishError::Forbidden(message) => response_403(&message),
+                    MakeWishError::NotFound(message) => response_404(&message),
+                    MakeWishError::InternalServerError(message) => {
+                        dbg!(message);
+                        response_500()
+                    }
                 },
             }
         }

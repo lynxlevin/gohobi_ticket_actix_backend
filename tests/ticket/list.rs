@@ -1,6 +1,6 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{Duration, Utc};
-use db_adapters::ticket::types::TicketStatus;
+use entities::custom_types::TicketStatus;
 use sea_orm::{ActiveModelTrait, DbErr};
 use ticket::{ListTicketResponse, TicketVisible};
 

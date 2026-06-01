@@ -7,7 +7,9 @@ use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
 };
-use db_adapters::{diary::DiaryQuery, ticket::TicketQuery, user_relation::UserRelationQuery};
+use db_adapters::{
+    diary::DiaryQuery, ticket_service::TicketService, user_relation::UserRelationQuery,
+};
 use entities::users_user;
 use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
@@ -28,7 +30,6 @@ async fn search_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let ticket_query = TicketQuery::init_query(&db);
             let diary_query = DiaryQuery::init(&db);
             let user_relation_query = UserRelationQuery { db: &db };
             match search(
@@ -36,7 +37,7 @@ async fn search_endpoint(
                 path_param.user_relation_id,
                 params.into_inner(),
                 user_relation_query,
-                ticket_query,
+                TicketService::init(&db),
                 diary_query,
             )
             .await

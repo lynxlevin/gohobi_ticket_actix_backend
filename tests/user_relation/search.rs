@@ -1,12 +1,12 @@
 use actix_web::{http, test, HttpMessage};
 use diary::{DiaryTag, DiaryVisible};
-use entities::{diaries_diary, tickets_ticket};
+use entities::{custom_types::TicketStatus, diaries_diary, tickets_ticket};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::TicketVisible;
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
-use db_adapters::{diary::types::DiaryStatus, ticket::types::TicketStatus};
+use db_adapters::diary::types::DiaryStatus;
 use user_relation::{SearchRequest, SearchResponse};
 
 fn get_uri(user_relation_id: i64) -> String {

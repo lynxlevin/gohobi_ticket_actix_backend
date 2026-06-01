@@ -1,32 +1,51 @@
 use crate::types::SpecialTicketAvailabilityQueryParam;
 use chrono::NaiveDate;
-use common::errors::use_case_errors::UseCaseError;
-use db_adapters::{ticket::TicketQuery, user_relation::UserRelationQuery};
+use db_adapters::{
+    ticket_service::{TicketService, TicketServiceError},
+    user_relation::UserRelationQuery,
+};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum CheckSpecialTicketAvailabilityError {
+    #[error("{0}")]
+    NotFound(String),
+    #[error("{0}")]
+    ValidationError(String),
+    #[error("{0}")]
+    InternalServerError(String),
+}
+impl From<TicketServiceError> for CheckSpecialTicketAvailabilityError {
+    fn from(e: TicketServiceError) -> Self {
+        match e {
+            _ => CheckSpecialTicketAvailabilityError::InternalServerError(e.to_string()),
+        }
+    }
+}
 
 pub async fn check_special_ticket_availability(
     user_id: i64,
     user_relation_id: i64,
     user_relation_query: UserRelationQuery<'_>,
-    ticket_query: TicketQuery<'_>,
+    ticket_service: TicketService<'_>,
     query: SpecialTicketAvailabilityQueryParam,
-) -> Result<bool, UseCaseError> {
+) -> Result<bool, CheckSpecialTicketAvailabilityError> {
     user_relation_query
         .find_by_id(user_relation_id, user_id)
         .await
-        .map_err(|_| UseCaseError::InternalServerError)?
-        .ok_or(UseCaseError::NotFound)?;
+        .map_err(|e| CheckSpecialTicketAvailabilityError::InternalServerError(e.to_string()))?
+        .ok_or(CheckSpecialTicketAvailabilityError::NotFound(format!(
+            "UserRelation not found for id: {}.",
+            user_relation_id
+        )))?;
 
-    ticket_query
-        .filter_which_user_has_access(user_id)
-        .exists_other_special_ticket(
-            user_id,
-            user_relation_id,
-            match NaiveDate::from_ymd_opt(query.year, query.month, 1) {
-                Some(date) => date,
-                None => return Err(UseCaseError::InternalServerError),
-            },
-        )
-        .await
-        .map(|exists| !exists)
-        .map_err(|_| UseCaseError::InternalServerError)
+    let date = NaiveDate::from_ymd_opt(query.year, query.month, 1).ok_or(
+        CheckSpecialTicketAvailabilityError::ValidationError("Invalid year or month.".to_string()),
+    )?;
+
+    let exists = ticket_service
+        .check_special_ticket_existence(user_id, user_relation_id, date)
+        .await?;
+
+    Ok(!exists)
 }

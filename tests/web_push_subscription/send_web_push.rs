@@ -17,7 +17,7 @@ struct Request {
 }
 
 #[actix_web::test]
-async fn happy_path_type_use_ticket() -> Result<(), DbErr> {
+async fn happy_path_type_make_wish() -> Result<(), DbErr> {
     let Connections {
         app, db, settings, ..
     } = init_app().await?;
@@ -45,7 +45,7 @@ async fn happy_path_type_use_ticket() -> Result<(), DbErr> {
 
     let expected_title = Some(format!("{}からのおねがい", user_0.username));
     let expected_body = wish.description.clone();
-    let expected_message_type = MessageType::UseTicket;
+    let expected_message_type = MessageType::MakeWish;
     let expected_user_relation_id = Some(user_relation.id);
     let expected_ticket_id = None;
     let expected_wish_id = Some(wish.id);
@@ -76,7 +76,7 @@ async fn happy_path_type_use_ticket() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri(URI)
         .set_json(Request {
-            r#type: MessageType::UseTicket,
+            r#type: MessageType::MakeWish,
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -95,7 +95,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri(URI)
         .set_json(Request {
-            r#type: MessageType::UseTicket,
+            r#type: MessageType::MakeWish,
         })
         .to_request();
     let res = test::call_service(&app, req).await;
@@ -130,7 +130,7 @@ mod not_found {
         let req = test::TestRequest::post()
             .uri(URI)
             .set_json(Request {
-                r#type: MessageType::UseTicket,
+                r#type: MessageType::MakeWish,
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
@@ -156,7 +156,7 @@ mod not_found {
         let req = test::TestRequest::post()
             .uri(URI)
             .set_json(Request {
-                r#type: MessageType::UseTicket,
+                r#type: MessageType::MakeWish,
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());

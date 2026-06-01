@@ -1,7 +1,7 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{Days, Utc};
-use db_adapters::ticket::types::{CreateTicketParams, TicketStatus};
-use entities::tickets_ticket;
+use db_adapters::ticket_service::CreateTicketParams;
+use entities::{custom_types::TicketStatus, tickets_ticket};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{CreateTicketRequest, TicketVisible, UpsertTicketResponse};
 
@@ -29,8 +29,8 @@ async fn happy_path() -> Result<(), DbErr> {
                 gift_date,
                 description: description.clone(),
                 user_relation_id: user_relation.id,
-                is_special: None,
-                status: None,
+                is_special: false,
+                is_draft: false,
             },
         })
         .to_request();
@@ -76,8 +76,8 @@ async fn create_draft() -> Result<(), DbErr> {
                 gift_date,
                 description: description.clone(),
                 user_relation_id: user_relation.id,
-                is_special: None,
-                status: Some(TicketStatus::Draft),
+                is_special: false,
+                is_draft: true,
             },
         })
         .to_request();
@@ -132,8 +132,8 @@ async fn create_special() -> Result<(), DbErr> {
                 gift_date,
                 description: description.clone(),
                 user_relation_id: user_relation.id,
-                is_special: Some(true),
-                status: None,
+                is_special: true,
+                is_draft: false,
             },
         })
         .to_request();
@@ -184,8 +184,8 @@ async fn create_special_already_exists() -> Result<(), DbErr> {
                 gift_date,
                 description: description.clone(),
                 user_relation_id: user_relation.id,
-                is_special: Some(true),
-                status: None,
+                is_special: true,
+                is_draft: false,
             },
         })
         .to_request();
@@ -225,8 +225,8 @@ async fn not_found_if_incorrect_user_relation_id() -> Result<(), DbErr> {
                 gift_date: Utc::now().date_naive(),
                 description: String::default(),
                 user_relation_id: other_relation.id,
-                is_special: None,
-                status: None,
+                is_special: false,
+                is_draft: false,
             },
         })
         .to_request();
@@ -249,8 +249,8 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
                 gift_date: Utc::now().date_naive(),
                 description: String::default(),
                 user_relation_id: 1,
-                is_special: None,
-                status: None,
+                is_special: false,
+                is_draft: false,
             },
         })
         .to_request();
@@ -283,8 +283,8 @@ mod first_ticket_date {
                     gift_date: today,
                     description: String::default(),
                     user_relation_id: user_relation.id,
-                    is_special: None,
-                    status: None,
+                    is_special: false,
+                    is_draft: false,
                 },
             })
             .to_request();
@@ -322,8 +322,8 @@ mod first_ticket_date {
                     gift_date: today,
                     description: String::default(),
                     user_relation_id: user_relation.id,
-                    is_special: None,
-                    status: None,
+                    is_special: false,
+                    is_draft: false,
                 },
             })
             .to_request();
@@ -362,8 +362,8 @@ mod first_ticket_date {
                     gift_date: yesterday,
                     description: String::default(),
                     user_relation_id: user_relation.id,
-                    is_special: None,
-                    status: None,
+                    is_special: false,
+                    is_draft: false,
                 },
             })
             .to_request();
@@ -402,8 +402,8 @@ mod first_ticket_date {
                     gift_date: yesterday,
                     description: String::default(),
                     user_relation_id: user_relation.id,
-                    is_special: None,
-                    status: None,
+                    is_special: false,
+                    is_draft: false,
                 },
             })
             .to_request();
