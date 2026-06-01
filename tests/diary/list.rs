@@ -1,5 +1,5 @@
 use actix_web::{http, test, HttpMessage};
-use chrono::{Duration, TimeDelta, Utc};
+use chrono::{TimeDelta, Utc};
 use db_adapters::diary::types::DiaryStatus;
 use diary::{DiaryTag, DiaryVisible};
 use entities::diaries_diary;
@@ -12,37 +12,48 @@ use common::factory::{self, *};
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let other_relation = factory::user_relation(other_user.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db).await?;
 
-    let diary_0 = factory::diary(user_relation.id)
-        .user_1_status(DiaryStatus::Edited.to_value())
-        .date((Utc::now() - Duration::days(2)).date_naive())
-        .insert(&db)
-        .await?;
-    let diary_1 = factory::diary(user_relation.id)
-        .user_1_status(DiaryStatus::Read.to_value())
-        .date(Utc::now().date_naive())
-        .insert(&db)
-        .await?;
-    let diary_2 = factory::diary(user_relation.id)
-        .user_1_status(DiaryStatus::Unread.to_value())
-        .date((Utc::now() - Duration::days(1)).date_naive())
-        .insert(&db)
-        .await?;
+    let diaries = create_diaries(
+        vec![
+            DiaryParam {
+                name: "diary_0".to_string(),
+                user_relation_id: user_relation.id,
+                n_days_ago: 2,
+                user_1_status: Some(DiaryStatus::Edited.to_value()),
+                ..Default::default()
+            },
+            DiaryParam {
+                name: "diary_1".to_string(),
+                user_relation_id: user_relation.id,
+                n_days_ago: 0,
+                user_1_status: Some(DiaryStatus::Read.to_value()),
+                ..Default::default()
+            },
+            DiaryParam {
+                name: "diary_2".to_string(),
+                user_relation_id: user_relation.id,
+                n_days_ago: 1,
+                user_1_status: Some(DiaryStatus::Unread.to_value()),
+                ..Default::default()
+            },
+            DiaryParam {
+                name: "_other_diary".to_string(),
+                user_relation_id: other_relation.id,
+                n_days_ago: 0,
+                user_1_status: None,
+                ..Default::default()
+            },
+        ],
+        &db,
+    )
+    .await?;
     let tag = factory::diary_tag(user_relation.id).insert(&db).await?;
-    let _ = factory::link_diary_tag(&db, diary_2.id, tag.id).await?;
-    let _other_diary = factory::diary(other_relation.id).insert(&db).await?;
+    let _ = factory::link_diary_tag(&db, diaries.get("diary_2").unwrap().id, tag.id).await?;
 
     let req = test::TestRequest::get()
-        .uri(&format!(
-            "/api/diaries/?user_relation_id={}",
-            user_relation.id
-        ))
+        .uri(&format!("/api/diaries/?user_relation_id={}", user_relation.id))
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
@@ -50,28 +61,27 @@ async fn happy_path() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let res: Vec<DiaryVisible> = test::read_body_json(res).await;
+    let diary_0 = diaries.get("diary_0").unwrap();
+    let diary_1 = diaries.get("diary_1").unwrap();
+    let diary_2 = diaries.get("diary_2").unwrap();
     let expected = vec![
         DiaryVisible {
             id: diary_1.id,
-            entry: diary_1.entry,
+            entry: diary_1.entry.clone(),
             date: diary_1.date,
             tags: vec![],
             status: (&diary_1.user_1_status).into(),
         },
         DiaryVisible {
             id: diary_2.id,
-            entry: diary_2.entry,
+            entry: diary_2.entry.clone(),
             date: diary_2.date,
-            tags: vec![DiaryTag {
-                id: tag.id,
-                text: tag.text,
-                sort_no: tag.sort_no,
-            }],
+            tags: vec![DiaryTag { id: tag.id, text: tag.text, sort_no: tag.sort_no }],
             status: (&diary_2.user_1_status).into(),
         },
         DiaryVisible {
             id: diary_0.id,
-            entry: diary_0.entry,
+            entry: diary_0.entry.clone(),
             date: diary_0.date,
             tags: vec![],
             status: (&diary_0.user_1_status).into(),
@@ -88,16 +98,11 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn happy_path_date_gte_lte() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
     let now = Utc::now();
-    let diaries = (1..10)
-        .map(|i| factory::diary(user_relation.id).date((now - TimeDelta::days(i)).date_naive()));
-    diaries_diary::Entity::insert_many(diaries)
-        .exec(&db)
-        .await?;
+    let diaries = (1..10).map(|i| factory::diary(user_relation.id).date((now - TimeDelta::days(i)).date_naive()));
+    diaries_diary::Entity::insert_many(diaries).exec(&db).await?;
     let diaries = diaries_diary::Entity::find()
         .filter(diaries_diary::Column::UserRelationId.eq(user_relation.id))
         .order_by_desc(diaries_diary::Column::Date)
@@ -140,20 +145,12 @@ async fn happy_path_date_gte_lte() -> Result<(), DbErr> {
 async fn not_found_cases() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let other_relation = factory::user_relation(other_user.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db).await?;
 
-    for (user_relation_id, case) in vec![
-        (other_relation.id, "other_relation.id"),
-        (-1, "non existent id"),
-    ] {
+    for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non existent id")] {
         dbg!(case);
         let req = test::TestRequest::get()
-            .uri(&format!(
-                "/api/diaries/?user_relation_id={}",
-                user_relation_id
-            ))
+            .uri(&format!("/api/diaries/?user_relation_id={}", user_relation_id))
             .to_request();
         req.extensions_mut().insert(user_0.clone());
         let res = test::call_service(&app, req).await;

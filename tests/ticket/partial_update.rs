@@ -11,22 +11,15 @@ use common::factory::{self, *};
 async fn update_description_of_unread_ticket() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let ticket = factory::ticket(user_0.id, user_relation.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let ticket = factory::ticket(user_0.id, user_relation.id).insert(&db).await?;
 
     let description = "New name".to_string();
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams {
-                description: Some(description.clone()),
-                ..Default::default()
-            },
+            ticket: UpdateTicketParams { description: Some(description.clone()), ..Default::default() },
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -35,10 +28,7 @@ async fn update_description_of_unread_ticket() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
-    let expected = TicketVisible {
-        description,
-        ..TicketVisible::from(&ticket)
-    };
+    let expected = TicketVisible { description, ..TicketVisible::from(&ticket) };
     assert_eq!(res, expected);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
@@ -54,9 +44,7 @@ async fn update_description_of_unread_ticket() -> Result<(), DbErr> {
 async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
     let ticket = factory::ticket(user_0.id, user_relation.id)
         .status(TicketStatus::Read.to_value())
         .insert(&db)
@@ -67,10 +55,7 @@ async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbE
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams {
-                description: Some(description.clone()),
-                ..Default::default()
-            },
+            ticket: UpdateTicketParams { description: Some(description.clone()), ..Default::default() },
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -79,11 +64,7 @@ async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbE
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
-    let expected = TicketVisible {
-        description,
-        status: TicketStatus::Edited,
-        ..TicketVisible::from(&ticket)
-    };
+    let expected = TicketVisible { description, status: TicketStatus::Edited, ..TicketVisible::from(&ticket) };
     assert_eq!(res, expected);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
@@ -99,22 +80,15 @@ async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbE
 async fn update_only_status() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let ticket = factory::ticket(user_0.id, user_relation.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let ticket = factory::ticket(user_0.id, user_relation.id).insert(&db).await?;
 
     let status = TicketStatus::Read;
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams {
-                status: Some(status.clone()),
-                ..Default::default()
-            },
+            ticket: UpdateTicketParams { status: Some(status.clone()), ..Default::default() },
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -123,10 +97,7 @@ async fn update_only_status() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
-    let expected = TicketVisible {
-        status,
-        ..TicketVisible::from(&ticket)
-    };
+    let expected = TicketVisible { status, ..TicketVisible::from(&ticket) };
     assert_eq!(res, expected);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
@@ -142,20 +113,13 @@ async fn update_only_status() -> Result<(), DbErr> {
 async fn update_only_is_special() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let ticket = factory::ticket(user_0.id, user_relation.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let ticket = factory::ticket(user_0.id, user_relation.id).insert(&db).await?;
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams {
-                is_special: Some(true),
-                ..Default::default()
-            },
+            ticket: UpdateTicketParams { is_special: Some(true), ..Default::default() },
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -164,10 +128,7 @@ async fn update_only_is_special() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
-    let expected = TicketVisible {
-        is_special: true,
-        ..TicketVisible::from(&ticket)
-    };
+    let expected = TicketVisible { is_special: true, ..TicketVisible::from(&ticket) };
     assert_eq!(res, expected);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db).await?;
@@ -183,34 +144,45 @@ async fn update_only_is_special() -> Result<(), DbErr> {
 async fn forbidden_on_changing_published_tickets_to_draft() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let unread_ticket = factory::ticket(user_0.id, user_relation.id)
-        .insert(&db)
-        .await?;
-    let read_ticket = factory::ticket(user_0.id, user_relation.id)
-        .status(TicketStatus::Read.to_value())
-        .insert(&db)
-        .await?;
-    let edited_ticket = factory::ticket(user_0.id, user_relation.id)
-        .status(TicketStatus::Edited.to_value())
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let tickets = create_tickets(
+        vec![
+            TicketParam {
+                name: "unread_ticket".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: user_0.id,
+                status: TicketStatus::default(),
+                ..Default::default()
+            },
+            TicketParam {
+                name: "read_ticket".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: user_0.id,
+                status: TicketStatus::Read,
+                ..Default::default()
+            },
+            TicketParam {
+                name: "edited_ticket".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: user_0.id,
+                status: TicketStatus::Edited,
+                ..Default::default()
+            },
+        ],
+        &db,
+    )
+    .await?;
 
     for (ticket, case) in vec![
-        (unread_ticket, "unread_ticket"),
-        (read_ticket, "read_ticket"),
-        (edited_ticket, "edited_ticket"),
+        (tickets.get("unread_ticket").unwrap(), "unread_ticket"),
+        (tickets.get("read_ticket").unwrap(), "read_ticket"),
+        (tickets.get("edited_ticket").unwrap(), "edited_ticket"),
     ] {
         dbg!(case);
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/", ticket.id))
             .set_json(UpdateTicketRequest {
-                ticket: UpdateTicketParams {
-                    status: Some(TicketStatus::Draft),
-                    ..Default::default()
-                },
+                ticket: UpdateTicketParams { status: Some(TicketStatus::Draft), ..Default::default() },
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
@@ -226,20 +198,13 @@ async fn forbidden_on_changing_published_tickets_to_draft() -> Result<(), DbErr>
 async fn forbidden_on_receiving_ticket() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db).await?;
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", receiving_ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams {
-                description: Some("Some name".to_string()),
-                ..Default::default()
-            },
+            ticket: UpdateTicketParams { description: Some("Some name".to_string()), ..Default::default() },
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -257,22 +222,14 @@ async fn not_found_cases() -> Result<(), DbErr> {
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
         .insert(&db)
         .await?;
-    let unrelated_ticket = factory::ticket(other_user_0.id, other_relation.id)
-        .insert(&db)
-        .await?;
+    let unrelated_ticket = factory::ticket(other_user_0.id, other_relation.id).insert(&db).await?;
 
-    for (ticket_id, case) in vec![
-        (unrelated_ticket.id, "unrelated_ticket.id"),
-        (-1, "non_existent_id"),
-    ] {
+    for (ticket_id, case) in vec![(unrelated_ticket.id, "unrelated_ticket.id"), (-1, "non_existent_id")] {
         dbg!(case);
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/", ticket_id))
             .set_json(UpdateTicketRequest {
-                ticket: UpdateTicketParams {
-                    description: Some("some name".to_string()),
-                    ..Default::default()
-                },
+                ticket: UpdateTicketParams { description: Some("some name".to_string()), ..Default::default() },
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
@@ -291,10 +248,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let req = test::TestRequest::put()
         .uri("/api/tickets/1/")
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams {
-                description: Some(String::default()),
-                ..Default::default()
-            },
+            ticket: UpdateTicketParams { description: Some(String::default()), ..Default::default() },
         })
         .to_request();
     let res = test::call_service(&app, req).await;

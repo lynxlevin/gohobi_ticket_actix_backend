@@ -1,4 +1,7 @@
-use db_adapters::ticket_service::{TicketService, TicketServiceError, UpdateTicketParams};
+use db_adapters::ticket_service::{
+    TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery,
+    UpdateTicketParams,
+};
 use entities::{
     custom_types::{TicketStatus, PUBLISHED_STATUSES},
     users_user,

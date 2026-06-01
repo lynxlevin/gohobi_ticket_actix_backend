@@ -1,20 +1,21 @@
-use std::future::Future;
+use std::{collections::HashMap, future::Future};
 
-use chrono::{NaiveDate, Utc};
+use chrono::{Days, NaiveDate, Utc};
 use entities::{
-    tickets_ticket::{ActiveModel, Model},
+    custom_types::TicketStatus,
+    tickets_ticket::{ActiveModel, Entity, Model},
     wish,
 };
-use sea_orm::{ActiveModelTrait, DbConn, DbErr, Set};
+use sea_orm::{ActiveModelTrait, DbConn, DbErr, EntityTrait, Set};
 
 use crate::factory::wish as wish_factory;
 
 pub fn ticket(giving_user_id: i64, user_relation_id: i64) -> ActiveModel {
     let now = Utc::now();
     ActiveModel {
-        description: Set("ticket".to_string()),
+        description: Set(String::default()),
         gift_date: Set(now.date_naive()),
-        status: Set("unread".to_string()),
+        status: Set(TicketStatus::default().to_value()),
         is_special: Set(false),
         giving_user_id: Set(giving_user_id),
         user_relation_id: Set(user_relation_id),
@@ -29,10 +30,7 @@ pub trait TicketFactory {
     fn gift_date(self, gift_date: NaiveDate) -> ActiveModel;
     fn status(self, status: String) -> ActiveModel;
     fn is_special(self, is_special: bool) -> ActiveModel;
-    fn insert_with_wish(
-        self,
-        db: &DbConn,
-    ) -> impl Future<Output = Result<(Model, wish::Model), DbErr>> + Send;
+    fn insert_with_wish(self, db: &DbConn) -> impl Future<Output = Result<(Model, wish::Model), DbErr>> + Send;
 }
 
 impl TicketFactory for ActiveModel {
@@ -61,4 +59,48 @@ impl TicketFactory for ActiveModel {
         let wish = wish_factory(&ticket).insert(db).await?;
         Ok((ticket, wish))
     }
+}
+
+#[derive(Default)]
+pub struct TicketParam {
+    pub name: String,
+    pub description: Option<String>,
+    pub n_days_ago: i64,
+    pub status: TicketStatus,
+    pub is_special: bool,
+    pub giving_user_id: i64,
+    pub user_relation_id: i64,
+}
+
+pub async fn create_tickets(params: Vec<TicketParam>, db: &DbConn) -> Result<HashMap<String, Model>, DbErr> {
+    let today = Utc::now().date_naive();
+    let tickets = params.iter().map(|param| {
+        let gift_date = if param.n_days_ago > 0 {
+            today
+                .checked_sub_days(Days::new(param.n_days_ago.unsigned_abs()))
+                .unwrap()
+        } else {
+            today
+                .checked_add_days(Days::new(param.n_days_ago.unsigned_abs()))
+                .unwrap()
+        };
+        let ticket = ticket(param.giving_user_id, param.user_relation_id)
+            .gift_date(gift_date)
+            .is_special(param.is_special)
+            .status(param.status.to_value());
+        if param.description.is_some() {
+            ticket.description(param.description.clone().unwrap())
+        } else {
+            ticket.description(param.name.clone())
+        }
+    });
+    let tickets = Entity::insert_many(tickets).exec_with_returning_many(db).await?;
+
+    Ok(tickets
+        .into_iter()
+        .zip(params)
+        .fold(HashMap::new(), |mut acc, (ticket, param)| {
+            acc.entry(param.name.to_string()).or_insert(ticket);
+            acc
+        }))
 }

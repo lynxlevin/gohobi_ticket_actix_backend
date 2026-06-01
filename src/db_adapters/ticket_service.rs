@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use chrono::{Datelike, NaiveDate, Utc};
 use entities::{
     custom_types::TicketStatus, prelude::TicketsTicket, tickets_ticket,
@@ -53,51 +55,47 @@ pub struct TicketService<'a> {
     pub db: &'a DbConn,
 }
 
-fn parse_transaction_error(e: TransactionError<TicketServiceError>) -> TicketServiceError {
-    match e {
-        TransactionError::Connection(e) => e.into(),
-        TransactionError::Transaction(e) => e,
-    }
-}
-
-async fn get_user_relation(
-    txn: &DatabaseTransaction,
-    user_id: i64,
-    user_relation_id: i64,
-) -> Result<user_relations_userrelation::Model, TicketServiceError> {
-    user_relations_userrelation::Entity::find_by_id(user_relation_id)
-        .filter(
-            Condition::any()
-                .add(user_relations_userrelation::Column::User1Id.eq(user_id))
-                .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
-        )
-        .one(txn)
-        .await?
-        .ok_or(TicketServiceError::UserRelationNotFound(user_relation_id))
-}
-
-fn get_query_tickets_with_access_to_user(user_id: i64) -> Select<TicketsTicket> {
-    tickets_ticket::Entity::find()
-        .join(
-            LeftJoin,
-            tickets_ticket::Relation::UserRelationsUserrelation.def(),
-        )
-        .filter(
-            Condition::any()
-                .add(user_relations_userrelation::Column::User1Id.eq(user_id))
-                .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
-        )
-}
-fn get_query_ticket_by_id(user_id: i64, ticket_id: i64) -> Select<TicketsTicket> {
-    get_query_tickets_with_access_to_user(user_id).filter(tickets_ticket::Column::Id.eq(ticket_id))
-}
-
 impl<'a> TicketService<'a> {
     pub fn init(db: &'a DbConn) -> Self {
         Self { db }
     }
+}
 
-    pub async fn get_ticket_by_id(
+pub trait TicketServiceQuery {
+    fn get_ticket_by_id(
+        &self,
+        user_id: i64,
+        ticket_id: i64,
+    ) -> impl Future<Output = Result<tickets_ticket::Model, TicketServiceError>>;
+    fn get_ticket_with_wish_by_id(
+        &self,
+        user_id: i64,
+        ticket_id: i64,
+    ) -> impl Future<Output = Result<(tickets_ticket::Model, Option<wish::Model>), TicketServiceError>>;
+    fn get_oldest_available_ticket(
+        &self,
+        receiving_user_id: i64,
+        user_relation_id: i64,
+        is_special: bool,
+    ) -> impl Future<Output = Result<Option<tickets_ticket::Model>, TicketServiceError>>;
+    fn list_tickets_with_wish(
+        &self,
+        user_id: i64,
+        user_relation_id: i64,
+        params: ListTicketsWithWishParams,
+    ) -> impl Future<
+        Output = Result<Vec<(tickets_ticket::Model, Option<wish::Model>)>, TicketServiceError>,
+    >;
+    fn check_special_ticket_existence(
+        &self,
+        giving_user_id: i64,
+        user_relation_id: i64,
+        date: NaiveDate,
+    ) -> impl Future<Output = Result<bool, TicketServiceError>>;
+}
+
+impl TicketServiceQuery for TicketService<'_> {
+    async fn get_ticket_by_id(
         &self,
         user_id: i64,
         ticket_id: i64,
@@ -107,7 +105,7 @@ impl<'a> TicketService<'a> {
             .await?
             .ok_or(TicketServiceError::TicketNotFound(ticket_id))
     }
-    pub async fn get_ticket_with_wish_by_id(
+    async fn get_ticket_with_wish_by_id(
         &self,
         user_id: i64,
         ticket_id: i64,
@@ -119,8 +117,25 @@ impl<'a> TicketService<'a> {
             .await?
             .ok_or(TicketServiceError::TicketNotFound(ticket_id))
     }
+    async fn get_oldest_available_ticket(
+        &self,
+        receiving_user_id: i64,
+        user_relation_id: i64,
+        is_special: bool,
+    ) -> Result<Option<tickets_ticket::Model>, TicketServiceError> {
+        get_query_tickets_with_access_to_user(receiving_user_id)
+            .join(LeftJoin, tickets_ticket::Relation::Wish.def())
+            .filter(tickets_ticket::Column::GivingUserId.ne(receiving_user_id))
+            .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id))
+            .filter(tickets_ticket::Column::IsSpecial.eq(is_special))
+            .filter(wish::Column::Id.is_null())
+            .order_by_asc(tickets_ticket::Column::GiftDate)
+            .one(self.db)
+            .await
+            .map_err(|e| e.into())
+    }
 
-    pub async fn list_tickets_with_wish(
+    async fn list_tickets_with_wish(
         &self,
         user_id: i64,
         user_relation_id: i64,
@@ -164,7 +179,7 @@ impl<'a> TicketService<'a> {
         Ok(tickets)
     }
 
-    pub async fn check_special_ticket_existence(
+    async fn check_special_ticket_existence(
         &self,
         giving_user_id: i64,
         user_relation_id: i64,
@@ -198,8 +213,32 @@ impl<'a> TicketService<'a> {
             .await?;
         Ok(count > 0)
     }
+}
 
-    pub async fn create_ticket(
+pub trait TicketServiceMutation {
+    fn create_ticket(
+        &self,
+        user_id: i64,
+        params: CreateTicketParams,
+    ) -> impl Future<Output = Result<tickets_ticket::Model, TicketServiceError>>;
+    fn update_ticket(
+        &self,
+        ticket: tickets_ticket::Model,
+        params: UpdateTicketParams,
+    ) -> impl Future<Output = Result<tickets_ticket::Model, TicketServiceError>>;
+    fn mark_ticket_read(
+        &self,
+        ticket: tickets_ticket::Model,
+    ) -> impl Future<Output = Result<tickets_ticket::Model, TicketServiceError>>;
+    fn delete_ticket(
+        &self,
+        user_id: i64,
+        ticket: tickets_ticket::Model,
+    ) -> impl Future<Output = Result<(), TicketServiceError>>;
+}
+
+impl TicketServiceMutation for TicketService<'_> {
+    async fn create_ticket(
         &self,
         user_id: i64,
         params: CreateTicketParams,
@@ -260,7 +299,7 @@ impl<'a> TicketService<'a> {
             .map_err(parse_transaction_error)
     }
 
-    pub async fn update_ticket(
+    async fn update_ticket(
         &self,
         ticket: tickets_ticket::Model,
         params: UpdateTicketParams,
@@ -281,7 +320,7 @@ impl<'a> TicketService<'a> {
         Ok(ticket)
     }
 
-    pub async fn mark_ticket_read(
+    async fn mark_ticket_read(
         &self,
         ticket: tickets_ticket::Model,
     ) -> Result<tickets_ticket::Model, TicketServiceError> {
@@ -293,7 +332,7 @@ impl<'a> TicketService<'a> {
         Ok(ticket)
     }
 
-    pub async fn delete_ticket(
+    async fn delete_ticket(
         &self,
         user_id: i64,
         ticket: tickets_ticket::Model,
@@ -349,4 +388,43 @@ impl<'a> TicketService<'a> {
             .await
             .map_err(parse_transaction_error)
     }
+}
+
+fn parse_transaction_error(e: TransactionError<TicketServiceError>) -> TicketServiceError {
+    match e {
+        TransactionError::Connection(e) => e.into(),
+        TransactionError::Transaction(e) => e,
+    }
+}
+
+async fn get_user_relation(
+    txn: &DatabaseTransaction,
+    user_id: i64,
+    user_relation_id: i64,
+) -> Result<user_relations_userrelation::Model, TicketServiceError> {
+    user_relations_userrelation::Entity::find_by_id(user_relation_id)
+        .filter(
+            Condition::any()
+                .add(user_relations_userrelation::Column::User1Id.eq(user_id))
+                .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
+        )
+        .one(txn)
+        .await?
+        .ok_or(TicketServiceError::UserRelationNotFound(user_relation_id))
+}
+
+fn get_query_tickets_with_access_to_user(user_id: i64) -> Select<TicketsTicket> {
+    tickets_ticket::Entity::find()
+        .join(
+            LeftJoin,
+            tickets_ticket::Relation::UserRelationsUserrelation.def(),
+        )
+        .filter(
+            Condition::any()
+                .add(user_relations_userrelation::Column::User1Id.eq(user_id))
+                .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
+        )
+}
+fn get_query_ticket_by_id(user_id: i64, ticket_id: i64) -> Select<TicketsTicket> {
+    get_query_tickets_with_access_to_user(user_id).filter(tickets_ticket::Column::Id.eq(ticket_id))
 }

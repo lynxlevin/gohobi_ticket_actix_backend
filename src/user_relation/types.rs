@@ -63,3 +63,13 @@ pub struct SearchResponse {
     pub receiving_tickets: Vec<TicketVisible>,
     pub diaries: Vec<DiaryVisible>,
 }
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct AvailableTicketsResponse {
+    pub oldest: AvailableTicketsOldest,
+}
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct AvailableTicketsOldest {
+    pub normal: Option<TicketVisible>,
+    pub special: Option<TicketVisible>,
+}
