@@ -12,23 +12,14 @@ pub struct WebPushSubscriptionQuery<'a> {
 
 impl<'a> WebPushSubscriptionQuery<'a> {
     pub fn init_query(db: &'a DbConn) -> Self {
-        Self {
-            db,
-            query: Entity::find(),
-        }
+        Self { db, query: Entity::find() }
     }
 
     pub async fn get_by_user(self, user: &users_user::Model) -> Result<Option<Model>, DbErr> {
-        self.query
-            .filter(Column::UserId.eq(user.id))
-            .one(self.db)
-            .await
+        self.query.filter(Column::UserId.eq(user.id)).one(self.db).await
     }
 
     pub async fn get_by_user_id(self, user_id: i64) -> Result<Option<Model>, DbErr> {
-        self.query
-            .filter(Column::UserId.eq(user_id))
-            .one(self.db)
-            .await
+        self.query.filter(Column::UserId.eq(user_id)).one(self.db).await
     }
 }

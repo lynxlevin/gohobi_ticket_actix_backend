@@ -14,10 +14,7 @@ use common::{
     settings::{get_test_settings, types::Settings},
 };
 use sea_orm::{DbConn, DbErr};
-use server::{
-    get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder,
-    AuthenticateUser,
-};
+use server::{get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder, AuthenticateUser};
 
 pub struct Connections<
     S: Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>,
@@ -28,9 +25,7 @@ pub struct Connections<
 }
 
 pub async fn init_app() -> Result<
-    Connections<
-        impl Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>,
-    >,
+    Connections<impl Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>>,
     DbErr,
 > {
     let settings = get_test_settings();
@@ -41,17 +36,11 @@ pub async fn init_app() -> Result<
 pub async fn init_app_with_settings(
     settings: Settings,
 ) -> Result<
-    Connections<
-        impl Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>,
-    >,
+    Connections<impl Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>>,
     DbErr,
 > {
-    let db = init_db(&settings)
-        .await
-        .expect("Error on getting DB connection.");
-    let redis_pool = init_redis_pool(&settings)
-        .await
-        .expect("Error on getting Redis pool.");
+    let db = init_db(&settings).await.expect("Error on getting DB connection.");
+    let redis_pool = init_redis_pool(&settings).await.expect("Error on getting Redis pool.");
 
     let (redis_store, secret_key) = get_preps_for_redis_session_store(&settings).await;
 

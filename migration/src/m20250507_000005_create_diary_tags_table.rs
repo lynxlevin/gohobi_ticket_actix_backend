@@ -32,10 +32,7 @@ impl MigrationTrait for Migration {
                         ForeignKey::create()
                             .name(INDEX_NAME)
                             .from(DiariesDiarytag::Table, DiariesDiarytag::UserRelationId)
-                            .to(
-                                UserRelationsUserrelation::Table,
-                                UserRelationsUserrelation::Id,
-                            ),
+                            .to(UserRelationsUserrelation::Table, UserRelationsUserrelation::Id),
                     )
                     .to_owned(),
             )
@@ -64,19 +61,13 @@ impl MigrationTrait for Migration {
                     .foreign_key(
                         ForeignKey::create()
                             .name(DIARY_ID_INDEX_NAME)
-                            .from(
-                                DiariesDiarytagrelation::Table,
-                                DiariesDiarytagrelation::DiaryId,
-                            )
+                            .from(DiariesDiarytagrelation::Table, DiariesDiarytagrelation::DiaryId)
                             .to(DiariesDiary::Table, DiariesDiary::Id),
                     )
                     .foreign_key(
                         ForeignKey::create()
                             .name(TAG_MASTER_ID_INDEX_NAME)
-                            .from(
-                                DiariesDiarytagrelation::Table,
-                                DiariesDiarytagrelation::TagMasterId,
-                            )
+                            .from(DiariesDiarytagrelation::Table, DiariesDiarytagrelation::TagMasterId)
                             .to(DiariesDiarytag::Table, DiariesDiarytag::Id),
                     )
                     .to_owned(),
@@ -107,20 +98,10 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_index(
-                Index::drop()
-                    .if_exists()
-                    .name(TAG_MASTER_ID_INDEX_NAME)
-                    .to_owned(),
-            )
+            .drop_index(Index::drop().if_exists().name(TAG_MASTER_ID_INDEX_NAME).to_owned())
             .await?;
         manager
-            .drop_index(
-                Index::drop()
-                    .if_exists()
-                    .name(DIARY_ID_INDEX_NAME)
-                    .to_owned(),
-            )
+            .drop_index(Index::drop().if_exists().name(DIARY_ID_INDEX_NAME).to_owned())
             .await?;
         manager
             .drop_table(
@@ -135,12 +116,7 @@ impl MigrationTrait for Migration {
             .drop_index(Index::drop().if_exists().name(INDEX_NAME).to_owned())
             .await?;
         manager
-            .drop_table(
-                Table::drop()
-                    .if_exists()
-                    .table(DiariesDiarytag::Table)
-                    .to_owned(),
-            )
+            .drop_table(Table::drop().if_exists().table(DiariesDiarytag::Table).to_owned())
             .await?;
         Ok(())
     }

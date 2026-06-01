@@ -31,14 +31,7 @@ async fn delete_diary_tag_endpoint(
             let diary_tag_query = DiaryTagQuery::init_query(&db);
             let diary_tag_mutation = DiaryTagMutation::init(&db);
             let diary_tag_id = path_param.into_inner().diary_tag_id;
-            match delete_diary_tag(
-                user.into_inner().id,
-                diary_tag_query,
-                diary_tag_mutation,
-                diary_tag_id,
-            )
-            .await
-            {
+            match delete_diary_tag(user.into_inner().id, diary_tag_query, diary_tag_mutation, diary_tag_id).await {
                 Ok(_) => HttpResponse::NoContent().finish(),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("DiaryTag not found."),

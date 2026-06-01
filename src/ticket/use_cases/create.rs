@@ -1,6 +1,5 @@
 use db_adapters::ticket_service::{
-    CreateTicketParams, TicketService, TicketServiceError, TicketServiceMutation,
-    TicketServiceQuery,
+    CreateTicketParams, TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery,
 };
 use entities::users_user;
 use thiserror::Error;
@@ -17,9 +16,7 @@ pub enum CreateTicketError {
 impl From<TicketServiceError> for CreateTicketError {
     fn from(e: TicketServiceError) -> Self {
         match e {
-            TicketServiceError::UserRelationNotFound(_) => {
-                CreateTicketError::NotFound(e.to_string())
-            }
+            TicketServiceError::UserRelationNotFound(_) => CreateTicketError::NotFound(e.to_string()),
             _ => CreateTicketError::InternalServerError(e.to_string()),
         }
     }
@@ -37,9 +34,7 @@ pub async fn create_ticket(
         params.is_special = !special_ticket_exists;
     }
 
-    let ticket = ticket_service
-        .create_ticket(user.id, params.clone())
-        .await?;
+    let ticket = ticket_service.create_ticket(user.id, params.clone()).await?;
 
     Ok(TicketVisible::from(ticket))
 }

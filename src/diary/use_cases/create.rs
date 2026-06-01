@@ -41,10 +41,7 @@ pub async fn create_diary<'a>(
         Ok(diary_with_tags) => diary_with_tags,
         Err(_) => return Err(UseCaseError::InternalServerError),
     };
-    if user_relation
-        .first_diary_date
-        .is_none_or(|date| date > diary.date)
-    {
+    if user_relation.first_diary_date.is_none_or(|date| date > diary.date) {
         user_relation_mutation
             .update_first_diary_date(user_relation, Some(diary.date))
             .await

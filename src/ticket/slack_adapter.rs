@@ -10,11 +10,10 @@ pub fn get_message(
     user_relation: &UserRelationWithName,
     use_description: &str,
 ) -> serde_json::Value {
-    let (giving_user_name, receiving_user_name) =
-        match user_relation.user_1_id == ticket.giving_user_id {
-            true => (&user_relation.user_1_name, &user_relation.user_2_name),
-            false => (&user_relation.user_2_name, &user_relation.user_1_name),
-        };
+    let (giving_user_name, receiving_user_name) = match user_relation.user_1_id == ticket.giving_user_id {
+        true => (&user_relation.user_1_name, &user_relation.user_2_name),
+        false => (&user_relation.user_2_name, &user_relation.user_1_name),
+    };
     match ticket.is_special {
         true => {
             json!({
@@ -49,10 +48,7 @@ pub fn get_message(
     }
 }
 
-pub async fn send_slack_message(
-    message: &serde_json::Value,
-    settings: &Settings,
-) -> Result<(), String> {
+pub async fn send_slack_message(message: &serde_json::Value, settings: &Settings) -> Result<(), String> {
     let config = actix_tls::connect::rustls_0_23::reexports::ClientConfig::builder()
         .with_root_certificates(actix_tls::connect::rustls_0_23::webpki_roots_cert_store())
         .with_no_client_auth();

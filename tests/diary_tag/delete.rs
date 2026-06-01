@@ -10,9 +10,7 @@ use crate::utils::{init_app, Connections};
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
     let tag = factory::diary_tag(user_relation.id)
         .text("tag_0")
@@ -30,9 +28,7 @@ async fn happy_path() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::NO_CONTENT);
 
-    let diary_tag_in_db = diaries_diarytag::Entity::find_by_id(tag.id)
-        .one(&db)
-        .await?;
+    let diary_tag_in_db = diaries_diarytag::Entity::find_by_id(tag.id).one(&db).await?;
     assert!(diary_tag_in_db.is_none());
 
     let tag_link_count = diaries_diarytagrelation::Entity::find()

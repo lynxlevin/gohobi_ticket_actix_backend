@@ -11,9 +11,7 @@ use db_adapters::web_push_subscription::WebPushSubscriptionMutation;
 use entities::users_user;
 use sea_orm::DbConn;
 
-use crate::{
-    types::WebPushSubscriptionCreateRequest, use_cases::create::create_web_push_subscription,
-};
+use crate::{types::WebPushSubscriptionCreateRequest, use_cases::create::create_web_push_subscription};
 
 #[post("")]
 pub async fn create_web_push_subscription_endpoint(

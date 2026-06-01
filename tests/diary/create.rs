@@ -4,8 +4,7 @@ use db_adapters::diary::types::DiaryStatus;
 use diary::{CreateDiaryRequest, DiaryTag, DiaryVisible};
 use entities::{diaries_diary, diaries_diarytagrelation, user_relations_userrelation};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DbErr, DeriveColumn, EntityTrait, EnumIter, QueryFilter,
-    QuerySelect,
+    ActiveModelTrait, ColumnTrait, DbErr, DeriveColumn, EntityTrait, EnumIter, QueryFilter, QuerySelect,
 };
 use uuid::Uuid;
 
@@ -21,9 +20,7 @@ enum TagLinkTagId {
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
     let entry = "new diary".to_string();
     let today = Utc::now().date_naive();
@@ -77,9 +74,7 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn happy_path_with_tag_ids() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
     let diary_tag_0 = factory::diary_tag(user_relation.id).insert(&db).await?;
     let diary_tag_1 = factory::diary_tag(user_relation.id).insert(&db).await?;
@@ -100,27 +95,16 @@ async fn happy_path_with_tag_ids() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::CREATED);
 
     let res: DiaryVisible = test::read_body_json(res).await;
-    assert_eq!(
-        res.tags,
-        tags.iter()
-            .map(|tag| DiaryTag::from(tag))
-            .collect::<Vec<_>>()
-    );
+    assert_eq!(res.tags, tags.iter().map(|tag| DiaryTag::from(tag)).collect::<Vec<_>>());
 
     let linked_tag_ids_in_db: Vec<Uuid> = diaries_diarytagrelation::Entity::find()
         .filter(diaries_diarytagrelation::Column::DiaryId.eq(res.id))
         .select_only()
-        .column_as(
-            diaries_diarytagrelation::Column::TagMasterId,
-            TagLinkTagId::TagId,
-        )
+        .column_as(diaries_diarytagrelation::Column::TagMasterId, TagLinkTagId::TagId)
         .into_values::<_, TagLinkTagId>()
         .all(&db)
         .await?;
-    assert_eq!(
-        linked_tag_ids_in_db,
-        tags.iter().map(|tag| tag.id).collect::<Vec<_>>()
-    );
+    assert_eq!(linked_tag_ids_in_db, tags.iter().map(|tag| tag.id).collect::<Vec<_>>());
 
     Ok(())
 }
@@ -134,10 +118,7 @@ async fn happy_path_when_first_diary() -> Result<(), DbErr> {
         .first_diary_date(Some(today))
         .insert(&db)
         .await?;
-    let _existing_diary = factory::diary(user_relation.id)
-        .date(today)
-        .insert(&db)
-        .await?;
+    let _existing_diary = factory::diary(user_relation.id).date(today).insert(&db).await?;
 
     let new_diary_date = today.checked_sub_days(Days::new(1)).unwrap();
 
@@ -168,14 +149,9 @@ async fn happy_path_when_first_diary() -> Result<(), DbErr> {
 async fn not_found_if_incorrect_user_relation_id() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let other_relation = factory::user_relation(user_1.id, other_user.id)
-        .insert(&db)
-        .await?;
+    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db).await?;
 
-    for (user_relation_id, case) in vec![
-        (other_relation.id, "other_relation.id"),
-        (-1, "non-existent id"),
-    ] {
+    for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non-existent id")] {
         dbg!(case);
         let req = test::TestRequest::post()
             .uri("/api/diaries/")

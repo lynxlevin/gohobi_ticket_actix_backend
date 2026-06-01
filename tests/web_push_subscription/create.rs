@@ -63,10 +63,7 @@ async fn happy_path() -> Result<(), DbErr> {
         .await?
         .unwrap();
     assert_eq!(sub_in_db.device_name, req_body.device_name);
-    assert_eq!(
-        sub_in_db.expiration_epoch_time,
-        req_body.expiration_epoch_time
-    );
+    assert_eq!(sub_in_db.expiration_epoch_time, req_body.expiration_epoch_time);
     assert_eq!(
         sub_in_db.endpoint,
         encrypt_and_encode(req_body.endpoint.clone(), &settings).unwrap()
@@ -125,10 +122,7 @@ async fn happy_path_conflict_handling() -> Result<(), DbErr> {
         .await?
         .unwrap();
     assert_eq!(sub_in_db.device_name, req_body.device_name);
-    assert_eq!(
-        sub_in_db.expiration_epoch_time,
-        req_body.expiration_epoch_time
-    );
+    assert_eq!(sub_in_db.expiration_epoch_time, req_body.expiration_epoch_time);
     assert_eq!(
         sub_in_db.endpoint,
         encrypt_and_encode(req_body.endpoint.clone(), &settings).unwrap()

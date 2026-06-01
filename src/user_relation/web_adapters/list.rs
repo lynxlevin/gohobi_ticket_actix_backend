@@ -11,10 +11,7 @@ use sea_orm::DbConn;
 use crate::use_cases::list::list_user_relations;
 
 #[get("/")]
-async fn list_user_relations_endpoint(
-    db: Data<DbConn>,
-    user: Option<ReqData<users_user::Model>>,
-) -> HttpResponse {
+async fn list_user_relations_endpoint(db: Data<DbConn>, user: Option<ReqData<users_user::Model>>) -> HttpResponse {
     match user {
         Some(user) => {
             let user_relation_query = UserRelationQuery { db: &db };

@@ -1,9 +1,5 @@
-use common::{
-    db::encrypt_and_encode, errors::use_case_errors::UseCaseError, settings::types::Settings,
-};
-use db_adapters::web_push_subscription::{
-    types::CreateWebPushSubscriptionParams, WebPushSubscriptionMutation,
-};
+use common::{db::encrypt_and_encode, errors::use_case_errors::UseCaseError, settings::types::Settings};
+use db_adapters::web_push_subscription::{types::CreateWebPushSubscriptionParams, WebPushSubscriptionMutation};
 use entities::users_user;
 
 use crate::types::{WebPushSubscriptionCreateRequest, WebPushSubscriptionVisible};
@@ -14,12 +10,12 @@ pub async fn create_web_push_subscription<'a>(
     params: WebPushSubscriptionCreateRequest,
     web_push_subscription_adapter: WebPushSubscriptionMutation<'a>,
 ) -> Result<WebPushSubscriptionVisible, UseCaseError> {
-    let encrypted_endpoint = encrypt_and_encode(params.endpoint.clone(), settings)
-        .map_err(|_| UseCaseError::InternalServerError)?;
-    let encrypted_p256dh_key = encrypt_and_encode(params.p256dh_key.clone(), settings)
-        .map_err(|_| UseCaseError::InternalServerError)?;
-    let encrypted_auth_key = encrypt_and_encode(params.auth_key.clone(), settings)
-        .map_err(|_| UseCaseError::InternalServerError)?;
+    let encrypted_endpoint =
+        encrypt_and_encode(params.endpoint.clone(), settings).map_err(|_| UseCaseError::InternalServerError)?;
+    let encrypted_p256dh_key =
+        encrypt_and_encode(params.p256dh_key.clone(), settings).map_err(|_| UseCaseError::InternalServerError)?;
+    let encrypted_auth_key =
+        encrypt_and_encode(params.auth_key.clone(), settings).map_err(|_| UseCaseError::InternalServerError)?;
     web_push_subscription_adapter
         .upsert(CreateWebPushSubscriptionParams {
             user_id: user.id,

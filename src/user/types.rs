@@ -16,10 +16,6 @@ pub struct UserVisible {
 
 impl From<users_user::Model> for UserVisible {
     fn from(value: users_user::Model) -> Self {
-        Self {
-            id: value.id,
-            username: value.username,
-            email: value.email,
-        }
+        Self { id: value.id, username: value.username, email: value.email }
     }
 }

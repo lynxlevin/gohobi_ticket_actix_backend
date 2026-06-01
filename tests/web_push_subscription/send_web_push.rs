@@ -18,18 +18,12 @@ struct Request {
 
 #[actix_web::test]
 async fn happy_path_type_make_wish() -> Result<(), DbErr> {
-    let Connections {
-        app, db, settings, ..
-    } = init_app().await?;
+    let Connections { app, db, settings, .. } = init_app().await?;
     let mut mock_server = mockito::Server::new_async().await;
 
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db).await?;
     let wish = factory::wish(&receiving_ticket).insert(&db).await?;
     let endpoint = format!("{}/message", mock_server.url());
     let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
@@ -54,10 +48,9 @@ async fn happy_path_type_make_wish() -> Result<(), DbErr> {
     let web_push_request_mock = mock_server
         .mock("POST", endpoint.parse::<Uri>().unwrap().path())
         .with_body_from_request(move |request| {
-            let message_string = String::from_utf8(
-                ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap(),
-            )
-            .unwrap();
+            let message_string =
+                String::from_utf8(ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap())
+                    .unwrap();
             let message: Message = serde_json::from_str(&message_string).unwrap();
             assert_eq!(message.title, expected_title);
             assert_eq!(message.body, expected_body);
@@ -75,9 +68,7 @@ async fn happy_path_type_make_wish() -> Result<(), DbErr> {
 
     let req = test::TestRequest::post()
         .uri(URI)
-        .set_json(Request {
-            r#type: MessageType::MakeWish,
-        })
+        .set_json(Request { r#type: MessageType::MakeWish })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
@@ -94,9 +85,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
     let req = test::TestRequest::post()
         .uri(URI)
-        .set_json(Request {
-            r#type: MessageType::MakeWish,
-        })
+        .set_json(Request { r#type: MessageType::MakeWish })
         .to_request();
     let res = test::call_service(&app, req).await;
 
@@ -110,9 +99,7 @@ mod not_found {
 
     #[actix_web::test]
     async fn no_wish() -> Result<(), DbErr> {
-        let Connections {
-            app, db, settings, ..
-        } = init_app().await?;
+        let Connections { app, db, settings, .. } = init_app().await?;
         let mock_server = mockito::Server::new_async().await;
 
         let [user_0, ..] = factory::get_users(&db).await?;
@@ -129,9 +116,7 @@ mod not_found {
 
         let req = test::TestRequest::post()
             .uri(URI)
-            .set_json(Request {
-                r#type: MessageType::MakeWish,
-            })
+            .set_json(Request { r#type: MessageType::MakeWish })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
         let res = test::call_service(&app, req).await;
@@ -145,19 +130,13 @@ mod not_found {
         let Connections { app, db, .. } = init_app().await?;
 
         let [user_0, user_1, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(user_0.id, user_1.id)
-            .insert(&db)
-            .await?;
-        let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
-            .insert(&db)
-            .await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+        let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db).await?;
         let _wish = factory::wish(&receiving_ticket).insert(&db).await?;
 
         let req = test::TestRequest::post()
             .uri(URI)
-            .set_json(Request {
-                r#type: MessageType::MakeWish,
-            })
+            .set_json(Request { r#type: MessageType::MakeWish })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
         let res = test::call_service(&app, req).await;

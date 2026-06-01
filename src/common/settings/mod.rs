@@ -1,8 +1,6 @@
 use std::env;
 
-use types::{
-    ApplicationSettings, DatabaseSettings, Environment, RedisSettings, SecretSettings, Settings,
-};
+use types::{ApplicationSettings, DatabaseSettings, Environment, RedisSettings, SecretSettings, Settings};
 
 pub mod types;
 
@@ -11,11 +9,9 @@ pub fn get_test_settings() -> Settings {
 }
 
 pub fn get_settings(env_file_name: &str) -> Result<Settings, String> {
-    dotenvy::from_filename(env_file_name)
-        .map_err(|e| format!("Failed to fetch env file: {}", e.to_string()))?;
+    dotenvy::from_filename(env_file_name).map_err(|e| format!("Failed to fetch env file: {}", e.to_string()))?;
 
-    match Environment::try_from(env::var("APP_ENVIRONMENT").unwrap_or_else(|_| "production".into()))
-    {
+    match Environment::try_from(env::var("APP_ENVIRONMENT").unwrap_or_else(|_| "production".into())) {
         Ok(env) => match env {
             Environment::Testing => get_development_settings(),
             Environment::Development => get_development_settings(),
@@ -74,14 +70,8 @@ fn merge_env(s: Settings) -> Result<Settings, String> {
             Ok(debug) => &debug == "true",
             Err(_) => s.debug,
         },
-        redis: RedisSettings {
-            url: get_env_var("REDIS_URL")?,
-            ..s.redis
-        },
-        secret: SecretSettings {
-            hmac_secret: get_env_var("APP_SECRET__HMAC_SECRET")?,
-            ..s.secret
-        },
+        redis: RedisSettings { url: get_env_var("REDIS_URL")?, ..s.redis },
+        secret: SecretSettings { hmac_secret: get_env_var("APP_SECRET__HMAC_SECRET")?, ..s.secret },
         ..s
     })
 }

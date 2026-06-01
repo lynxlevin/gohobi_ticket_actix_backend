@@ -9,13 +9,9 @@ use common::factory::{self, *};
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
-    let ticket = factory::ticket(user_0.id, user_relation.id)
-        .insert(&db)
-        .await?;
+    let ticket = factory::ticket(user_0.id, user_relation.id).insert(&db).await?;
 
     let req = test::TestRequest::delete()
         .uri(&format!("/api/tickets/{}/", ticket.id))
@@ -25,9 +21,7 @@ async fn happy_path() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::NO_CONTENT);
 
-    let ticket_in_db = tickets_ticket::Entity::find_by_id(ticket.id)
-        .one(&db)
-        .await?;
+    let ticket_in_db = tickets_ticket::Entity::find_by_id(ticket.id).one(&db).await?;
     assert!(ticket_in_db.is_none());
 
     Ok(())
@@ -37,13 +31,9 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn forbidden_responses() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
-    let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
-        .insert(&db)
-        .await?;
+    let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db).await?;
     let (used_ticket, _) = factory::ticket(user_0.id, user_relation.id)
         .insert_with_wish(&db)
         .await?;
@@ -99,9 +89,7 @@ async fn not_found_responses() -> Result<(), DbErr> {
 async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let Connections { app, .. } = init_app().await?;
 
-    let req = test::TestRequest::delete()
-        .uri("/api/tickets/1/")
-        .to_request();
+    let req = test::TestRequest::delete().uri("/api/tickets/1/").to_request();
     let res = test::call_service(&app, req).await;
 
     assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
@@ -146,10 +134,7 @@ mod first_ticket_date {
             .one(&db)
             .await?
             .unwrap();
-        assert_eq!(
-            user_relation_in_db.first_user_1_giving_ticket_date,
-            Some(today)
-        );
+        assert_eq!(user_relation_in_db.first_user_1_giving_ticket_date, Some(today));
 
         Ok(())
     }
@@ -216,10 +201,7 @@ mod first_ticket_date {
             .one(&db)
             .await?
             .unwrap();
-        assert_eq!(
-            user_relation_in_db.first_user_2_giving_ticket_date,
-            Some(today)
-        );
+        assert_eq!(user_relation_in_db.first_user_2_giving_ticket_date, Some(today));
 
         Ok(())
     }

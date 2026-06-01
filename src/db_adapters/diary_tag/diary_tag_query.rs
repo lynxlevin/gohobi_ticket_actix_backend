@@ -1,9 +1,7 @@
-use entities::{
-    diaries_diary, diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation,
-};
+use entities::{diaries_diary, diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation};
 use sea_orm::{
-    ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter,
-    QueryOrder, QuerySelect, RelationTrait, Select,
+    ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter, QueryOrder, QuerySelect,
+    RelationTrait, Select,
 };
 use uuid::Uuid;
 
@@ -16,18 +14,12 @@ pub struct DiaryTagQuery<'a> {
 
 impl<'a> DiaryTagQuery<'a> {
     pub fn init_query(db: &'a DbConn) -> Self {
-        Self {
-            db,
-            query: diaries_diarytag::Entity::find(),
-        }
+        Self { db, query: diaries_diarytag::Entity::find() }
     }
     pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
         self.query = self
             .query
-            .join(
-                LeftJoin,
-                diaries_diarytag::Relation::UserRelationsUserrelation.def(),
-            )
+            .join(LeftJoin, diaries_diarytag::Relation::UserRelationsUserrelation.def())
             .filter(
                 Condition::any()
                     .add(user_relations_userrelation::Column::User1Id.eq(user_id))
@@ -35,10 +27,7 @@ impl<'a> DiaryTagQuery<'a> {
             );
         self
     }
-    pub fn filter_by_relation(
-        mut self,
-        user_relation: &user_relations_userrelation::Model,
-    ) -> Self {
+    pub fn filter_by_relation(mut self, user_relation: &user_relations_userrelation::Model) -> Self {
         self.query = self
             .query
             .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation.id));
@@ -52,14 +41,8 @@ impl<'a> DiaryTagQuery<'a> {
         self.query = self
             .query
             .column_as(diaries_diary::Column::Id.count(), "diary_count")
-            .join(
-                LeftJoin,
-                diaries_diarytag::Relation::DiariesDiarytagrelation.def(),
-            )
-            .join(
-                LeftJoin,
-                diaries_diarytagrelation::Relation::DiariesDiary.def(),
-            )
+            .join(LeftJoin, diaries_diarytag::Relation::DiariesDiarytagrelation.def())
+            .join(LeftJoin, diaries_diarytagrelation::Relation::DiariesDiary.def())
             .group_by(diaries_diarytag::Column::Id);
         self
     }
@@ -72,10 +55,7 @@ impl<'a> DiaryTagQuery<'a> {
             .await
     }
 
-    pub async fn get_diary_tag_visible(
-        self,
-        diary_tag_id: Uuid,
-    ) -> Result<Option<DiaryTagVisible>, DbErr> {
+    pub async fn get_diary_tag_visible(self, diary_tag_id: Uuid) -> Result<Option<DiaryTagVisible>, DbErr> {
         self.query
             .filter(diaries_diarytag::Column::Id.eq(diary_tag_id))
             .into_model::<DiaryTagVisible>()
@@ -83,10 +63,7 @@ impl<'a> DiaryTagQuery<'a> {
             .await
     }
 
-    pub async fn get_one(
-        self,
-        diary_tag_id: Uuid,
-    ) -> Result<Option<diaries_diarytag::Model>, DbErr> {
+    pub async fn get_one(self, diary_tag_id: Uuid) -> Result<Option<diaries_diarytag::Model>, DbErr> {
         self.query
             .filter(diaries_diarytag::Column::Id.eq(diary_tag_id))
             .one(self.db)

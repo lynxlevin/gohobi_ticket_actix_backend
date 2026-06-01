@@ -1,8 +1,8 @@
 use chrono::Utc;
 use entities::{diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation};
 use sea_orm::{
-    ActiveModelTrait, ActiveValue::NotSet, ColumnTrait, DbConn, DbErr, EntityTrait, ModelTrait,
-    QueryFilter, Set, TryInsertResult,
+    ActiveModelTrait, ActiveValue::NotSet, ColumnTrait, DbConn, DbErr, EntityTrait, ModelTrait, QueryFilter, Set,
+    TryInsertResult,
 };
 use uuid::Uuid;
 

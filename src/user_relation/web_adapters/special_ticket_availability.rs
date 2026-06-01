@@ -45,9 +45,7 @@ async fn special_ticket_availability_endpoint(
                     {
                         Ok(res) => HttpResponse::Ok().json(res),
                         Err(e) => match e {
-                            CheckSpecialTicketAvailabilityError::NotFound(message) => {
-                                response_404(&message)
-                            }
+                            CheckSpecialTicketAvailabilityError::NotFound(message) => response_404(&message),
                             CheckSpecialTicketAvailabilityError::ValidationError(message) => {
                                 response_400(&message)
                             }

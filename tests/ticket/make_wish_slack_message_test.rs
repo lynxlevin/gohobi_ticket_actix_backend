@@ -15,9 +15,7 @@ async fn happy_path_with_slack_message() -> Result<(), DbErr> {
     let mut mock_server = mockito::Server::new_async().await;
     let mut settings = get_test_settings();
     settings.application.slack_host = mock_server.url();
-    let Connections {
-        app, db, settings, ..
-    } = init_app_with_settings(settings).await?;
+    let Connections { app, db, settings, .. } = init_app_with_settings(settings).await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .use_slack(true)
@@ -43,10 +41,7 @@ async fn happy_path_with_slack_message() -> Result<(), DbErr> {
     .unwrap();
 
     let slack_mock = mock_server
-        .mock(
-            "POST",
-            settings.application.slack_incoming_webhook_path.as_str(),
-        )
+        .mock("POST", settings.application.slack_incoming_webhook_path.as_str())
         .match_body(expected_slack_message.as_str())
         .expect(1)
         .with_status(200)
@@ -57,11 +52,7 @@ async fn happy_path_with_slack_message() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-        .set_json(MakeWishRequest {
-            ticket: MakeWishParams {
-                use_description: use_description.clone(),
-            },
-        })
+        .set_json(MakeWishRequest { ticket: MakeWishParams { use_description: use_description.clone() } })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
@@ -77,9 +68,7 @@ async fn happy_path_with_slack_message_special_ticket() -> Result<(), DbErr> {
     let mut mock_server = mockito::Server::new_async().await;
     let mut settings = get_test_settings();
     settings.application.slack_host = mock_server.url();
-    let Connections {
-        app, db, settings, ..
-    } = init_app_with_settings(settings).await?;
+    let Connections { app, db, settings, .. } = init_app_with_settings(settings).await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .use_slack(true)
@@ -110,10 +99,7 @@ async fn happy_path_with_slack_message_special_ticket() -> Result<(), DbErr> {
     .unwrap();
 
     let slack_mock = mock_server
-        .mock(
-            "POST",
-            settings.application.slack_incoming_webhook_path.as_str(),
-        )
+        .mock("POST", settings.application.slack_incoming_webhook_path.as_str())
         .match_body(expected_slack_message.as_str())
         .expect(1)
         .with_status(200)
@@ -124,11 +110,7 @@ async fn happy_path_with_slack_message_special_ticket() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-        .set_json(MakeWishRequest {
-            ticket: MakeWishParams {
-                use_description: use_description.clone(),
-            },
-        })
+        .set_json(MakeWishRequest { ticket: MakeWishParams { use_description: use_description.clone() } })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
@@ -144,9 +126,7 @@ async fn happy_path_with_slack_message_not_sent_if_not_use_slack() -> Result<(),
     let mut mock_server = mockito::Server::new_async().await;
     let mut settings = get_test_settings();
     settings.application.slack_host = mock_server.url();
-    let Connections {
-        app, db, settings, ..
-    } = init_app_with_settings(settings).await?;
+    let Connections { app, db, settings, .. } = init_app_with_settings(settings).await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .use_slack(false)
@@ -158,21 +138,14 @@ async fn happy_path_with_slack_message_not_sent_if_not_use_slack() -> Result<(),
         .await?;
 
     let slack_mock = mock_server
-        .mock(
-            "POST",
-            settings.application.slack_incoming_webhook_path.as_str(),
-        )
+        .mock("POST", settings.application.slack_incoming_webhook_path.as_str())
         .expect(0)
         .create_async()
         .await;
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-        .set_json(MakeWishRequest {
-            ticket: MakeWishParams {
-                use_description: String::default(),
-            },
-        })
+        .set_json(MakeWishRequest { ticket: MakeWishParams { use_description: String::default() } })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;

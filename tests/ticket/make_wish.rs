@@ -10,30 +10,19 @@ use common::factory::{self, *};
 async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db).await?;
 
     let use_description = "used".to_string();
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-        .set_json(MakeWishRequest {
-            ticket: MakeWishParams {
-                use_description: use_description.clone(),
-            },
-        })
+        .set_json(MakeWishRequest { ticket: MakeWishParams { use_description: use_description.clone() } })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    let MakeWishResponse {
-        ticket,
-        web_push_result,
-    } = test::read_body_json(res).await;
+    let MakeWishResponse { ticket, web_push_result } = test::read_body_json(res).await;
     assert_eq!(ticket.id, receiving_ticket.id);
     assert_eq!(ticket.user_relation_id, receiving_ticket.user_relation_id);
     assert_eq!(ticket.giving_user_id, receiving_ticket.giving_user_id);
@@ -45,9 +34,7 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
     assert_eq!(wish.description, use_description);
     assert_eq!(web_push_result, WebPushResult::NotSent);
 
-    let ticket_in_db = tickets_ticket::Entity::find_by_id(ticket.id)
-        .one(&db)
-        .await?;
+    let ticket_in_db = tickets_ticket::Entity::find_by_id(ticket.id).one(&db).await?;
     assert!(ticket_in_db.is_some());
     let ticket_in_db = ticket_in_db.unwrap();
     assert_eq!(ticket_in_db, receiving_ticket);
@@ -59,20 +46,12 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
 async fn forbidden_on_giving_ticket() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let giving_ticket = factory::ticket(user_0.id, user_relation.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let giving_ticket = factory::ticket(user_0.id, user_relation.id).insert(&db).await?;
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", giving_ticket.id))
-        .set_json(MakeWishRequest {
-            ticket: MakeWishParams {
-                use_description: String::default(),
-            },
-        })
+        .set_json(MakeWishRequest { ticket: MakeWishParams { use_description: String::default() } })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
@@ -86,19 +65,13 @@ async fn forbidden_on_giving_ticket() -> Result<(), DbErr> {
 async fn not_found_cases() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let other_relation = factory::user_relation(other_user.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db).await?;
     let receiving_draft_ticket = factory::ticket(user_1.id, user_relation.id)
         .status(TicketStatus::Draft.to_value())
         .insert(&db)
         .await?;
-    let unrelated_ticket = factory::ticket(other_user.id, other_relation.id)
-        .insert(&db)
-        .await?;
+    let unrelated_ticket = factory::ticket(other_user.id, other_relation.id).insert(&db).await?;
 
     for (ticket_id, case) in vec![
         (receiving_draft_ticket.id, "receiving_draft_ticket.id"),
@@ -108,11 +81,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
         dbg!(case);
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/use/", ticket_id))
-            .set_json(MakeWishRequest {
-                ticket: MakeWishParams {
-                    use_description: String::default(),
-                },
-            })
+            .set_json(MakeWishRequest { ticket: MakeWishParams { use_description: String::default() } })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
         let res = test::call_service(&app, req).await;
@@ -129,11 +98,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri("/api/tickets/1/use/")
-        .set_json(MakeWishRequest {
-            ticket: MakeWishParams {
-                use_description: String::default(),
-            },
-        })
+        .set_json(MakeWishRequest { ticket: MakeWishParams { use_description: String::default() } })
         .to_request();
     let res = test::call_service(&app, req).await;
 
@@ -155,12 +120,8 @@ mod web_push_message {
         let mut mock_server = mockito::Server::new_async().await;
 
         let [user_0, user_1, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(user_0.id, user_1.id)
-            .insert(&db)
-            .await?;
-        let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
-            .insert(&db)
-            .await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+        let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db).await?;
         let endpoint = format!("{}/message", mock_server.url());
         let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
         let private_key = key_pair.raw_components().unwrap();
@@ -184,10 +145,9 @@ mod web_push_message {
         let web_push_request_mock = mock_server
             .mock("POST", endpoint.parse::<Uri>().unwrap().path())
             .with_body_from_request(move |request| {
-                let message_string = String::from_utf8(
-                    ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap(),
-                )
-                .unwrap();
+                let message_string =
+                    String::from_utf8(ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap())
+                        .unwrap();
                 let message: Message = serde_json::from_str(&message_string).unwrap();
                 assert_eq!(message.title, expected_title);
                 assert_eq!(message.body, expected_body);
@@ -205,9 +165,7 @@ mod web_push_message {
 
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-            .set_json(MakeWishRequest {
-                ticket: MakeWishParams { use_description },
-            })
+            .set_json(MakeWishRequest { ticket: MakeWishParams { use_description } })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
         let res = test::call_service(&app, req).await;
@@ -215,10 +173,7 @@ mod web_push_message {
 
         web_push_request_mock.assert_async().await;
 
-        let MakeWishResponse {
-            ticket: _,
-            web_push_result,
-        } = test::read_body_json(res).await;
+        let MakeWishResponse { ticket: _, web_push_result } = test::read_body_json(res).await;
         assert_eq!(web_push_result, WebPushResult::Sent);
 
         Ok(())
@@ -230,9 +185,7 @@ mod web_push_message {
         let mut mock_server = mockito::Server::new_async().await;
 
         let [user_0, user_1, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(user_0.id, user_1.id)
-            .insert(&db)
-            .await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
         let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
             .is_special(true)
             .insert(&db)
@@ -260,10 +213,9 @@ mod web_push_message {
         let web_push_request_mock = mock_server
             .mock("POST", endpoint.parse::<Uri>().unwrap().path())
             .with_body_from_request(move |request| {
-                let message_string = String::from_utf8(
-                    ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap(),
-                )
-                .unwrap();
+                let message_string =
+                    String::from_utf8(ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap())
+                        .unwrap();
                 let message: Message = serde_json::from_str(&message_string).unwrap();
                 assert_eq!(message.title, expected_title);
                 assert_eq!(message.body, expected_body);
@@ -281,9 +233,7 @@ mod web_push_message {
 
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/use/", receiving_ticket.id))
-            .set_json(MakeWishRequest {
-                ticket: MakeWishParams { use_description },
-            })
+            .set_json(MakeWishRequest { ticket: MakeWishParams { use_description } })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
         let res = test::call_service(&app, req).await;
@@ -291,10 +241,7 @@ mod web_push_message {
 
         web_push_request_mock.assert_async().await;
 
-        let MakeWishResponse {
-            ticket: _,
-            web_push_result,
-        } = test::read_body_json(res).await;
+        let MakeWishResponse { ticket: _, web_push_result } = test::read_body_json(res).await;
         assert_eq!(web_push_result, WebPushResult::Sent);
 
         Ok(())

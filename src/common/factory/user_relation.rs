@@ -15,39 +15,21 @@ pub fn user_relation(user_1_id: i64, user_2_id: i64) -> user_relations_userrelat
 }
 
 pub trait UserRelationFactory {
-    fn user_1_giving_ticket_img(
-        self,
-        img: Option<String>,
-    ) -> user_relations_userrelation::ActiveModel;
-    fn user_2_giving_ticket_img(
-        self,
-        img: Option<String>,
-    ) -> user_relations_userrelation::ActiveModel;
+    fn user_1_giving_ticket_img(self, img: Option<String>) -> user_relations_userrelation::ActiveModel;
+    fn user_2_giving_ticket_img(self, img: Option<String>) -> user_relations_userrelation::ActiveModel;
     fn use_slack(self, use_slack: bool) -> user_relations_userrelation::ActiveModel;
-    fn first_user_1_giving_ticket_date(
-        self,
-        date: Option<NaiveDate>,
-    ) -> user_relations_userrelation::ActiveModel;
-    fn first_user_2_giving_ticket_date(
-        self,
-        date: Option<NaiveDate>,
-    ) -> user_relations_userrelation::ActiveModel;
+    fn first_user_1_giving_ticket_date(self, date: Option<NaiveDate>) -> user_relations_userrelation::ActiveModel;
+    fn first_user_2_giving_ticket_date(self, date: Option<NaiveDate>) -> user_relations_userrelation::ActiveModel;
     fn first_diary_date(self, date: Option<NaiveDate>) -> user_relations_userrelation::ActiveModel;
 }
 
 impl UserRelationFactory for user_relations_userrelation::ActiveModel {
-    fn user_1_giving_ticket_img(
-        mut self,
-        img: Option<String>,
-    ) -> user_relations_userrelation::ActiveModel {
+    fn user_1_giving_ticket_img(mut self, img: Option<String>) -> user_relations_userrelation::ActiveModel {
         self.user_1_giving_ticket_img = Set(img);
         self
     }
 
-    fn user_2_giving_ticket_img(
-        mut self,
-        img: Option<String>,
-    ) -> user_relations_userrelation::ActiveModel {
+    fn user_2_giving_ticket_img(mut self, img: Option<String>) -> user_relations_userrelation::ActiveModel {
         self.user_2_giving_ticket_img = Set(img);
         self
     }
@@ -73,10 +55,7 @@ impl UserRelationFactory for user_relations_userrelation::ActiveModel {
         self
     }
 
-    fn first_diary_date(
-        mut self,
-        date: Option<NaiveDate>,
-    ) -> user_relations_userrelation::ActiveModel {
+    fn first_diary_date(mut self, date: Option<NaiveDate>) -> user_relations_userrelation::ActiveModel {
         self.first_diary_date = Set(date);
         self
     }

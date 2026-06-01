@@ -20,10 +20,6 @@ pub struct BulkUpdateDiaryTagItem {
 
 impl From<&diaries_diarytag::Model> for BulkUpdateDiaryTagItem {
     fn from(value: &diaries_diarytag::Model) -> Self {
-        Self {
-            id: Some(value.id),
-            text: value.text.clone(),
-            sort_no: value.sort_no,
-        }
+        Self { id: Some(value.id), text: value.text.clone(), sort_no: value.sort_no }
     }
 }

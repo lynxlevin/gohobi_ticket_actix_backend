@@ -31,12 +31,7 @@ pub async fn mark_diary_read<'a>(
         false => (None, Some(DiaryStatus::Read)),
     };
 
-    let params = UpdateDiaryParams {
-        entry: None,
-        date: None,
-        user_1_status,
-        user_2_status,
-    };
+    let params = UpdateDiaryParams { entry: None, date: None, user_1_status, user_2_status };
 
     match diary_mutation.update(diary, params).await {
         Ok(_) => Ok(()),

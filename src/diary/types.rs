@@ -13,11 +13,7 @@ pub struct DiaryTag {
 
 impl From<&diaries_diarytag::Model> for DiaryTag {
     fn from(value: &diaries_diarytag::Model) -> Self {
-        Self {
-            id: value.id,
-            text: value.text.to_string(),
-            sort_no: value.sort_no,
-        }
+        Self { id: value.id, text: value.text.to_string(), sort_no: value.sort_no }
     }
 }
 

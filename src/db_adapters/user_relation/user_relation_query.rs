@@ -1,7 +1,7 @@
 use entities::user_relations_userrelation;
 use sea_orm::{
-    prelude::Expr, ColumnTrait, Condition, DbConn, DbErr, DeriveIden, EntityTrait, QueryFilter,
-    QueryOrder, QuerySelect, RelationTrait,
+    prelude::Expr, ColumnTrait, Condition, DbConn, DbErr, DeriveIden, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, RelationTrait,
 };
 
 use super::types::UserRelationWithName;
@@ -66,10 +66,7 @@ impl UserRelationQuery<'_> {
             .await
     }
 
-    pub async fn find_related_by_user_id(
-        self,
-        user_id: i64,
-    ) -> Result<Vec<UserRelationWithName>, DbErr> {
+    pub async fn find_related_by_user_id(self, user_id: i64) -> Result<Vec<UserRelationWithName>, DbErr> {
         user_relations_userrelation::Entity::find()
             .join_as(
                 sea_orm::JoinType::LeftJoin,

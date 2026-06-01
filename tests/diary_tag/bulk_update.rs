@@ -11,9 +11,7 @@ use crate::utils::{init_app, Connections};
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
     let tag_0 = factory::diary_tag(user_relation.id)
         .text("tag_0")
@@ -38,26 +36,10 @@ async fn happy_path() -> Result<(), DbErr> {
 
     let req_param = BulkUpdateDiaryTagRequest {
         diary_tags: vec![
-            BulkUpdateDiaryTagItem {
-                id: Some(tag_0.id),
-                text: "tag_0->0".to_string(),
-                sort_no: 0,
-            },
-            BulkUpdateDiaryTagItem {
-                id: Some(tag_1.id),
-                text: "tag_1->3".to_string(),
-                sort_no: 3,
-            },
-            BulkUpdateDiaryTagItem {
-                id: Some(tag_2.id),
-                text: "tag_2->1".to_string(),
-                sort_no: 1,
-            },
-            BulkUpdateDiaryTagItem {
-                id: None,
-                text: "new_tag".to_string(),
-                sort_no: 2,
-            },
+            BulkUpdateDiaryTagItem { id: Some(tag_0.id), text: "tag_0->0".to_string(), sort_no: 0 },
+            BulkUpdateDiaryTagItem { id: Some(tag_1.id), text: "tag_1->3".to_string(), sort_no: 3 },
+            BulkUpdateDiaryTagItem { id: Some(tag_2.id), text: "tag_2->1".to_string(), sort_no: 1 },
+            BulkUpdateDiaryTagItem { id: None, text: "new_tag".to_string(), sort_no: 2 },
         ],
         user_relation_id: user_relation.id,
     };
@@ -93,10 +75,8 @@ async fn happy_path() -> Result<(), DbErr> {
         .all(&db)
         .await?;
 
-    let actual: Vec<BulkUpdateDiaryTagItem> = tags_in_db
-        .iter()
-        .map(|tag| BulkUpdateDiaryTagItem::from(tag))
-        .collect();
+    let actual: Vec<BulkUpdateDiaryTagItem> =
+        tags_in_db.iter().map(|tag| BulkUpdateDiaryTagItem::from(tag)).collect();
     assert_eq!(actual, res);
 
     Ok(())
@@ -106,12 +86,8 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn create_new_if_other_relation_tag() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let other_relation = factory::user_relation(user_1.id, other_user.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db).await?;
 
     let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db).await?;
 
@@ -163,22 +139,12 @@ async fn create_new_if_other_relation_tag() -> Result<(), DbErr> {
 async fn bad_request_on_duplicate_sort_no() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
     let req_param = BulkUpdateDiaryTagRequest {
         diary_tags: vec![
-            BulkUpdateDiaryTagItem {
-                id: None,
-                text: "tag_0".to_string(),
-                sort_no: 1,
-            },
-            BulkUpdateDiaryTagItem {
-                id: None,
-                text: "tag_1".to_string(),
-                sort_no: 1,
-            },
+            BulkUpdateDiaryTagItem { id: None, text: "tag_0".to_string(), sort_no: 1 },
+            BulkUpdateDiaryTagItem { id: None, text: "tag_1".to_string(), sort_no: 1 },
         ],
         user_relation_id: user_relation.id,
     };
@@ -202,19 +168,12 @@ async fn not_found_cases() -> Result<(), DbErr> {
         .insert(&db)
         .await?;
 
-    for (user_relation_id, case) in vec![
-        (other_relation.id, "other_relation.id"),
-        (-1, "non existent id"),
-    ] {
+    for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non existent id")] {
         dbg!(case);
         let req = test::TestRequest::post()
             .uri("/api/diary_tags/bulk_update/")
             .set_json(BulkUpdateDiaryTagRequest {
-                diary_tags: vec![BulkUpdateDiaryTagItem {
-                    id: None,
-                    text: "tag_0".to_string(),
-                    sort_no: 1,
-                }],
+                diary_tags: vec![BulkUpdateDiaryTagItem { id: None, text: "tag_0".to_string(), sort_no: 1 }],
                 user_relation_id,
             })
             .to_request();
@@ -234,11 +193,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri("/api/diary_tags/bulk_update/")
         .set_json(BulkUpdateDiaryTagRequest {
-            diary_tags: vec![BulkUpdateDiaryTagItem {
-                id: None,
-                text: "tag_0".to_string(),
-                sort_no: 1,
-            }],
+            diary_tags: vec![BulkUpdateDiaryTagItem { id: None, text: "tag_0".to_string(), sort_no: 1 }],
             user_relation_id: 1,
         })
         .to_request();
