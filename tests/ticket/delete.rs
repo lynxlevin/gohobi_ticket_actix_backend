@@ -108,3 +108,150 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
     Ok(())
 }
+
+mod first_ticket_date {
+    use chrono::{Days, Utc};
+    use entities::user_relations_userrelation;
+
+    use super::*;
+
+    #[actix_web::test]
+    async fn delete_oldest_user_1_giving_ticket_update_to_second_oldest() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_1, user_2, ..] = factory::get_users(&db).await?;
+        let today = Utc::now().date_naive();
+        let yesterday = today.checked_sub_days(Days::new(1)).unwrap();
+        let user_relation = factory::user_relation(user_1.id, user_2.id)
+            .first_user_1_giving_ticket_date(Some(yesterday))
+            .insert(&db)
+            .await?;
+        let _second_oldest_ticket = factory::ticket(user_1.id, user_relation.id)
+            .gift_date(today)
+            .insert(&db)
+            .await?;
+        let ticket = factory::ticket(user_1.id, user_relation.id)
+            .gift_date(yesterday)
+            .insert(&db)
+            .await?;
+
+        let req = test::TestRequest::delete()
+            .uri(&format!("/api/tickets/{}/", ticket.id))
+            .to_request();
+        req.extensions_mut().insert(user_1.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::NO_CONTENT);
+
+        let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+            .one(&db)
+            .await?
+            .unwrap();
+        assert_eq!(
+            user_relation_in_db.first_user_1_giving_ticket_date,
+            Some(today)
+        );
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn delete_oldest_user_1_giving_ticket_update_to_none() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_1, user_2, ..] = factory::get_users(&db).await?;
+        let today = Utc::now().date_naive();
+        let user_relation = factory::user_relation(user_1.id, user_2.id)
+            .first_user_1_giving_ticket_date(Some(today))
+            .insert(&db)
+            .await?;
+        let ticket = factory::ticket(user_1.id, user_relation.id)
+            .gift_date(today)
+            .insert(&db)
+            .await?;
+
+        let req = test::TestRequest::delete()
+            .uri(&format!("/api/tickets/{}/", ticket.id))
+            .to_request();
+        req.extensions_mut().insert(user_1.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::NO_CONTENT);
+
+        let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+            .one(&db)
+            .await?
+            .unwrap();
+        assert_eq!(user_relation_in_db.first_user_1_giving_ticket_date, None);
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn delete_oldest_user_2_giving_ticket_update_to_second_oldest() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_1, user_2, ..] = factory::get_users(&db).await?;
+        let today = Utc::now().date_naive();
+        let yesterday = today.checked_sub_days(Days::new(1)).unwrap();
+        let user_relation = factory::user_relation(user_1.id, user_2.id)
+            .first_user_2_giving_ticket_date(Some(yesterday))
+            .insert(&db)
+            .await?;
+        let _second_oldest_ticket = factory::ticket(user_2.id, user_relation.id)
+            .gift_date(today)
+            .insert(&db)
+            .await?;
+        let ticket = factory::ticket(user_2.id, user_relation.id)
+            .gift_date(yesterday)
+            .insert(&db)
+            .await?;
+
+        let req = test::TestRequest::delete()
+            .uri(&format!("/api/tickets/{}/", ticket.id))
+            .to_request();
+        req.extensions_mut().insert(user_2.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::NO_CONTENT);
+
+        let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+            .one(&db)
+            .await?
+            .unwrap();
+        assert_eq!(
+            user_relation_in_db.first_user_2_giving_ticket_date,
+            Some(today)
+        );
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn delete_oldest_user_2_giving_ticket_update_to_none() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_1, user_2, ..] = factory::get_users(&db).await?;
+        let today = Utc::now().date_naive();
+        let user_relation = factory::user_relation(user_1.id, user_2.id)
+            .first_user_2_giving_ticket_date(Some(today))
+            .insert(&db)
+            .await?;
+        let ticket = factory::ticket(user_2.id, user_relation.id)
+            .gift_date(today)
+            .insert(&db)
+            .await?;
+
+        let req = test::TestRequest::delete()
+            .uri(&format!("/api/tickets/{}/", ticket.id))
+            .to_request();
+        req.extensions_mut().insert(user_2.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::NO_CONTENT);
+
+        let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+            .one(&db)
+            .await?
+            .unwrap();
+        assert_eq!(user_relation_in_db.first_user_2_giving_ticket_date, None);
+
+        Ok(())
+    }
+}

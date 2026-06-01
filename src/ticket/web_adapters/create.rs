@@ -9,7 +9,7 @@ use common::errors::{
 };
 use db_adapters::{
     ticket::{TicketMutation, TicketQuery},
-    user_relation::UserRelationQuery,
+    user_relation::{UserRelationMutation, UserRelationQuery},
 };
 use entities::users_user;
 use sea_orm::DbConn;
@@ -25,11 +25,13 @@ async fn create_ticket_endpoint(
     match user {
         Some(user) => {
             let user_relation_query = UserRelationQuery { db: &db };
+            let user_relation_mutation = UserRelationMutation::init(&db);
             let ticket_query = TicketQuery::init_query(&db);
             let ticket_mutation = TicketMutation { db: &db };
             match create_ticket(
                 user.into_inner(),
                 user_relation_query,
+                user_relation_mutation,
                 ticket_query,
                 ticket_mutation,
                 &mut params.into_inner().ticket,

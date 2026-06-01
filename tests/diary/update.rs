@@ -213,6 +213,49 @@ async fn happy_path_change_date_to_oldest() -> Result<(), DbErr> {
 }
 
 #[actix_web::test]
+async fn happy_path_change_date_of_oldest() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
+    let today = Utc::now().date_naive();
+    let yesterday = today.checked_sub_days(Days::new(1)).unwrap();
+    let user_relation = factory::user_relation(user_0.id, user_1.id)
+        .first_diary_date(Some(yesterday))
+        .insert(&db)
+        .await?;
+    let oldest_diary = factory::diary(user_relation.id)
+        .date(yesterday)
+        .insert(&db)
+        .await?;
+    let _second_oldest_diary = factory::diary(user_relation.id)
+        .date(today)
+        .insert(&db)
+        .await?;
+
+    let new_diary_date = today.checked_add_days(Days::new(10)).unwrap();
+
+    let req = test::TestRequest::put()
+        .uri(&format!("/api/diaries/{}/", oldest_diary.id))
+        .set_json(UpdateDiaryRequest {
+            entry: oldest_diary.entry,
+            date: new_diary_date,
+            tag_ids: None,
+        })
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
+        .one(&db)
+        .await?
+        .unwrap();
+    assert_eq!(user_relation_in_db.first_diary_date, Some(today));
+
+    Ok(())
+}
+
+#[actix_web::test]
 async fn not_found_if_incorrect_id() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;

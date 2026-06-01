@@ -24,6 +24,14 @@ pub trait UserRelationFactory {
         img: Option<String>,
     ) -> user_relations_userrelation::ActiveModel;
     fn use_slack(self, use_slack: bool) -> user_relations_userrelation::ActiveModel;
+    fn first_user_1_giving_ticket_date(
+        self,
+        date: Option<NaiveDate>,
+    ) -> user_relations_userrelation::ActiveModel;
+    fn first_user_2_giving_ticket_date(
+        self,
+        date: Option<NaiveDate>,
+    ) -> user_relations_userrelation::ActiveModel;
     fn first_diary_date(self, date: Option<NaiveDate>) -> user_relations_userrelation::ActiveModel;
 }
 
@@ -46,6 +54,22 @@ impl UserRelationFactory for user_relations_userrelation::ActiveModel {
 
     fn use_slack(mut self, use_slack: bool) -> user_relations_userrelation::ActiveModel {
         self.use_slack = Set(use_slack);
+        self
+    }
+
+    fn first_user_1_giving_ticket_date(
+        mut self,
+        date: Option<NaiveDate>,
+    ) -> user_relations_userrelation::ActiveModel {
+        self.first_user_1_giving_ticket_date = Set(date);
+        self
+    }
+
+    fn first_user_2_giving_ticket_date(
+        mut self,
+        date: Option<NaiveDate>,
+    ) -> user_relations_userrelation::ActiveModel {
+        self.first_user_2_giving_ticket_date = Set(date);
         self
     }
 
