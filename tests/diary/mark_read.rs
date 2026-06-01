@@ -11,9 +11,7 @@ use common::factory::{self, *};
 async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
     let diary = factory::diary(user_relation.id)
         .user_1_status(DiaryStatus::Unread.to_value())
         .user_2_status(DiaryStatus::Read.to_value())
@@ -44,9 +42,7 @@ async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
 async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
     let diary = factory::diary(user_relation.id)
         .user_1_status(DiaryStatus::Edited.to_value())
         .user_2_status(DiaryStatus::Read.to_value())
@@ -77,9 +73,7 @@ async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
 async fn not_found_if_incorrect_id() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let other_relation = factory::user_relation(user_1.id, other_user.id)
-        .insert(&db)
-        .await?;
+    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db).await?;
     let other_relation_diary = factory::diary(other_relation.id).insert(&db).await?;
 
     for (diary_id, case) in vec![

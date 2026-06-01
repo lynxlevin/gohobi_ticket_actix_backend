@@ -11,13 +11,7 @@ pub struct Settings {
 
 impl Settings {
     pub fn base_settings() -> Self {
-        Self {
-            application: ApplicationSettings {
-                port: 8000,
-                ..Default::default()
-            },
-            ..Default::default()
-        }
+        Self { application: ApplicationSettings { port: 8000, ..Default::default() }, ..Default::default() }
     }
 }
 

@@ -14,15 +14,11 @@ pub async fn init_db(settings: &Settings) -> Result<DbConn, DbErr> {
     let db_conn = match db.get_database_backend() {
         DbBackend::MySql => {
             let url = format!("{}", &database_url);
-            Database::connect(&url)
-                .await
-                .expect("Failed to open DB connection.")
+            Database::connect(&url).await.expect("Failed to open DB connection.")
         }
         DbBackend::Postgres => {
             let url = format!("{}", &database_url);
-            Database::connect(&url)
-                .await
-                .expect("Failed to open DB connection.")
+            Database::connect(&url).await.expect("Failed to open DB connection.")
         }
         DbBackend::Sqlite => db,
     };

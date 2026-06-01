@@ -2,8 +2,7 @@ use sea_orm_migration::{
     prelude::{
         async_trait,
         sea_orm::{self, DeriveIden},
-        DbErr, DeriveMigrationName, ForeignKey, ForeignKeyAction, Index, MigrationTrait,
-        SchemaManager, Table,
+        DbErr, DeriveMigrationName, ForeignKey, ForeignKeyAction, Index, MigrationTrait, SchemaManager, Table,
     },
     schema::{big_integer, big_integer_null, string, string_len, uuid},
 };
@@ -52,11 +51,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_index(
-                Index::drop()
-                    .name(WEB_PUSH_SUBSCRIPTION_INDEX_NAME)
-                    .to_owned(),
-            )
+            .drop_index(Index::drop().name(WEB_PUSH_SUBSCRIPTION_INDEX_NAME).to_owned())
             .await?;
         manager
             .drop_table(Table::drop().table(WebPushSubscription::Table).to_owned())

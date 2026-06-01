@@ -30,14 +30,7 @@ async fn mark_diary_read_endpoint(
         Some(user) => {
             let diary_query = DiaryQuery::init(&db);
             let diary_mutation = DiaryMutation::init(&db);
-            match mark_diary_read(
-                user.into_inner(),
-                diary_query,
-                diary_mutation,
-                path_param.diary_id,
-            )
-            .await
-            {
+            match mark_diary_read(user.into_inner(), diary_query, diary_mutation, path_param.diary_id).await {
                 Ok(_) => HttpResponse::Ok().finish(),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("Diary not found."),

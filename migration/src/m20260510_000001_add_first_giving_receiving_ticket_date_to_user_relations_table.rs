@@ -18,12 +18,8 @@ impl MigrationTrait for Migration {
             .alter_table(
                 Table::alter()
                     .table(UserRelationsUserrelation::Table)
-                    .add_column_if_not_exists(date_null(
-                        UserRelationsUserrelation::FirstUser1GivingTicketDate,
-                    ))
-                    .add_column_if_not_exists(date_null(
-                        UserRelationsUserrelation::FirstUser2GivingTicketDate,
-                    ))
+                    .add_column_if_not_exists(date_null(UserRelationsUserrelation::FirstUser1GivingTicketDate))
+                    .add_column_if_not_exists(date_null(UserRelationsUserrelation::FirstUser2GivingTicketDate))
                     .to_owned(),
             )
             .await?;

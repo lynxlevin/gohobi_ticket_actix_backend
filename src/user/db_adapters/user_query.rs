@@ -10,10 +10,7 @@ impl UserQuery<'_> {
         users_user::Entity::find_by_id(id).one(self.db).await
     }
 
-    pub async fn find_active_by_email(
-        self,
-        email: String,
-    ) -> Result<Option<users_user::Model>, DbErr> {
+    pub async fn find_active_by_email(self, email: String) -> Result<Option<users_user::Model>, DbErr> {
         users_user::Entity::find()
             .filter(users_user::Column::Email.eq(email))
             .one(self.db)

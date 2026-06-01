@@ -32,10 +32,7 @@ impl MigrationTrait for Migration {
                         ForeignKey::create()
                             .name(INDEX_NAME)
                             .from(DiariesDiary::Table, DiariesDiary::UserRelationId)
-                            .to(
-                                UserRelationsUserrelation::Table,
-                                UserRelationsUserrelation::Id,
-                            ),
+                            .to(UserRelationsUserrelation::Table, UserRelationsUserrelation::Id),
                     )
                     .to_owned(),
             )
@@ -58,12 +55,7 @@ impl MigrationTrait for Migration {
             .drop_index(Index::drop().if_exists().name(INDEX_NAME).to_owned())
             .await?;
         manager
-            .drop_table(
-                Table::drop()
-                    .if_exists()
-                    .table(DiariesDiary::Table)
-                    .to_owned(),
-            )
+            .drop_table(Table::drop().if_exists().table(DiariesDiary::Table).to_owned())
             .await?;
         Ok(())
     }

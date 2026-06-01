@@ -4,9 +4,7 @@ use sea_orm_migration::{
         sea_orm::{self, DeriveIden},
         DbErr, DeriveMigrationName, ForeignKey, Index, MigrationTrait, SchemaManager, Table,
     },
-    schema::{
-        big_integer, big_integer_uniq, date_null, string_len, text, timestamp_with_time_zone, uuid,
-    },
+    schema::{big_integer, big_integer_uniq, date_null, string_len, text, timestamp_with_time_zone, uuid},
     sea_orm::ConnectionTrait,
 };
 
@@ -43,10 +41,7 @@ impl MigrationTrait for Migration {
                         ForeignKey::create()
                             .name(RELATION_FK_NAME)
                             .from(Wish::Table, Wish::UserRelationId)
-                            .to(
-                                UserRelationsUserrelation::Table,
-                                UserRelationsUserrelation::Id,
-                            ),
+                            .to(UserRelationsUserrelation::Table, UserRelationsUserrelation::Id),
                     )
                     .to_owned(),
             )
@@ -114,12 +109,7 @@ impl MigrationTrait for Migration {
             )
             .await?;
         manager
-            .drop_index(
-                Index::drop()
-                    .if_exists()
-                    .name(RELATION_INDEX_NAME)
-                    .to_owned(),
-            )
+            .drop_index(Index::drop().if_exists().name(RELATION_INDEX_NAME).to_owned())
             .await?;
         manager
             .drop_index(Index::drop().if_exists().name(TICKET_INDEX_NAME).to_owned())

@@ -43,23 +43,14 @@ mod tests {
         let password = "password";
         let django_password =
             "pbkdf2_sha256$260000$N4b3mSYc5bXPsCkD7G3eKt$4nfua4vv7GLRqeRHxCcDmjtMxB6LYZNhMf6Lqh48RDE=";
-        let user = factory::user()
-            .password(django_password)
-            .insert(&db)
-            .await?;
+        let user = factory::user().password(django_password).insert(&db).await?;
 
         let user_mutation = UserMutation { db: &db };
-        let res_user = user_mutation
-            .convert_to_argon2_password(user, password)
-            .await
-            .unwrap();
+        let res_user = user_mutation.convert_to_argon2_password(user, password).await.unwrap();
 
         assert!(res_user.password.starts_with(ARGON2_START_WORD));
 
-        let user_in_db = users_user::Entity::find_by_id(res_user.id)
-            .one(&db)
-            .await?
-            .unwrap();
+        let user_in_db = users_user::Entity::find_by_id(res_user.id).one(&db).await?.unwrap();
         assert!(user_in_db.password.starts_with(ARGON2_START_WORD));
 
         Ok(())

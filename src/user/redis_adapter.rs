@@ -11,10 +11,7 @@ pub struct UserRedis<'a> {
 }
 
 impl UserRedis<'_> {
-    pub async fn validate_request_count(
-        self,
-        login_attempts_count_key: &str,
-    ) -> Result<u64, UseCaseError> {
+    pub async fn validate_request_count(self, login_attempts_count_key: &str) -> Result<u64, UseCaseError> {
         let mut conn = match self.pool.get().await {
             Ok(conn) => conn,
             Err(_) => return Err(UseCaseError::InternalServerError),

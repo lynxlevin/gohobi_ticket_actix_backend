@@ -10,9 +10,7 @@ use crate::utils::{init_app, Connections};
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
     let tag = factory::diary_tag(user_relation.id)
         .text("tag_0")
@@ -35,12 +33,7 @@ async fn happy_path() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let res: DiaryTagVisible = test::read_body_json(res).await;
-    let expected = DiaryTagVisible {
-        id: tag.id,
-        text: tag.text,
-        sort_no: tag.sort_no,
-        diary_count: diary_count,
-    };
+    let expected = DiaryTagVisible { id: tag.id, text: tag.text, sort_no: tag.sort_no, diary_count: diary_count };
     assert_eq!(res, expected);
 
     Ok(())

@@ -70,7 +70,8 @@ mod tests {
     #[test]
     fn test_verify_with_argon2_password() {
         let password = "password";
-        let argon2_password = "$argon2id$v=19$m=19456,t=2,p=1$r07vWFCaKrbNPrSgUrG/+Q$/2lBaeRWeox6ROMu6qAwOYmttdGXA3o4Uw2YHC/fvfY";
+        let argon2_password =
+            "$argon2id$v=19$m=19456,t=2,p=1$r07vWFCaKrbNPrSgUrG/+Q$/2lBaeRWeox6ROMu6qAwOYmttdGXA3o4Uw2YHC/fvfY";
 
         let res = verify(password, argon2_password);
 
@@ -81,7 +82,8 @@ mod tests {
     #[test]
     fn test_verify_with_incorrect_argon2_password() {
         let incorrect_password = "passworda";
-        let argon2_password = "$argon2id$v=19$m=19456,t=2,p=1$r07vWFCaKrbNPrSgUrG/+Q$/2lBaeRWeox6ROMu6qAwOYmttdGXA3o4Uw2YHC/fvfY";
+        let argon2_password =
+            "$argon2id$v=19$m=19456,t=2,p=1$r07vWFCaKrbNPrSgUrG/+Q$/2lBaeRWeox6ROMu6qAwOYmttdGXA3o4Uw2YHC/fvfY";
 
         let res = verify(incorrect_password, argon2_password);
 
@@ -94,7 +96,8 @@ mod tests {
     fn test_verify_with_django_password() {
         // Ignore this test because it's very slow
         let password = "password";
-        let django_password = "pbkdf2_sha256$260000$N4b3mSYc5bXPsCkD7G3eKt$4nfua4vv7GLRqeRHxCcDmjtMxB6LYZNhMf6Lqh48RDE=";
+        let django_password =
+            "pbkdf2_sha256$260000$N4b3mSYc5bXPsCkD7G3eKt$4nfua4vv7GLRqeRHxCcDmjtMxB6LYZNhMf6Lqh48RDE=";
 
         let res = verify(password, django_password);
 
@@ -107,7 +110,8 @@ mod tests {
     fn test_verify_with_incorrect_django_password() {
         // Ignore this test because it's very slow
         let incorrect_password = "passworda";
-        let django_password = "pbkdf2_sha256$260000$N4b3mSYc5bXPsCkD7G3eKt$4nfua4vv7GLRqeRHxCcDmjtMxB6LYZNhMf6Lqh48RDE=";
+        let django_password =
+            "pbkdf2_sha256$260000$N4b3mSYc5bXPsCkD7G3eKt$4nfua4vv7GLRqeRHxCcDmjtMxB6LYZNhMf6Lqh48RDE=";
 
         let res = verify(incorrect_password, django_password);
 
@@ -118,7 +122,8 @@ mod tests {
     #[test]
     fn test_verify_with_unknown_password_hash() {
         let password = "password";
-        let unknown_password = "apbkdf2_sha256$260000$N4b3mSYc5bXPsCkD7G3eKt$4nfua4vv7GLRqeRHxCcDmjtMxB6LYZNhMf6Lqh48RDE=";
+        let unknown_password =
+            "apbkdf2_sha256$260000$N4b3mSYc5bXPsCkD7G3eKt$4nfua4vv7GLRqeRHxCcDmjtMxB6LYZNhMf6Lqh48RDE=";
 
         let res = verify(password, unknown_password);
 
@@ -136,10 +141,7 @@ mod tests {
         let hashed_password = result.unwrap();
         assert!(hashed_password.starts_with(ARGON2_START_WORD));
         assert!(Argon2::default()
-            .verify_password(
-                password.as_bytes(),
-                &PasswordHash::new(&hashed_password).unwrap()
-            )
+            .verify_password(password.as_bytes(), &PasswordHash::new(&hashed_password).unwrap())
             .is_ok());
     }
 }

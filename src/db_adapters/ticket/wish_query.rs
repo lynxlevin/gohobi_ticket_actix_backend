@@ -20,10 +20,7 @@ pub struct WishQuery<'a> {
 
 impl<'a> WishQuery<'a> {
     pub fn init_query(db: &'a DbConn) -> Self {
-        Self {
-            db,
-            query: Entity::find(),
-        }
+        Self { db, query: Entity::find() }
     }
 
     pub fn join_ticket(mut self) -> Self {
@@ -31,9 +28,7 @@ impl<'a> WishQuery<'a> {
         self
     }
     pub fn join_user_relation(mut self) -> Self {
-        self.query = self
-            .query
-            .join(LeftJoin, Relation::UserRelationsUserrelation.def());
+        self.query = self.query.join(LeftJoin, Relation::UserRelationsUserrelation.def());
         self
     }
 
@@ -47,9 +42,7 @@ impl<'a> WishQuery<'a> {
         self
     }
     pub fn filter_by_relation(mut self, user_relation_id: i64) -> Self {
-        self.query = self
-            .query
-            .filter(Column::UserRelationId.eq(user_relation_id));
+        self.query = self.query.filter(Column::UserRelationId.eq(user_relation_id));
         self
     }
     pub fn filter_created_at_gte(mut self, created_at: DateTime<FixedOffset>) -> Self {
@@ -70,18 +63,11 @@ impl<'a> WishQuery<'a> {
         self
     }
 
-    pub async fn get_all_with_ticket(
-        self,
-    ) -> Result<Vec<(Model, Option<tickets_ticket::Model>)>, DbErr> {
-        self.query
-            .select_also(tickets_ticket::Entity)
-            .all(self.db)
-            .await
+    pub async fn get_all_with_ticket(self) -> Result<Vec<(Model, Option<tickets_ticket::Model>)>, DbErr> {
+        self.query.select_also(tickets_ticket::Entity).all(self.db).await
     }
 
-    pub async fn get_random_with_ticket(
-        self,
-    ) -> Result<Option<(Model, Option<tickets_ticket::Model>)>, DbErr> {
+    pub async fn get_random_with_ticket(self) -> Result<Option<(Model, Option<tickets_ticket::Model>)>, DbErr> {
         self.query
             .select_also(tickets_ticket::Entity)
             .order_by(SimpleExpr::FunctionCall(Func::random()), Order::Asc)

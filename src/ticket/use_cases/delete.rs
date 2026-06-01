@@ -1,6 +1,4 @@
-use db_adapters::ticket_service::{
-    TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery,
-};
+use db_adapters::ticket_service::{TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery};
 use entities::users_user;
 use thiserror::Error;
 
@@ -27,9 +25,7 @@ pub async fn delete_ticket(
     ticket_id: i64,
     ticket_service: TicketService<'_>,
 ) -> Result<(), DeleteTicketError> {
-    let (ticket, wish) = ticket_service
-        .get_ticket_with_wish_by_id(user.id, ticket_id)
-        .await?;
+    let (ticket, wish) = ticket_service.get_ticket_with_wish_by_id(user.id, ticket_id).await?;
 
     if ticket.giving_user_id != user.id {
         return Err(DeleteTicketError::Forbidden(

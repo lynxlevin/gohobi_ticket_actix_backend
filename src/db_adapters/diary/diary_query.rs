@@ -4,8 +4,8 @@ use entities::{
     diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation,
 };
 use sea_orm::{
-    ColumnTrait, Condition, DbConn, DbErr, DeriveColumn, EntityTrait, EnumIter, JoinType::LeftJoin,
-    QueryFilter, QueryOrder, QuerySelect, RelationTrait, Select,
+    ColumnTrait, Condition, DbConn, DbErr, DeriveColumn, EntityTrait, EnumIter, JoinType::LeftJoin, QueryFilter,
+    QueryOrder, QuerySelect, RelationTrait, Select,
 };
 
 pub use sea_orm::Order;
@@ -24,10 +24,7 @@ pub struct DiaryQuery<'a> {
 
 impl<'a> DiaryQuery<'a> {
     pub fn init(db: &'a DbConn) -> Self {
-        Self {
-            db,
-            query: Entity::find(),
-        }
+        Self { db, query: Entity::find() }
     }
     pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
         self.query = self
@@ -41,9 +38,7 @@ impl<'a> DiaryQuery<'a> {
         self
     }
     pub fn filter_by_relation(mut self, user_relation_id: i64) -> Self {
-        self.query = self
-            .query
-            .filter(Column::UserRelationId.eq(user_relation_id));
+        self.query = self.query.filter(Column::UserRelationId.eq(user_relation_id));
         self
     }
     pub fn filter_by_id(mut self, diary_id: Uuid) -> Self {
@@ -89,9 +84,7 @@ impl<'a> DiaryQuery<'a> {
             .await
     }
 
-    pub async fn get_all_with_tags(
-        self,
-    ) -> Result<Vec<(Model, Vec<diaries_diarytag::Model>)>, DbErr> {
+    pub async fn get_all_with_tags(self) -> Result<Vec<(Model, Vec<diaries_diarytag::Model>)>, DbErr> {
         self.query
             .find_with_related(diaries_diarytag::Entity)
             .all(self.db)

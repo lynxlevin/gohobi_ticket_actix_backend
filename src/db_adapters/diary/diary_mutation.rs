@@ -1,8 +1,6 @@
 use chrono::Utc;
 use entities::{diaries_diary, diaries_diarytag, diaries_diarytagrelation};
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DbConn, DbErr, EntityTrait, IntoActiveModel, QueryFilter, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbConn, DbErr, EntityTrait, IntoActiveModel, QueryFilter, Set};
 use uuid::Uuid;
 
 use super::types::{CreateDiaryParams, UpdateDiaryParams};

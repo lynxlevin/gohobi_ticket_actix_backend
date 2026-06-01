@@ -7,9 +7,7 @@ use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
 };
-use db_adapters::{
-    diary::DiaryQuery, ticket_service::TicketService, user_relation::UserRelationQuery,
-};
+use db_adapters::{diary::DiaryQuery, ticket_service::TicketService, user_relation::UserRelationQuery};
 use entities::users_user;
 use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};

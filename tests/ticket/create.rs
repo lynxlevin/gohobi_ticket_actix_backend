@@ -12,14 +12,9 @@ use common::factory::{self, *};
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
-    let gift_date = Utc::now()
-        .date_naive()
-        .checked_sub_days(Days::new(2))
-        .unwrap();
+    let gift_date = Utc::now().date_naive().checked_sub_days(Days::new(2)).unwrap();
     let description = "new ticket".to_string();
 
     let req = test::TestRequest::post()
@@ -59,14 +54,9 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn create_draft() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
-    let gift_date = Utc::now()
-        .date_naive()
-        .checked_sub_days(Days::new(2))
-        .unwrap();
+    let gift_date = Utc::now().date_naive().checked_sub_days(Days::new(2)).unwrap();
     let description = "new ticket".to_string();
 
     let req = test::TestRequest::post()
@@ -106,14 +96,9 @@ async fn create_draft() -> Result<(), DbErr> {
 async fn create_special() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
-    let gift_date = Utc::now()
-        .date_naive()
-        .checked_sub_days(Days::new(2))
-        .unwrap();
+    let gift_date = Utc::now().date_naive().checked_sub_days(Days::new(2)).unwrap();
     let _receiving_special_ticket = factory::ticket(user_1.id, user_relation.id)
         .is_special(true)
         .gift_date(gift_date)
@@ -162,14 +147,9 @@ async fn create_special() -> Result<(), DbErr> {
 async fn create_special_already_exists() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
 
-    let gift_date = Utc::now()
-        .date_naive()
-        .checked_sub_days(Days::new(2))
-        .unwrap();
+    let gift_date = Utc::now().date_naive().checked_sub_days(Days::new(2)).unwrap();
     let description = "new ticket".to_string();
     let _other_special_ticket = factory::ticket(user_0.id, user_relation.id)
         .is_special(true)
@@ -214,9 +194,7 @@ async fn create_special_already_exists() -> Result<(), DbErr> {
 async fn not_found_if_incorrect_user_relation_id() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let other_relation = factory::user_relation(user_1.id, other_user.id)
-        .insert(&db)
-        .await?;
+    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db).await?;
 
     let req = test::TestRequest::post()
         .uri("/api/tickets/")
@@ -270,9 +248,7 @@ mod first_ticket_date {
     async fn first_user_1_ticket_when_originally_none() -> Result<(), DbErr> {
         let Connections { app, db, .. } = init_app().await?;
         let [user_1, user_2, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(user_1.id, user_2.id)
-            .insert(&db)
-            .await?;
+        let user_relation = factory::user_relation(user_1.id, user_2.id).insert(&db).await?;
 
         let today = Utc::now().date_naive();
 
@@ -297,10 +273,7 @@ mod first_ticket_date {
             .one(&db)
             .await?
             .unwrap();
-        assert_eq!(
-            user_relation_in_db.first_user_1_giving_ticket_date,
-            Some(today)
-        );
+        assert_eq!(user_relation_in_db.first_user_1_giving_ticket_date, Some(today));
 
         Ok(())
     }
@@ -309,9 +282,7 @@ mod first_ticket_date {
     async fn first_user_2_ticket_when_originally_none() -> Result<(), DbErr> {
         let Connections { app, db, .. } = init_app().await?;
         let [user_1, user_2, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(user_1.id, user_2.id)
-            .insert(&db)
-            .await?;
+        let user_relation = factory::user_relation(user_1.id, user_2.id).insert(&db).await?;
 
         let today = Utc::now().date_naive();
 
@@ -336,10 +307,7 @@ mod first_ticket_date {
             .one(&db)
             .await?
             .unwrap();
-        assert_eq!(
-            user_relation_in_db.first_user_2_giving_ticket_date,
-            Some(today)
-        );
+        assert_eq!(user_relation_in_db.first_user_2_giving_ticket_date, Some(today));
 
         Ok(())
     }
@@ -376,10 +344,7 @@ mod first_ticket_date {
             .one(&db)
             .await?
             .unwrap();
-        assert_eq!(
-            user_relation_in_db.first_user_1_giving_ticket_date,
-            Some(yesterday)
-        );
+        assert_eq!(user_relation_in_db.first_user_1_giving_ticket_date, Some(yesterday));
 
         Ok(())
     }
@@ -416,10 +381,7 @@ mod first_ticket_date {
             .one(&db)
             .await?
             .unwrap();
-        assert_eq!(
-            user_relation_in_db.first_user_2_giving_ticket_date,
-            Some(yesterday)
-        );
+        assert_eq!(user_relation_in_db.first_user_2_giving_ticket_date, Some(yesterday));
 
         Ok(())
     }

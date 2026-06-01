@@ -21,11 +21,7 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(TicketsTicket::Table)
                     .if_not_exists()
-                    .col(
-                        big_integer(TicketsTicket::Id)
-                            .auto_increment()
-                            .primary_key(),
-                    )
+                    .col(big_integer(TicketsTicket::Id).auto_increment().primary_key())
                     .col(text(TicketsTicket::Description))
                     .col(date(TicketsTicket::GiftDate))
                     .col(text(TicketsTicket::UseDescription))
@@ -46,10 +42,7 @@ impl MigrationTrait for Migration {
                         ForeignKey::create()
                             .name(RELATION_INDEX_NAME)
                             .from(TicketsTicket::Table, TicketsTicket::UserRelationId)
-                            .to(
-                                UserRelationsUserrelation::Table,
-                                UserRelationsUserrelation::Id,
-                            ),
+                            .to(UserRelationsUserrelation::Table, UserRelationsUserrelation::Id),
                     )
                     .to_owned(),
             )
@@ -79,23 +72,13 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_index(
-                Index::drop()
-                    .if_exists()
-                    .name(RELATION_INDEX_NAME)
-                    .to_owned(),
-            )
+            .drop_index(Index::drop().if_exists().name(RELATION_INDEX_NAME).to_owned())
             .await?;
         manager
             .drop_index(Index::drop().if_exists().name(USER_INDEX_NAME).to_owned())
             .await?;
         manager
-            .drop_table(
-                Table::drop()
-                    .if_exists()
-                    .table(TicketsTicket::Table)
-                    .to_owned(),
-            )
+            .drop_table(Table::drop().if_exists().table(TicketsTicket::Table).to_owned())
             .await?;
         Ok(())
     }

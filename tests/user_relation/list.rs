@@ -11,14 +11,8 @@ async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, user_2, ..] = factory::get_users(&db).await?;
     let first_giving_ticket_date = Utc::now().date_naive();
-    let first_receiving_ticket_date = Utc::now()
-        .date_naive()
-        .checked_sub_days(Days::new(1))
-        .unwrap();
-    let first_diary_date = Utc::now()
-        .date_naive()
-        .checked_sub_days(Days::new(2))
-        .unwrap();
+    let first_receiving_ticket_date = Utc::now().date_naive().checked_sub_days(Days::new(1)).unwrap();
+    let first_diary_date = Utc::now().date_naive().checked_sub_days(Days::new(2)).unwrap();
     let user_relation_0 = factory::user_relation(user_0.id, user_1.id)
         .user_1_giving_ticket_img(Some("user_0s image".to_string()))
         .user_2_giving_ticket_img(Some("user_1s image".to_string()))
@@ -32,13 +26,9 @@ async fn happy_path() -> Result<(), DbErr> {
         .user_2_giving_ticket_img(Some("user_0s image".to_string()))
         .insert(&db)
         .await?;
-    let _other_relation = factory::user_relation(user_2.id, user_1.id)
-        .insert(&db)
-        .await?;
+    let _other_relation = factory::user_relation(user_2.id, user_1.id).insert(&db).await?;
 
-    let req = test::TestRequest::get()
-        .uri("/api/user_relations/")
-        .to_request();
+    let req = test::TestRequest::get().uri("/api/user_relations/").to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
 
@@ -78,9 +68,7 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let Connections { app, .. } = init_app().await?;
 
-    let req = test::TestRequest::get()
-        .uri("/api/user_relations/")
-        .to_request();
+    let req = test::TestRequest::get().uri("/api/user_relations/").to_request();
     let res = test::call_service(&app, req).await;
 
     assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);

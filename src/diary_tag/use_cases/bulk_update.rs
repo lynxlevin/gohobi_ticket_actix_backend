@@ -51,10 +51,7 @@ pub async fn bulk_update_diary_tags(
     res.sort_by_key(|tag| tag.sort_no);
 
     Ok(BulkUpdateDiaryTagResponse {
-        diary_tags: res
-            .iter()
-            .map(|tag| BulkUpdateDiaryTagItem::from(tag))
-            .collect(),
+        diary_tags: res.iter().map(|tag| BulkUpdateDiaryTagItem::from(tag)).collect(),
     })
 }
 

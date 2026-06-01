@@ -93,10 +93,7 @@ pub async fn make_wish(
         true => user_relation.user_2_id,
         false => user_relation.user_1_id,
     };
-    let web_push_subscription = match web_push_subscription_query
-        .get_by_user_id(related_user_id)
-        .await
-    {
+    let web_push_subscription = match web_push_subscription_query.get_by_user_id(related_user_id).await {
         Ok(sub) => sub,
         Err(_) => None,
     };
@@ -130,8 +127,5 @@ pub async fn make_wish(
         None => WebPushResult::NotSent,
     };
 
-    Ok(MakeWishResponse {
-        ticket: TicketVisible::from(ticket).with_wish(&wish),
-        web_push_result,
-    })
+    Ok(MakeWishResponse { ticket: TicketVisible::from(ticket).with_wish(&wish), web_push_result })
 }

@@ -79,39 +79,21 @@ pub async fn update_diary<'a>(
                 .await
                 .map_err(|_| UseCaseError::InternalServerError)?;
 
-            link_tags(
-                clean_tag_ids.clone(),
-                &current_linked_tag_ids,
-                &diary_mutation,
-                &diary,
-            )
-            .await?;
+            link_tags(clean_tag_ids.clone(), &current_linked_tag_ids, &diary_mutation, &diary).await?;
 
-            unlink_tags(
-                &clean_tag_ids,
-                current_linked_tag_ids,
-                &diary_mutation,
-                &diary,
-            )
-            .await?;
+            unlink_tags(&clean_tag_ids, current_linked_tag_ids, &diary_mutation, &diary).await?;
 
             clean_tags
         }
         None => vec![],
     };
 
-    if user_relation
-        .first_diary_date
-        .is_none_or(|date| date > diary.date)
-    {
+    if user_relation.first_diary_date.is_none_or(|date| date > diary.date) {
         user_relation_mutation
             .update_first_diary_date(user_relation, Some(diary.date))
             .await
             .map_err(|_| UseCaseError::InternalServerError)?;
-    } else if user_relation
-        .first_diary_date
-        .is_some_and(|date| date == original_date)
-    {
+    } else if user_relation.first_diary_date.is_some_and(|date| date == original_date) {
         let first_diary = diary_query
             .clone()
             .filter_by_relation(user_relation.id)

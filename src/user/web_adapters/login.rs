@@ -31,10 +31,7 @@ async fn login_user_endpoint(
 ) -> HttpResponse {
     let user_query = UserQuery { db: &db };
     let user_mutation = UserMutation { db: &db };
-    let user_redis = UserRedis {
-        pool: &redis_pool,
-        settings: &settings,
-    };
+    let user_redis = UserRedis { pool: &redis_pool, settings: &settings };
 
     match login_user(req_user.into_inner(), user_query, user_mutation, user_redis).await {
         Ok(user) => match renew_session(session, user.id, user.email.clone()) {
@@ -49,11 +46,7 @@ async fn login_user_endpoint(
     }
 }
 
-fn renew_session(
-    session: actix_session::Session,
-    id: i64,
-    email: String,
-) -> Result<(), SessionInsertError> {
+fn renew_session(session: actix_session::Session, id: i64, email: String) -> Result<(), SessionInsertError> {
     session.renew();
     session.insert(USER_ID_KEY, id)?;
     session.insert(USER_EMAIL_KEY, email)

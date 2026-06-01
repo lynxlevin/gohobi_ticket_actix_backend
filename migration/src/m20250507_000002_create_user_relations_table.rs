@@ -26,39 +26,23 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(string_len_null(
-                        UserRelationsUserrelation::User1GivingTicketImg,
-                        13,
-                    ))
-                    .col(string_len_null(
-                        UserRelationsUserrelation::User2GivingTicketImg,
-                        13,
-                    ))
-                    .col(timestamp_with_time_zone(
-                        UserRelationsUserrelation::CreatedAt,
-                    ))
-                    .col(timestamp_with_time_zone(
-                        UserRelationsUserrelation::UpdatedAt,
-                    ))
+                    .col(string_len_null(UserRelationsUserrelation::User1GivingTicketImg, 13))
+                    .col(string_len_null(UserRelationsUserrelation::User2GivingTicketImg, 13))
+                    .col(timestamp_with_time_zone(UserRelationsUserrelation::CreatedAt))
+                    .col(timestamp_with_time_zone(UserRelationsUserrelation::UpdatedAt))
                     .col(big_integer(UserRelationsUserrelation::User1Id))
                     .col(big_integer(UserRelationsUserrelation::User2Id))
                     .col(boolean(UserRelationsUserrelation::UseSlack))
                     .foreign_key(
                         ForeignKey::create()
                             .name(INDEX_1_NAME)
-                            .from(
-                                UserRelationsUserrelation::Table,
-                                UserRelationsUserrelation::User1Id,
-                            )
+                            .from(UserRelationsUserrelation::Table, UserRelationsUserrelation::User1Id)
                             .to(UsersUser::Table, UsersUser::Id),
                     )
                     .foreign_key(
                         ForeignKey::create()
                             .name(INDEX_2_NAME)
-                            .from(
-                                UserRelationsUserrelation::Table,
-                                UserRelationsUserrelation::User2Id,
-                            )
+                            .from(UserRelationsUserrelation::Table, UserRelationsUserrelation::User2Id)
                             .to(UsersUser::Table, UsersUser::Id),
                     )
                     .to_owned(),

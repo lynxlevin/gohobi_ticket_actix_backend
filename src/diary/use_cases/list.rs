@@ -46,11 +46,7 @@ pub async fn list_diary<'a>(
         diary_query = diary_query.filter_date_lte(date_lte);
     }
 
-    match diary_query
-        .order_by_date(Order::Desc)
-        .get_all_with_tags()
-        .await
-    {
+    match diary_query.order_by_date(Order::Desc).get_all_with_tags().await {
         Ok(diaries) => Ok(diaries
             .iter()
             .map(|(diary, tags)| DiaryVisible {
@@ -63,11 +59,7 @@ pub async fn list_diary<'a>(
                 },
                 tags: tags
                     .iter()
-                    .map(|tag| DiaryTag {
-                        id: tag.id,
-                        text: tag.text.clone(),
-                        sort_no: tag.sort_no,
-                    })
+                    .map(|tag| DiaryTag { id: tag.id, text: tag.text.clone(), sort_no: tag.sort_no })
                     .collect(),
             })
             .collect()),

@@ -24,10 +24,7 @@ pub trait WebPushSubscriptionFactory {
     fn set_raw_endpoint(self, raw_endpoint: &str) -> web_push_subscription::ActiveModel;
     fn set_raw_p256dh_key(self, raw_p256dh_key: Vec<u8>) -> web_push_subscription::ActiveModel;
     fn set_raw_auth_key(self, raw_auth_key: [u8; 16]) -> web_push_subscription::ActiveModel;
-    fn encrypt_and_encode_sensitive_fields(
-        self,
-        settings: &Settings,
-    ) -> web_push_subscription::ActiveModel;
+    fn encrypt_and_encode_sensitive_fields(self, settings: &Settings) -> web_push_subscription::ActiveModel;
     fn get_model(self) -> web_push_subscription::Model;
 }
 
@@ -55,10 +52,7 @@ impl WebPushSubscriptionFactory for web_push_subscription::ActiveModel {
         self.auth_key = Set(BASE64_URL_SAFE_NO_PAD.encode(raw_auth_key));
         self
     }
-    fn encrypt_and_encode_sensitive_fields(
-        mut self,
-        settings: &Settings,
-    ) -> web_push_subscription::ActiveModel {
+    fn encrypt_and_encode_sensitive_fields(mut self, settings: &Settings) -> web_push_subscription::ActiveModel {
         self.endpoint = Set(encrypt_and_encode(self.endpoint.unwrap(), settings).unwrap());
         self.p256dh_key = Set(encrypt_and_encode(self.p256dh_key.unwrap(), settings).unwrap());
         self.auth_key = Set(encrypt_and_encode(self.auth_key.unwrap(), settings).unwrap());
