@@ -1,7 +1,7 @@
 use actix_web::{http, test, HttpMessage};
 use diary::{DiaryTag, DiaryVisible};
-use entities::{custom_types::TicketStatus, diaries_diary, tickets_ticket};
-use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
+use entities::custom_types::TicketStatus;
+use sea_orm::{ActiveModelTrait, DbErr};
 use ticket::TicketVisible;
 
 use crate::utils::{init_app, Connections};
@@ -16,111 +16,175 @@ fn get_uri(user_relation_id: i64) -> String {
 #[actix_web::test]
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let [user_0, user_1, user_2, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id)
-        .insert(&db)
-        .await?;
-    let other_relation = factory::user_relation(user_0.id, user_2.id)
-        .insert(&db)
-        .await?;
+    let [me, you, user_2, ..] = factory::get_users(&db).await?;
+    let user_relation = factory::user_relation(me.id, you.id).insert(&db).await?;
+    let other_relation = factory::user_relation(me.id, user_2.id).insert(&db).await?;
     let search_text = "Find me".to_string();
 
-    let giving_ticket_description_hit = factory::ticket(user_0.id, user_relation.id)
-        .description("Let me now Find you".to_string())
-        .insert(&db)
-        .await?;
-    let giving_ticket_wish_hit = factory::ticket(user_0.id, user_relation.id)
-        .insert(&db)
-        .await?;
-    let giving_ticket_wish_hit_wish = factory::wish(&giving_ticket_wish_hit)
+    let tickets = create_tickets(
+        vec![
+            TicketParam {
+                name: "giving_description_hit".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: me.id,
+                description: Some("Let me now Find you".to_string()),
+                status: TicketStatus::default(),
+                ..Default::default()
+            },
+            TicketParam {
+                name: "giving_ticket_wish_hit".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: me.id,
+                description: None,
+                status: TicketStatus::default(),
+                ..Default::default()
+            },
+            TicketParam {
+                name: "receiving_description_hit".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: you.id,
+                description: Some(format!("aa{}bb", search_text)),
+                status: TicketStatus::default(),
+                ..Default::default()
+            },
+            TicketParam {
+                name: "receiving_ticket_wish_hit".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: you.id,
+                description: None,
+                status: TicketStatus::default(),
+                ..Default::default()
+            },
+            TicketParam {
+                name: "_no_hit_giving_ticket".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: me.id,
+                description: None,
+                status: TicketStatus::default(),
+                ..Default::default()
+            },
+            TicketParam {
+                name: "_no_hit_receiving_ticket".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: user_2.id,
+                description: None,
+                status: TicketStatus::default(),
+                ..Default::default()
+            },
+            TicketParam {
+                name: "_no_hit_draft_receiving_ticket".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: you.id,
+                description: Some(format!("aa{}bb", search_text)),
+                status: TicketStatus::Draft,
+                ..Default::default()
+            },
+            TicketParam {
+                name: "_no_hit_other_relation_giving_ticket".to_string(),
+                user_relation_id: other_relation.id,
+                giving_user_id: me.id,
+                description: Some(format!("aa{}bb", search_text)),
+                status: TicketStatus::default(),
+                ..Default::default()
+            },
+            TicketParam {
+                name: "_no_hit_other_relation_receiving_ticket".to_string(),
+                user_relation_id: other_relation.id,
+                giving_user_id: user_2.id,
+                description: Some(format!("aa{}bb", search_text)),
+                status: TicketStatus::default(),
+                ..Default::default()
+            },
+        ],
+        &db,
+    )
+    .await?;
+    let giving_ticket_wish_hit = tickets.get("giving_ticket_wish_hit").unwrap();
+    let giving_description_hit = tickets.get("giving_description_hit").unwrap();
+    let receiving_ticket_wish_hit = tickets.get("receiving_ticket_wish_hit").unwrap();
+    let receiving_description_hit = tickets.get("receiving_description_hit").unwrap();
+
+    let giving_ticket_wish_hit_wish = factory::wish(giving_ticket_wish_hit)
         .description(format!("aa{}bb", search_text))
         .insert(&db)
         .await?;
-    let receiving_ticket_description_hit = factory::ticket(user_1.id, user_relation.id)
+    let receiving_ticket_wish_hit_wish = factory::wish(receiving_ticket_wish_hit)
         .description(format!("aa{}bb", search_text))
         .insert(&db)
         .await?;
-    let receiving_ticket_wish_hit = factory::ticket(user_1.id, user_relation.id)
-        .insert(&db)
-        .await?;
-    let receiving_ticket_wish_hit_wish = factory::wish(&receiving_ticket_wish_hit)
-        .description(format!("aa{}bb", search_text))
-        .insert(&db)
-        .await?;
-    let diary_entry_hit = factory::diary(user_relation.id)
-        .entry(&format!("aa{}bb", search_text))
-        .user_1_status(DiaryStatus::Read.to_value())
-        .insert(&db)
-        .await?;
-    let diary_tag_hit = factory::diary(user_relation.id)
-        .user_1_status(DiaryStatus::Read.to_value())
-        .insert(&db)
-        .await?;
+
+    let diaries = create_diaries(
+        vec![
+            DiaryParam {
+                name: "diary_entry_hit".to_string(),
+                entry: Some(format!("aa{}bb", search_text)),
+                user_relation_id: user_relation.id,
+                ..Default::default()
+            },
+            DiaryParam {
+                name: "diary_tag_hit".to_string(),
+                entry: Some("".to_string()),
+                user_relation_id: user_relation.id,
+                ..Default::default()
+            },
+            DiaryParam {
+                name: "_no_hit_diary".to_string(),
+                entry: Some("me".to_string()),
+                user_relation_id: user_relation.id,
+                ..Default::default()
+            },
+            DiaryParam {
+                name: "_no_hit_tag_diary".to_string(),
+                entry: Some("".to_string()),
+                user_relation_id: user_relation.id,
+                ..Default::default()
+            },
+        ],
+        &db,
+    )
+    .await?;
     let tag = factory::diary_tag(user_relation.id)
         .text(&format!("aa{}bb", search_text))
         .insert(&db)
         .await?;
-    factory::link_diary_tag(&db, diary_tag_hit.id, tag.id).await?;
-
-    let no_hit_giving_ticket =
-        factory::ticket(user_0.id, user_relation.id).description("Find".to_string());
-    let no_hit_receiving_ticket = factory::ticket(user_2.id, user_relation.id);
-    let no_hit_draft_receiving_ticket =
-        factory::ticket(user_1.id, user_relation.id).status(TicketStatus::Draft.to_value());
-    let other_relation_giving_ticket = factory::ticket(user_0.id, other_relation.id);
-    let other_relation_receiving_ticket = factory::ticket(user_2.id, other_relation.id);
-    let no_hit_diary = factory::diary(user_relation.id).entry("me");
-    let other_relation_diary = factory::diary(other_relation.id);
-    tickets_ticket::Entity::insert_many(vec![
-        no_hit_giving_ticket,
-        no_hit_receiving_ticket,
-        no_hit_draft_receiving_ticket,
-        other_relation_giving_ticket,
-        other_relation_receiving_ticket,
-    ])
-    .exec(&db)
-    .await?;
-    diaries_diary::Entity::insert_many(vec![no_hit_diary, other_relation_diary])
-        .exec(&db)
-        .await?;
-    let no_hit_tag_diary = factory::diary(user_relation.id).insert(&db).await?;
+    factory::link_diary_tag(&db, diaries.get("diary_tag_hit").unwrap().id, tag.id).await?;
     let no_hit_tag = factory::diary_tag(user_relation.id).insert(&db).await?;
-    factory::link_diary_tag(&db, no_hit_tag_diary.id, no_hit_tag.id).await?;
+    factory::link_diary_tag(&db, diaries.get("_no_hit_tag_diary").unwrap().id, no_hit_tag.id).await?;
+    let _other_relation_diary = factory::diary(other_relation.id).insert(&db).await?;
 
     let req = test::TestRequest::post()
         .uri(&get_uri(user_relation.id))
-        .set_json(SearchRequest {
-            text: search_text.clone(),
-        })
+        .set_json(SearchRequest { text: search_text.clone() })
         .to_request();
-    req.extensions_mut().insert(user_0.clone());
+    req.extensions_mut().insert(me.clone());
     let res = test::call_service(&app, req).await;
 
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let res: SearchResponse = test::read_body_json(res).await;
 
+    let diary_entry_hit = diaries.get("diary_entry_hit").unwrap();
+    let diary_tag_hit = diaries.get("diary_tag_hit").unwrap();
     let expected = SearchResponse {
         giving_tickets: vec![
             TicketVisible::from(giving_ticket_wish_hit).with_wish(&giving_ticket_wish_hit_wish),
-            TicketVisible::from(giving_ticket_description_hit),
+            TicketVisible::from(giving_description_hit),
         ],
         receiving_tickets: vec![
-            TicketVisible::from(receiving_ticket_wish_hit)
-                .with_wish(&receiving_ticket_wish_hit_wish),
-            TicketVisible::from(receiving_ticket_description_hit),
+            TicketVisible::from(receiving_ticket_wish_hit).with_wish(&receiving_ticket_wish_hit_wish),
+            TicketVisible::from(receiving_description_hit),
         ],
         diaries: vec![
             DiaryVisible {
                 id: diary_entry_hit.id,
-                entry: diary_entry_hit.entry,
+                entry: diary_entry_hit.entry.clone(),
                 date: diary_entry_hit.date,
                 tags: vec![],
                 status: DiaryStatus::from(&diary_entry_hit.user_1_status),
             },
             DiaryVisible {
                 id: diary_tag_hit.id,
-                entry: diary_tag_hit.entry,
+                entry: diary_tag_hit.entry.clone(),
                 date: diary_tag_hit.date,
                 tags: vec![DiaryTag::from(&tag)],
                 status: DiaryStatus::from(&diary_tag_hit.user_1_status),
@@ -137,18 +201,16 @@ async fn happy_path() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn not_found_on_unrelated_relation() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let [user_0, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
+    let [me, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
         .insert(&db)
         .await?;
 
     let req = test::TestRequest::post()
         .uri(&get_uri(other_relation.id))
-        .set_json(SearchRequest {
-            text: String::default(),
-        })
+        .set_json(SearchRequest { text: String::default() })
         .to_request();
-    req.extensions_mut().insert(user_0.clone());
+    req.extensions_mut().insert(me.clone());
     let res = test::call_service(&app, req).await;
 
     assert_eq!(res.status(), http::StatusCode::NOT_FOUND);
@@ -162,9 +224,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
     let req = test::TestRequest::post()
         .uri(&get_uri(1))
-        .set_json(SearchRequest {
-            text: String::default(),
-        })
+        .set_json(SearchRequest { text: String::default() })
         .to_request();
     let res = test::call_service(&app, req).await;
 

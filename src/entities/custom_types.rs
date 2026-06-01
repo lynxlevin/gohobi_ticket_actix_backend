@@ -12,7 +12,7 @@ pub enum TicketStatus {
 }
 
 impl TicketStatus {
-    pub fn to_value(self) -> String {
+    pub fn to_value(&self) -> String {
         match self {
             TicketStatus::Unread => "unread".to_string(),
             TicketStatus::Read => "read".to_string(),
@@ -44,11 +44,13 @@ impl FromStr for TicketStatus {
     }
 }
 
-pub const PUBLISHED_STATUSES: [TicketStatus; 3] = [
-    TicketStatus::Unread,
-    TicketStatus::Read,
-    TicketStatus::Edited,
-];
+impl Default for TicketStatus {
+    fn default() -> Self {
+        TicketStatus::Unread
+    }
+}
+
+pub const PUBLISHED_STATUSES: [TicketStatus; 3] = [TicketStatus::Unread, TicketStatus::Read, TicketStatus::Edited];
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
