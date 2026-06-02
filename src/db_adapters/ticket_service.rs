@@ -21,7 +21,6 @@ pub struct CreateTicketParams {
     pub is_draft: bool,
 }
 
-// MYMEMO: UpdateTicketParams changed
 #[derive(Deserialize, Debug, Serialize, Clone, Default)]
 pub struct UpdateTicketParams {
     pub description: Option<String>,

@@ -106,7 +106,6 @@ impl From<(&wish::Model, &tickets_ticket::Model)> for WishVisible {
     }
 }
 
-// MYMEMO: front code needs to be changed
 #[derive(Deserialize, Debug, Serialize)]
 pub struct CreateTicketRequest {
     pub ticket: CreateTicketParams,
