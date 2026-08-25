@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     ".",
     "src/gohobi_ticket",
-    "./migration",
     "src/entities",
     "src/common",
     "src/db_adapters",

@@ -15,8 +15,6 @@ pub struct Model {
     #[sea_orm(unique)]
     pub email: String,
     #[sea_orm(has_many)]
-    pub django_admin_logs: HasMany<super::django_admin_log::Entity>,
-    #[sea_orm(has_many)]
     pub tickets_tickets: HasMany<super::tickets_ticket::Entity>,
     #[sea_orm(has_one)]
     pub web_push_subscription: HasOne<super::web_push_subscription::Entity>,
