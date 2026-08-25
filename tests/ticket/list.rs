@@ -10,8 +10,8 @@ use common::factory::{self, *};
 async fn list_giving_tickets() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [me, you, other_user, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(me.id, you.id).insert(&db).await?;
-    let _other_relation = factory::user_relation(other_user.id, me.id).insert(&db).await?;
+    let user_relation = factory::user_relation(me.id, you.id).insert(&db.db).await?;
+    let _other_relation = factory::user_relation(other_user.id, me.id).insert(&db.db).await?;
 
     let tickets = create_tickets(
         vec![
@@ -67,7 +67,7 @@ async fn list_giving_tickets() -> Result<(), DbErr> {
         &db,
     )
     .await?;
-    let wish_3 = factory::wish(tickets.get("ticket_3").unwrap()).insert(&db).await?;
+    let wish_3 = factory::wish(tickets.get("ticket_3").unwrap()).insert(&db.db).await?;
 
     let req = test::TestRequest::get()
         .uri(&format!(
@@ -99,8 +99,8 @@ async fn list_giving_tickets() -> Result<(), DbErr> {
 async fn list_receiving_tickets() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [me, you, other_user, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(me.id, you.id).insert(&db).await?;
-    let _other_relation = factory::user_relation(other_user.id, me.id).insert(&db).await?;
+    let user_relation = factory::user_relation(me.id, you.id).insert(&db.db).await?;
+    let _other_relation = factory::user_relation(other_user.id, me.id).insert(&db.db).await?;
 
     let tickets = create_tickets(
         vec![
@@ -156,7 +156,7 @@ async fn list_receiving_tickets() -> Result<(), DbErr> {
         &db,
     )
     .await?;
-    let wish_3 = factory::wish(tickets.get("ticket_3").unwrap()).insert(&db).await?;
+    let wish_3 = factory::wish(tickets.get("ticket_3").unwrap()).insert(&db.db).await?;
 
     let valid_queries_for_receiving = vec!["&is_receiving", "&is_giving=false", ""];
 
@@ -189,9 +189,9 @@ async fn empty_on_unrelated_relation() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [me, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
-    let _unrelated_ticket = factory::ticket(other_user_0.id, other_relation.id).insert(&db).await?;
+    let _unrelated_ticket = factory::ticket(other_user_0.id, other_relation.id).insert(&db.db).await?;
 
     let req = test::TestRequest::get()
         .uri(&format!(
@@ -231,7 +231,7 @@ mod gift_date_lte_gte {
     async fn list_giving_tickets() -> Result<(), DbErr> {
         let Connections { app, db, .. } = init_app().await?;
         let [me, you, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(me.id, you.id).insert(&db).await?;
+        let user_relation = factory::user_relation(me.id, you.id).insert(&db.db).await?;
 
         let tickets = create_tickets(
             (1..10)
@@ -283,7 +283,7 @@ mod gift_date_lte_gte {
     async fn list_receiving_tickets() -> Result<(), DbErr> {
         let Connections { app, db, .. } = init_app().await?;
         let [me, you, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(me.id, you.id).insert(&db).await?;
+        let user_relation = factory::user_relation(me.id, you.id).insert(&db.db).await?;
 
         let tickets = create_tickets(
             (1..10)

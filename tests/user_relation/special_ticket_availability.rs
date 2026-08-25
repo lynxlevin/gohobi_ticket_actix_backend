@@ -9,33 +9,33 @@ use common::factory::{self, *};
 async fn happy_path_available() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, user_2, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-    let other_relation = factory::user_relation(user_0.id, user_2.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let other_relation = factory::user_relation(user_0.id, user_2.id).insert(&db.db).await?;
 
     let (year, month) = (2025, 5);
     let _receiving_special_ticket = factory::ticket(user_1.id, user_relation.id)
         .is_special(true)
         .gift_date(NaiveDate::from_ymd_opt(year, month, 1).unwrap())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let _non_special_giving_ticket = factory::ticket(user_0.id, user_relation.id)
         .gift_date(NaiveDate::from_ymd_opt(year, month, 1).unwrap())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let _last_month_special_giving_ticket = factory::ticket(user_0.id, user_relation.id)
         .is_special(true)
         .gift_date(NaiveDate::from_ymd_opt(year, month - 1, 30).unwrap())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let _next_month_special_giving_ticket = factory::ticket(user_0.id, user_relation.id)
         .is_special(true)
         .gift_date(NaiveDate::from_ymd_opt(year, month + 1, 1).unwrap())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let _other_relation_special_giving_ticket = factory::ticket(user_0.id, other_relation.id)
         .is_special(true)
         .gift_date(NaiveDate::from_ymd_opt(year, month, 1).unwrap())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req = test::TestRequest::get()
@@ -59,13 +59,13 @@ async fn happy_path_available() -> Result<(), DbErr> {
 async fn happy_path_unavailable() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
     let (year, month) = (2025, 5);
     let _giving_special_ticket = factory::ticket(user_0.id, user_relation.id)
         .is_special(true)
         .gift_date(NaiveDate::from_ymd_opt(year, month, 1).unwrap())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req = test::TestRequest::get()
@@ -90,7 +90,7 @@ async fn not_found_on_unrelated_relation() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req = test::TestRequest::get()
@@ -111,7 +111,7 @@ async fn not_found_on_unrelated_relation() -> Result<(), DbErr> {
 async fn bad_request_on_invalid_year_month() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
     for (year_month, case) in vec![
         ((2201, 5), "year_out_of_range(2201)"),

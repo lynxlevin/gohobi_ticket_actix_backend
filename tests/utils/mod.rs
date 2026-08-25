@@ -9,18 +9,18 @@ use actix_web::{
     App, Error,
 };
 use common::{
-    db::init_db,
+    db::{init_db, Db},
     redis::init_redis_pool,
     settings::{get_test_settings, types::Settings},
 };
-use sea_orm::{DbConn, DbErr};
+use sea_orm::DbErr;
 use server::{get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder, AuthenticateUser};
 
 pub struct Connections<
     S: Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>,
 > {
     pub app: S,
-    pub db: DbConn,
+    pub db: Db,
     pub settings: Settings,
 }
 

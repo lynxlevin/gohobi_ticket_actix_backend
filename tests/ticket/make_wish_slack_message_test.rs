@@ -19,11 +19,11 @@ async fn happy_path_with_slack_message() -> Result<(), DbErr> {
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .use_slack(true)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
         .status(TicketStatus::Read.to_value())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let use_description = "used".to_string();
@@ -72,12 +72,12 @@ async fn happy_path_with_slack_message_special_ticket() -> Result<(), DbErr> {
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .use_slack(true)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
         .is_special(true)
         .status(TicketStatus::Read.to_value())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let use_description = "used".to_string();
@@ -130,11 +130,11 @@ async fn happy_path_with_slack_message_not_sent_if_not_use_slack() -> Result<(),
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .use_slack(false)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
         .status(TicketStatus::Read.to_value())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let slack_mock = mock_server

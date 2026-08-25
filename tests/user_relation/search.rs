@@ -17,8 +17,8 @@ fn get_uri(user_relation_id: i64) -> String {
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [me, you, user_2, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(me.id, you.id).insert(&db).await?;
-    let other_relation = factory::user_relation(me.id, user_2.id).insert(&db).await?;
+    let user_relation = factory::user_relation(me.id, you.id).insert(&db.db).await?;
+    let other_relation = factory::user_relation(me.id, user_2.id).insert(&db.db).await?;
     let search_text = "Find me".to_string();
 
     let tickets = create_tickets(
@@ -106,11 +106,11 @@ async fn happy_path() -> Result<(), DbErr> {
 
     let giving_ticket_wish_hit_wish = factory::wish(giving_ticket_wish_hit)
         .description(format!("aa{}bb", search_text))
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let receiving_ticket_wish_hit_wish = factory::wish(receiving_ticket_wish_hit)
         .description(format!("aa{}bb", search_text))
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let diaries = create_diaries(
@@ -145,12 +145,12 @@ async fn happy_path() -> Result<(), DbErr> {
     .await?;
     let tag = factory::diary_tag(user_relation.id)
         .text(&format!("aa{}bb", search_text))
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     factory::link_diary_tag(&db, diaries.get("diary_tag_hit").unwrap().id, tag.id).await?;
-    let no_hit_tag = factory::diary_tag(user_relation.id).insert(&db).await?;
+    let no_hit_tag = factory::diary_tag(user_relation.id).insert(&db.db).await?;
     factory::link_diary_tag(&db, diaries.get("_no_hit_tag_diary").unwrap().id, no_hit_tag.id).await?;
-    let _other_relation_diary = factory::diary(other_relation.id).insert(&db).await?;
+    let _other_relation_diary = factory::diary(other_relation.id).insert(&db.db).await?;
 
     let req = test::TestRequest::post()
         .uri(&get_uri(user_relation.id))
@@ -203,7 +203,7 @@ async fn not_found_on_unrelated_relation() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [me, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req = test::TestRequest::post()

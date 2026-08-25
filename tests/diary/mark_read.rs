@@ -11,11 +11,11 @@ use common::factory::{self, *};
 async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
     let diary = factory::diary(user_relation.id)
         .user_1_status(DiaryStatus::Unread.to_value())
         .user_2_status(DiaryStatus::Read.to_value())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req = test::TestRequest::put()
@@ -26,7 +26,7 @@ async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db).await?;
+    let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db.db).await?;
     assert!(diary_in_db.is_some());
     let diary_in_db = diary_in_db.unwrap();
     assert_eq!(diary_in_db.entry, diary.entry);
@@ -42,11 +42,11 @@ async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
 async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
     let diary = factory::diary(user_relation.id)
         .user_1_status(DiaryStatus::Edited.to_value())
         .user_2_status(DiaryStatus::Read.to_value())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req = test::TestRequest::put()
@@ -57,7 +57,7 @@ async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db).await?;
+    let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db.db).await?;
     assert!(diary_in_db.is_some());
     let diary_in_db = diary_in_db.unwrap();
     assert_eq!(diary_in_db.entry, diary.entry);
@@ -73,8 +73,8 @@ async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
 async fn not_found_if_incorrect_id() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db).await?;
-    let other_relation_diary = factory::diary(other_relation.id).insert(&db).await?;
+    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db.db).await?;
+    let other_relation_diary = factory::diary(other_relation.id).insert(&db.db).await?;
 
     for (diary_id, case) in vec![
         (other_relation_diary.id, "other_relation_diary.id"),

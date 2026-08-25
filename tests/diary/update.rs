@@ -20,8 +20,8 @@ enum TagLinkTagId {
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-    let diary = factory::diary(user_relation.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let diary = factory::diary(user_relation.id).insert(&db.db).await?;
 
     let entry = "new_entry".to_string();
     let date = Utc::now().date_naive() - Duration::days(1);
@@ -41,7 +41,7 @@ async fn happy_path() -> Result<(), DbErr> {
     assert_eq!(res.status, DiaryStatus::Read);
     assert_eq!(res.tags, vec![]);
 
-    let diary_in_db = diaries_diary::Entity::find_by_id(res.id).one(&db).await?.unwrap();
+    let diary_in_db = diaries_diary::Entity::find_by_id(res.id).one(&db.db).await?.unwrap();
     assert_eq!(diary_in_db.entry, entry);
     assert_eq!(diary_in_db.date, date);
     assert_eq!(diary_in_db.user_relation_id, user_relation.id);
@@ -55,12 +55,12 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn assert_tag_change() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db).await?;
-    let diary = factory::diary(user_relation.id).insert(&db).await?;
-    let tag_0 = factory::diary_tag(user_relation.id).insert(&db).await?;
-    let tag_1 = factory::diary_tag(user_relation.id).insert(&db).await?;
-    let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db.db).await?;
+    let diary = factory::diary(user_relation.id).insert(&db.db).await?;
+    let tag_0 = factory::diary_tag(user_relation.id).insert(&db.db).await?;
+    let tag_1 = factory::diary_tag(user_relation.id).insert(&db.db).await?;
+    let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db.db).await?;
     let _tag_0_link = factory::link_diary_tag(&db, diary.id, tag_0.id).await?;
 
     let tag_ids = vec![tag_1.id, other_relation_tag.id];
@@ -90,7 +90,7 @@ async fn assert_tag_change() -> Result<(), DbErr> {
         .select_only()
         .column_as(diaries_diarytagrelation::Column::TagMasterId, TagLinkTagId::TagId)
         .into_values::<_, TagLinkTagId>()
-        .all(&db)
+        .all(&db.db)
         .await?;
     assert_eq!(
         linked_tag_ids_in_db,
@@ -104,7 +104,7 @@ async fn assert_tag_change() -> Result<(), DbErr> {
 async fn assert_user_2_status_changes() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
     let diaries = create_diaries(
         vec![
@@ -161,7 +161,7 @@ async fn assert_user_2_status_changes() -> Result<(), DbErr> {
         let res: DiaryVisible = test::read_body_json(res).await;
         assert_eq!(res.status, DiaryStatus::Read);
 
-        let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db).await?.unwrap();
+        let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db.db).await?.unwrap();
         assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read.to_value());
         assert_eq!(diary_in_db.user_2_status, expected_status.to_value());
     }
@@ -176,10 +176,10 @@ async fn happy_path_change_date_to_oldest() -> Result<(), DbErr> {
     let today = Utc::now().date_naive();
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .first_diary_date(Some(today))
-        .insert(&db)
+        .insert(&db.db)
         .await?;
-    let _existing_diary = factory::diary(user_relation.id).date(today).insert(&db).await?;
-    let diary = factory::diary(user_relation.id).insert(&db).await?;
+    let _existing_diary = factory::diary(user_relation.id).date(today).insert(&db.db).await?;
+    let diary = factory::diary(user_relation.id).insert(&db.db).await?;
 
     let new_diary_date = today.checked_sub_days(Days::new(1)).unwrap();
 
@@ -193,7 +193,7 @@ async fn happy_path_change_date_to_oldest() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
-        .one(&db)
+        .one(&db.db)
         .await?
         .unwrap();
     assert_eq!(user_relation_in_db.first_diary_date, Some(new_diary_date));
@@ -209,10 +209,10 @@ async fn happy_path_change_date_of_oldest() -> Result<(), DbErr> {
     let yesterday = today.checked_sub_days(Days::new(1)).unwrap();
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .first_diary_date(Some(yesterday))
-        .insert(&db)
+        .insert(&db.db)
         .await?;
-    let oldest_diary = factory::diary(user_relation.id).date(yesterday).insert(&db).await?;
-    let _second_oldest_diary = factory::diary(user_relation.id).date(today).insert(&db).await?;
+    let oldest_diary = factory::diary(user_relation.id).date(yesterday).insert(&db.db).await?;
+    let _second_oldest_diary = factory::diary(user_relation.id).date(today).insert(&db.db).await?;
 
     let new_diary_date = today.checked_add_days(Days::new(10)).unwrap();
 
@@ -226,7 +226,7 @@ async fn happy_path_change_date_of_oldest() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
-        .one(&db)
+        .one(&db.db)
         .await?
         .unwrap();
     assert_eq!(user_relation_in_db.first_diary_date, Some(today));
@@ -238,8 +238,8 @@ async fn happy_path_change_date_of_oldest() -> Result<(), DbErr> {
 async fn not_found_if_incorrect_id() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db).await?;
-    let other_relation_diary = factory::diary(other_relation.id).insert(&db).await?;
+    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db.db).await?;
+    let other_relation_diary = factory::diary(other_relation.id).insert(&db.db).await?;
 
     for (diary_id, case) in vec![
         (other_relation_diary.id, "other_relation_diary.id"),

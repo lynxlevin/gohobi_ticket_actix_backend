@@ -22,9 +22,9 @@ async fn happy_path_type_make_wish() -> Result<(), DbErr> {
     let mut mock_server = mockito::Server::new_async().await;
 
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-    let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db).await?;
-    let wish = factory::wish(&receiving_ticket).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db.db).await?;
+    let wish = factory::wish(&receiving_ticket).insert(&db.db).await?;
     let endpoint = format!("{}/message", mock_server.url());
     let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
     let private_key = key_pair.raw_components().unwrap();
@@ -34,7 +34,7 @@ async fn happy_path_type_make_wish() -> Result<(), DbErr> {
         .set_raw_p256dh_key(p256dh_key.clone())
         .set_raw_auth_key(auth_key)
         .encrypt_and_encode_sensitive_fields(&settings)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let expected_title = Some(format!("{}からのおねがい", user_0.username));
@@ -111,7 +111,7 @@ mod not_found {
             .set_raw_p256dh_key(p256dh_key.clone())
             .set_raw_auth_key(auth_key)
             .encrypt_and_encode_sensitive_fields(&settings)
-            .insert(&db)
+            .insert(&db.db)
             .await?;
 
         let req = test::TestRequest::post()
@@ -130,9 +130,9 @@ mod not_found {
         let Connections { app, db, .. } = init_app().await?;
 
         let [user_0, user_1, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-        let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db).await?;
-        let _wish = factory::wish(&receiving_ticket).insert(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+        let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db.db).await?;
+        let _wish = factory::wish(&receiving_ticket).insert(&db.db).await?;
 
         let req = test::TestRequest::post()
             .uri(URI)

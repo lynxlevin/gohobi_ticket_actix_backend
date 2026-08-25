@@ -19,14 +19,14 @@ async fn happy_path() -> Result<(), DbErr> {
         .first_user_1_giving_ticket_date(Some(first_giving_ticket_date))
         .first_user_2_giving_ticket_date(Some(first_receiving_ticket_date))
         .first_diary_date(Some(first_diary_date))
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let user_relation_1 = factory::user_relation(user_2.id, user_0.id)
         .user_1_giving_ticket_img(Some("user_2s image".to_string()))
         .user_2_giving_ticket_img(Some("user_0s image".to_string()))
-        .insert(&db)
+        .insert(&db.db)
         .await?;
-    let _other_relation = factory::user_relation(user_2.id, user_1.id).insert(&db).await?;
+    let _other_relation = factory::user_relation(user_2.id, user_1.id).insert(&db.db).await?;
 
     let req = test::TestRequest::get().uri("/api/user_relations/").to_request();
     req.extensions_mut().insert(user_0.clone());
