@@ -15,7 +15,9 @@ pub struct Model {
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
     pub user_relation_id: i64,
+    #[sea_orm(column_type = "String(StringLen::N(8))")]
     pub user_1_status: String,
+    #[sea_orm(column_type = "String(StringLen::N(8))")]
     pub user_2_status: String,
     #[sea_orm(has_many)]
     pub diaries_diarytagrelations: HasMany<super::diaries_diarytagrelation::Entity>,

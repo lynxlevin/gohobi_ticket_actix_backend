@@ -12,6 +12,7 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub description: String,
     pub gift_date: Date,
+    #[sea_orm(column_type = "String(StringLen::N(8))")]
     pub status: String,
     pub is_special: bool,
     pub created_at: DateTimeWithTimeZone,

@@ -9,7 +9,9 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
+    #[sea_orm(column_type = "String(StringLen::N(13))")]
     pub user_1_giving_ticket_img: Option<String>,
+    #[sea_orm(column_type = "String(StringLen::N(13))")]
     pub user_2_giving_ticket_img: Option<String>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,

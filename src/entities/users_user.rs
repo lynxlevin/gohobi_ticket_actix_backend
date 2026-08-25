@@ -9,10 +9,12 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
+    #[sea_orm(column_type = "String(StringLen::N(128))")]
     pub password: String,
     pub last_login: Option<DateTimeWithTimeZone>,
+    #[sea_orm(column_type = "String(StringLen::N(150))")]
     pub username: String,
-    #[sea_orm(unique)]
+    #[sea_orm(unique, column_type = "String(StringLen::N(254))")]
     pub email: String,
     #[sea_orm(has_many)]
     pub tickets_tickets: HasMany<super::tickets_ticket::Entity>,

@@ -11,6 +11,7 @@ pub struct Model {
     pub id: Uuid,
     #[sea_orm(column_type = "Text")]
     pub description: String,
+    #[sea_orm(column_type = "String(StringLen::N(8))")]
     pub status: String,
     #[sea_orm(unique)]
     pub ticket_id: i64,
