@@ -3,10 +3,10 @@ use actix_web::{
     web::{Data, Path, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::error_responses::{response_401, response_403, response_404, response_500};
 use db_adapters::ticket_service::TicketService;
 use entities::users_user;
-use common::db::Db;
 use serde::{Deserialize, Serialize};
 
 use crate::use_cases::delete::{delete_ticket, DeleteTicketError};

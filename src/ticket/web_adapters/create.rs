@@ -3,10 +3,10 @@ use actix_web::{
     web::{Data, Json, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::error_responses::{response_401, response_404, response_500};
 use db_adapters::ticket_service::TicketService;
 use entities::users_user;
-use common::db::Db;
 
 use crate::{
     use_cases::create::{create_ticket, CreateTicketError},

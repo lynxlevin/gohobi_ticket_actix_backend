@@ -191,7 +191,9 @@ async fn empty_on_unrelated_relation() -> Result<(), DbErr> {
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
         .insert(&db.db)
         .await?;
-    let _unrelated_ticket = factory::ticket(other_user_0.id, other_relation.id).insert(&db.db).await?;
+    let _unrelated_ticket = factory::ticket(other_user_0.id, other_relation.id)
+        .insert(&db.db)
+        .await?;
 
     let req = test::TestRequest::get()
         .uri(&format!(

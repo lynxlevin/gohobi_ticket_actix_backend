@@ -4,10 +4,10 @@ use actix_web::{
     HttpResponse,
 };
 use chrono::NaiveDate;
+use common::db::Db;
 use common::errors::error_responses::{response_401, response_500};
 use db_adapters::ticket_service::TicketService;
 use entities::users_user;
-use common::db::Db;
 use serde::Deserialize;
 
 use crate::{list::ListTicketsParams, use_cases::list::list_tickets};

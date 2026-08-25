@@ -3,13 +3,13 @@ use actix_web::{
     web::{Data, Path, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
 };
 use db_adapters::diary_tag::{DiaryTagMutation, DiaryTagQuery};
 use entities::users_user;
-use common::db::Db;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 

@@ -3,10 +3,10 @@ use actix_web::{
     web::{Data, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::error_responses::{response_401, response_500};
 use db_adapters::user_relation::UserRelationQuery;
 use entities::users_user;
-use common::db::Db;
 
 use crate::use_cases::list::list_user_relations;
 
