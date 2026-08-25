@@ -1942,6 +1942,7 @@ dependencies = [
  "actix-session",
  "actix-web",
  "common",
+ "entities",
  "env_logger",
  "server",
 ]
