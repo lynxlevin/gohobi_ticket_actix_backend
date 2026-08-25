@@ -94,7 +94,7 @@ pub async fn create_tickets(params: Vec<TicketParam>, db: &DbConn) -> Result<Has
             ticket.description(param.name.clone())
         }
     });
-    let tickets = Entity::insert_many(tickets).exec_with_returning_many(db).await?;
+    let tickets = Entity::insert_many(tickets).exec_with_returning(db).await?;
 
     Ok(tickets
         .into_iter()

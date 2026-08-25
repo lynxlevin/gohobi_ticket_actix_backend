@@ -7,7 +7,7 @@ pub async fn get_users(db: &DbConn) -> Result<[users_user::Model; 3], DbErr> {
     let user_1 = user().username("user_1");
     let user_2 = user().username("user_2");
     let users = users_user::Entity::insert_many([user_0, user_1, user_2])
-        .exec_with_returning_many(db)
+        .exec_with_returning(db)
         .await?;
     Ok(users.try_into().unwrap())
 }

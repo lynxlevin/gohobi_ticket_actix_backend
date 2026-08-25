@@ -87,7 +87,7 @@ pub async fn create_diaries(params: Vec<DiaryParam>, db: &DbConn) -> Result<Hash
             diary
         }
     });
-    let diaries = Entity::insert_many(diaries).exec_with_returning_many(db).await?;
+    let diaries = Entity::insert_many(diaries).exec_with_returning(db).await?;
 
     Ok(diaries
         .into_iter()

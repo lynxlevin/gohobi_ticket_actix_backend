@@ -49,7 +49,6 @@ impl<'a> DiaryMutation<'a> {
                     .collect::<Vec<_>>();
 
                 diaries_diarytagrelation::Entity::insert_many(tag_links)
-                    .on_empty_do_nothing()
                     .exec(self.db)
                     .await?;
                 diaries_diarytag::Entity::find()
@@ -97,7 +96,6 @@ impl<'a> DiaryMutation<'a> {
             })
             .collect();
         diaries_diarytagrelation::Entity::insert_many(links_to_create)
-            .on_empty_do_nothing()
             .exec(self.db)
             .await
             .map(|_| ())
