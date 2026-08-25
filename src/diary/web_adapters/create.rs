@@ -3,6 +3,7 @@ use actix_web::{
     web::{Data, Json, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::{
     error_responses::{response_400, response_401, response_404, response_500},
     use_case_errors::UseCaseError,
@@ -12,19 +13,18 @@ use db_adapters::{
     user_relation::{UserRelationMutation, UserRelationQuery},
 };
 use entities::users_user;
-use sea_orm::DbConn;
 
 use crate::{use_cases::create::create_diary, CreateDiaryRequest};
 
 #[post("/")]
 async fn create_diary_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     params: Json<CreateDiaryRequest>,
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let user_relation_query = UserRelationQuery { db: &db };
+            let user_relation_query = UserRelationQuery { db: &db.db };
             let user_relation_mutation = UserRelationMutation::init(&db);
             let diary_mutation = DiaryMutation::init(&db);
             match create_diary(

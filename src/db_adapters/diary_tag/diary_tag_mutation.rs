@@ -1,4 +1,5 @@
 use chrono::Utc;
+use common::db::Db;
 use entities::{diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation};
 use sea_orm::{
     ActiveModelTrait, ActiveValue::NotSet, ColumnTrait, DbConn, DbErr, EntityTrait, ModelTrait, QueryFilter, Set,
@@ -12,8 +13,8 @@ pub struct DiaryTagMutation<'a> {
 }
 
 impl<'a> DiaryTagMutation<'a> {
-    pub fn init(db: &'a DbConn) -> Self {
-        Self { db }
+    pub fn init(db: &'a Db) -> Self {
+        Self { db: &db.db }
     }
 
     pub async fn create_many(

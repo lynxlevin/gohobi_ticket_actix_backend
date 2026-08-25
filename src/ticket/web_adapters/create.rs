@@ -6,7 +6,7 @@ use actix_web::{
 use common::errors::error_responses::{response_401, response_404, response_500};
 use db_adapters::ticket_service::TicketService;
 use entities::users_user;
-use sea_orm::DbConn;
+use common::db::Db;
 
 use crate::{
     use_cases::create::{create_ticket, CreateTicketError},
@@ -15,7 +15,7 @@ use crate::{
 
 #[post("/")]
 async fn create_ticket_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     params: Json<CreateTicketRequest>,
 ) -> HttpResponse {

@@ -8,6 +8,7 @@ name = "db_adapters"
 path = "lib.rs"
 
 [dependencies]
+common = { path = "../common", features = ["db"]}
 entities = { path = "../entities" }
 
 chrono.workspace = true
@@ -17,6 +18,6 @@ thiserror.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
-common = { path = "../common", features = ["db", "factory", "settings"]}
+common = { path = "../common", features = ["factory", "settings"]}
 
 actix-web.workspace = true

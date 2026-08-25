@@ -3,13 +3,13 @@ use actix_web::{
     web::{Data, Path, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
 };
 use db_adapters::{ticket_service::TicketService, user_relation::UserRelationQuery};
 use entities::users_user;
-use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 
 use crate::use_cases::available_tickets::available_tickets;
@@ -21,7 +21,7 @@ struct PathParam {
 
 #[get("/{user_relation_id}/available_tickets/")]
 async fn available_tickets_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     path_param: Path<PathParam>,
 ) -> HttpResponse {
@@ -30,7 +30,7 @@ async fn available_tickets_endpoint(
             match available_tickets(
                 user.into_inner(),
                 path_param.user_relation_id,
-                UserRelationQuery { db: &db },
+                UserRelationQuery { db: &db.db },
                 TicketService::init(&db),
             )
             .await

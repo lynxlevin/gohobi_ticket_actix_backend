@@ -9,7 +9,7 @@ use common::errors::{
 };
 use db_adapters::diary_tag::DiaryTagQuery;
 use entities::users_user;
-use sea_orm::DbConn;
+use common::db::Db;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -22,7 +22,7 @@ struct PathParam {
 
 #[get("/{diary_tag_id}/")]
 async fn get_diary_tag_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     path_param: Path<PathParam>,
 ) -> HttpResponse {

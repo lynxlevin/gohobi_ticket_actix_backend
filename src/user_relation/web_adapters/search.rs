@@ -3,13 +3,13 @@ use actix_web::{
     web::{Data, Json, Path, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
 };
 use db_adapters::{diary::DiaryQuery, ticket_service::TicketService, user_relation::UserRelationQuery};
 use entities::users_user;
-use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 
 use crate::{use_cases::search::search, SearchRequest};
@@ -21,7 +21,7 @@ struct PathParam {
 
 #[post("/{user_relation_id}/search/")]
 async fn search_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     path_param: Path<PathParam>,
     params: Json<SearchRequest>,
@@ -29,7 +29,7 @@ async fn search_endpoint(
     match user {
         Some(user) => {
             let diary_query = DiaryQuery::init(&db);
-            let user_relation_query = UserRelationQuery { db: &db };
+            let user_relation_query = UserRelationQuery { db: &db.db };
             match search(
                 user.into_inner(),
                 path_param.user_relation_id,

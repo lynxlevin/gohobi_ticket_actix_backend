@@ -3,6 +3,7 @@ use actix_web::{
     web::{Data, Json, Path, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
@@ -13,7 +14,6 @@ use db_adapters::{
     user_relation::UserRelationMutation,
 };
 use entities::users_user;
-use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -26,7 +26,7 @@ struct PathParam {
 
 #[put("/{diary_id}/")]
 async fn update_diary_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     path_param: Path<PathParam>,
     req_param: Json<UpdateDiaryRequest>,

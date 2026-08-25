@@ -109,7 +109,7 @@ mod tests {
     async fn test_set_user() -> Result<(), String> {
         let settings = get_test_settings();
         let db = init_db(&settings).await.unwrap();
-        let user = factory::user().insert(&db).await.unwrap();
+        let user = factory::user().insert(&db.db).await.unwrap();
         let srv_req = test::TestRequest::default()
             .app_data(Data::new(db.clone()))
             .to_srv_request();

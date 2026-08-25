@@ -3,6 +3,7 @@ use actix_web::{
     web::{Data, Json, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::{
     error_responses::{response_400, response_401, response_404, response_500},
     use_case_errors::UseCaseError,
@@ -12,19 +13,18 @@ use db_adapters::{
     user_relation::UserRelationQuery,
 };
 use entities::users_user;
-use sea_orm::DbConn;
 
 use crate::{use_cases::bulk_update::bulk_update_diary_tags, BulkUpdateDiaryTagRequest};
 
 #[post("/bulk_update/")]
 async fn bulk_update_diary_tags_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     params: Json<BulkUpdateDiaryTagRequest>,
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let user_relation_query = UserRelationQuery { db: &db };
+            let user_relation_query = UserRelationQuery { db: &db.db };
             let diary_tag_query = DiaryTagQuery::init_query(&db);
             let diary_tag_mutation = DiaryTagMutation::init(&db);
             match bulk_update_diary_tags(

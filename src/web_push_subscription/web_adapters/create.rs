@@ -4,18 +4,18 @@ use actix_web::{
     HttpResponse,
 };
 use common::{
+    db::Db,
     errors::error_responses::{response_401, response_500},
     settings::types::Settings,
 };
 use db_adapters::web_push_subscription::WebPushSubscriptionMutation;
 use entities::users_user;
-use sea_orm::DbConn;
 
 use crate::{types::WebPushSubscriptionCreateRequest, use_cases::create::create_web_push_subscription};
 
 #[post("")]
 pub async fn create_web_push_subscription_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     settings: Data<Settings>,
     user: Option<ReqData<users_user::Model>>,
     req: Json<WebPushSubscriptionCreateRequest>,
@@ -26,7 +26,7 @@ pub async fn create_web_push_subscription_endpoint(
                 user.into_inner(),
                 &settings,
                 req.into_inner(),
-                WebPushSubscriptionMutation { db: &db },
+                WebPushSubscriptionMutation { db: &db.db },
             )
             .await
             {

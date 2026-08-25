@@ -1,6 +1,7 @@
 use std::future::Future;
 
 use chrono::{Datelike, NaiveDate, Utc};
+use common::db::Db;
 use entities::{
     custom_types::TicketStatus, prelude::TicketsTicket, tickets_ticket, user_relations_userrelation, wish,
 };
@@ -54,8 +55,8 @@ pub struct TicketService<'a> {
 }
 
 impl<'a> TicketService<'a> {
-    pub fn init(db: &'a DbConn) -> Self {
-        Self { db }
+    pub fn init(db: &'a Db) -> Self {
+        Self { db: &db.db }
     }
 }
 

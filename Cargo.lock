@@ -1481,7 +1481,6 @@ dependencies = [
  "common",
  "db_adapters",
  "entities",
- "sea-orm",
  "serde",
  "uuid",
 ]
@@ -1494,7 +1493,6 @@ dependencies = [
  "common",
  "db_adapters",
  "entities",
- "sea-orm",
  "serde",
  "uuid",
 ]
@@ -4470,7 +4468,6 @@ dependencies = [
  "db_adapters",
  "entities",
  "mockito",
- "sea-orm",
  "serde",
  "serde_json",
  "thiserror 2.0.20",
@@ -4835,7 +4832,6 @@ dependencies = [
  "diary",
  "entities",
  "futures",
- "sea-orm",
  "serde",
  "thiserror 2.0.20",
  "ticket",

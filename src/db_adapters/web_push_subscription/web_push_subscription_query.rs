@@ -1,3 +1,4 @@
+use common::db::Db;
 use entities::{
     users_user,
     web_push_subscription::{Column, Entity, Model},
@@ -11,8 +12,8 @@ pub struct WebPushSubscriptionQuery<'a> {
 }
 
 impl<'a> WebPushSubscriptionQuery<'a> {
-    pub fn init_query(db: &'a DbConn) -> Self {
-        Self { db, query: Entity::find() }
+    pub fn init_query(db: &'a Db) -> Self {
+        Self { db: &db.db, query: Entity::find() }
     }
 
     pub async fn get_by_user(self, user: &users_user::Model) -> Result<Option<Model>, DbErr> {

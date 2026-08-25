@@ -4,6 +4,7 @@ use actix_web::{
     HttpResponse,
 };
 use common::{
+    db::Db,
     errors::{
         error_responses::{response_401, response_404, response_500},
         use_case_errors::UseCaseError,
@@ -15,13 +16,12 @@ use db_adapters::{
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
 use entities::users_user;
-use sea_orm::DbConn;
 
 use crate::{types::SendWebPushRequest, use_cases::send_web_push::send_web_push_use_case};
 
 #[post("/send/")]
 async fn send_web_push_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     settings: Data<Settings>,
     user: Option<ReqData<users_user::Model>>,
     params: Json<SendWebPushRequest>,
@@ -32,7 +32,7 @@ async fn send_web_push_endpoint(
                 user.into_inner(),
                 WishQuery::init_query(&db),
                 WebPushSubscriptionQuery::init_query(&db),
-                WebPushSubscriptionMutation { db: &db },
+                WebPushSubscriptionMutation { db: &db.db },
                 &settings,
                 params.into_inner(),
             )
