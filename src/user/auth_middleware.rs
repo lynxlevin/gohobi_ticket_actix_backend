@@ -102,13 +102,13 @@ mod tests {
     use actix_web::test;
     use sea_orm::prelude::ActiveModelTrait;
 
-    use common::{db::init_db, factory, settings::get_test_settings};
+    use common::{db::get_db_connection, factory, settings::get_test_settings};
     use entities::users_user;
 
     #[actix_web::test]
     async fn test_set_user() -> Result<(), String> {
         let settings = get_test_settings();
-        let db = init_db(&settings).await.unwrap();
+        let db = get_db_connection(&settings).await.unwrap();
         let user = factory::user().insert(&db.db).await.unwrap();
         let srv_req = test::TestRequest::default()
             .app_data(Data::new(db.clone()))

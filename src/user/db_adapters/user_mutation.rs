@@ -26,7 +26,7 @@ impl UserMutation<'_> {
 #[cfg(test)]
 mod tests {
     use common::{
-        db::init_db,
+        db::get_db_connection,
         factory::{self, *},
         settings::get_test_settings,
     };
@@ -39,7 +39,7 @@ mod tests {
     #[actix_web::test]
     async fn test_convert_to_argon2_password() -> Result<(), DbErr> {
         let settings = get_test_settings();
-        let db = init_db(&settings).await?;
+        let db = get_db_connection(&settings).await?;
         let password = "password";
         let django_password =
             "pbkdf2_sha256$260000$N4b3mSYc5bXPsCkD7G3eKt$4nfua4vv7GLRqeRHxCcDmjtMxB6LYZNhMf6Lqh48RDE=";
