@@ -9,8 +9,8 @@ use actix_web::{
     web::Data,
     Error, HttpMessage,
 };
+use common::db::Db;
 use futures::future::LocalBoxFuture;
-use sea_orm::DbConn;
 
 use crate::{constants::USER_ID_KEY, db_adapters::UserQuery};
 
@@ -72,8 +72,8 @@ async fn set_user(req: &ServiceRequest) -> Result<(), String> {
         Err(e) => return Err(e.to_string()),
     };
 
-    let user_query = match req.app_data::<Data<DbConn>>() {
-        Some(data) => UserQuery { db: &data },
+    let user_query = match req.app_data::<Data<Db>>() {
+        Some(data) => UserQuery { db: &data.db },
         None => return Err("Error acquiring DB connection.".to_string()),
     };
 
