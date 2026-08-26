@@ -13,6 +13,7 @@ use entities::users_user;
 
 use crate::{types::WebPushSubscriptionCreateRequest, use_cases::create::create_web_push_subscription};
 
+#[tracing::instrument(skip(db, user, req))]
 #[post("")]
 pub async fn create_web_push_subscription_endpoint(
     db: Data<Db>,

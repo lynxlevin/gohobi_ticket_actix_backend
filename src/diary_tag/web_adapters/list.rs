@@ -13,6 +13,7 @@ use entities::users_user;
 
 use crate::{types::ListDiaryTagsQuery, use_cases::list::list_diary_tags};
 
+#[tracing::instrument(skip(db, user))]
 #[get("/")]
 async fn list_diary_tags_endpoint(
     db: Data<Db>,

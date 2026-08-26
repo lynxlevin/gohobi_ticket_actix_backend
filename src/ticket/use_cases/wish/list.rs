@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::WishVisible;
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct ListWishesQueryParam {
     created_at_gte: Option<DateTime<FixedOffset>>,
     created_at_lte: Option<DateTime<FixedOffset>>,

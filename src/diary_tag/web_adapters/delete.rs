@@ -20,6 +20,7 @@ struct PathParam {
     diary_tag_id: Uuid,
 }
 
+#[tracing::instrument(skip(db, user))]
 #[delete("/{diary_tag_id}/")]
 async fn delete_diary_tag_endpoint(
     db: Data<Db>,

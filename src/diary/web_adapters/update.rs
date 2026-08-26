@@ -24,6 +24,7 @@ struct PathParam {
     diary_id: Uuid,
 }
 
+#[tracing::instrument(skip(db, user, req_param))]
 #[put("/{diary_id}/")]
 async fn update_diary_endpoint(
     db: Data<Db>,

@@ -20,6 +20,7 @@ struct PathParam {
     diary_tag_id: Uuid,
 }
 
+#[tracing::instrument(skip(db, user))]
 #[get("/{diary_tag_id}/")]
 async fn get_diary_tag_endpoint(
     db: Data<Db>,

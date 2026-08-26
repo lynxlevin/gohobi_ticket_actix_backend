@@ -20,6 +20,7 @@ struct PathParam {
     diary_id: Uuid,
 }
 
+#[tracing::instrument(skip(db, user))]
 #[put("/{diary_id}/mark_read/")]
 async fn mark_diary_read_endpoint(
     db: Data<Db>,

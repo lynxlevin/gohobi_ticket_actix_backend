@@ -1491,6 +1491,7 @@ dependencies = [
  "db_adapters",
  "entities",
  "serde",
+ "tracing",
  "uuid",
 ]
 
@@ -1503,6 +1504,7 @@ dependencies = [
  "db_adapters",
  "entities",
  "serde",
+ "tracing",
  "uuid",
 ]
 
@@ -4524,6 +4526,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.20",
+ "tracing",
  "uuid",
 ]
 
@@ -4927,6 +4930,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "sha2 0.10.9",
+ "tracing",
  "uuid",
 ]
 
@@ -4944,6 +4948,7 @@ dependencies = [
  "serde",
  "thiserror 2.0.20",
  "ticket",
+ "tracing",
 ]
 
 [[package]]
@@ -5108,6 +5113,7 @@ dependencies = [
  "entities",
  "sea-orm",
  "serde",
+ "tracing",
 ]
 
 [[package]]

@@ -21,6 +21,7 @@ struct PathParam {
     user_relation_id: i64,
 }
 
+#[tracing::instrument(skip(db, user))]
 #[get("/{user_relation_id}/special_ticket_availability/")]
 async fn special_ticket_availability_endpoint(
     db: Data<Db>,

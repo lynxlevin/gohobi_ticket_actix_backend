@@ -19,6 +19,7 @@ struct PathParam {
     user_relation_id: i64,
 }
 
+#[tracing::instrument(skip(db, user))]
 #[post("/{user_relation_id}/search/")]
 async fn search_endpoint(
     db: Data<Db>,

@@ -6,6 +6,7 @@ use common::errors::{
 };
 use entities::users_user;
 
+#[tracing::instrument(skip(user))]
 #[get("/me")]
 async fn get_me_endpoint(user: Option<ReqData<users_user::Model>>) -> HttpResponse {
     match get_me(match user {

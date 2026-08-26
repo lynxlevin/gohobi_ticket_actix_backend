@@ -20,6 +20,7 @@ pub struct ListTicketsQueryParam {
     pub gift_date_lte: Option<NaiveDate>,
 }
 
+#[tracing::instrument(skip(db, user))]
 #[get("/")]
 async fn list_tickets_endpoint(
     db: Data<Db>,

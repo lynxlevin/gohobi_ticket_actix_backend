@@ -10,6 +10,7 @@ use entities::users_user;
 
 use crate::use_cases::list::list_user_relations;
 
+#[tracing::instrument(skip(db, user))]
 #[get("/")]
 async fn list_user_relations_endpoint(db: Data<Db>, user: Option<ReqData<users_user::Model>>) -> HttpResponse {
     match user {

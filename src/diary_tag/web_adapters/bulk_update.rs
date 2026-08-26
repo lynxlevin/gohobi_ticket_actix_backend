@@ -16,6 +16,7 @@ use entities::users_user;
 
 use crate::{use_cases::bulk_update::bulk_update_diary_tags, BulkUpdateDiaryTagRequest};
 
+#[tracing::instrument(skip(db, user, params))]
 #[post("/bulk_update/")]
 async fn bulk_update_diary_tags_endpoint(
     db: Data<Db>,

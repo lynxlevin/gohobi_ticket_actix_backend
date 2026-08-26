@@ -16,6 +16,7 @@ use entities::users_user;
 
 use crate::{use_cases::create::create_diary, CreateDiaryRequest};
 
+#[tracing::instrument(skip(db, user, params))]
 #[post("/")]
 async fn create_diary_endpoint(
     db: Data<Db>,
