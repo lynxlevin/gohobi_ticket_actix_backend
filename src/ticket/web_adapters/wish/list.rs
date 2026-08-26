@@ -16,6 +16,7 @@ struct PathParam {
     user_relation_id: i64,
 }
 
+#[tracing::instrument(skip(db, user))]
 #[get("/")]
 async fn list_wishes_endpoint(
     db: Data<Db>,

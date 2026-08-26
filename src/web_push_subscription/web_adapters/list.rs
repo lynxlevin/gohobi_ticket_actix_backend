@@ -12,6 +12,7 @@ use entities::users_user;
 
 use crate::use_cases::list::list_web_push_subscription;
 
+#[tracing::instrument(skip(db, user))]
 #[get("")]
 pub async fn list_web_push_subscription_endpoint(
     db: Data<Db>,

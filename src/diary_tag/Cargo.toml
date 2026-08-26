@@ -18,4 +18,5 @@ db_adapters = { path = "../db_adapters" }
 
 actix-web.workspace = true
 serde.workspace = true
+tracing.workspace = true
 uuid.workspace = true

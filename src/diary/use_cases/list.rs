@@ -9,7 +9,7 @@ use serde::Deserialize;
 
 use crate::{DiaryTag, DiaryVisible};
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct ListDiaryQueryParam {
     pub user_relation_id: i64,
     pub date_gte: Option<NaiveDate>,

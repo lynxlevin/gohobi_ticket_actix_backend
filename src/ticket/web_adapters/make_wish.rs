@@ -27,6 +27,7 @@ struct PathParam {
     ticket_id: i64,
 }
 
+#[tracing::instrument(skip(db, user, params))]
 #[put("/{ticket_id}/use/")]
 async fn make_wish_endpoint(
     db: Data<Db>,

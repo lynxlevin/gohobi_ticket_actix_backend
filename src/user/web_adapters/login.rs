@@ -21,6 +21,7 @@ use common::{
 };
 use deadpool_redis::Pool;
 
+#[tracing::instrument(skip(db, redis_pool, settings, req_user, session))]
 #[post("/login")]
 async fn login_user_endpoint(
     db: Data<Db>,

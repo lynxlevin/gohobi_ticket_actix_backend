@@ -12,6 +12,7 @@ use entities::users_user;
 
 use crate::use_cases::delete::delete_web_push_subscription;
 
+#[tracing::instrument(skip(db, user))]
 #[delete("")]
 pub async fn delete_web_push_subscription_endpoint(
     db: Data<Db>,

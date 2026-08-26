@@ -19,6 +19,7 @@ use entities::users_user;
 
 use crate::{types::SendWebPushRequest, use_cases::send_web_push::send_web_push_use_case};
 
+#[tracing::instrument(skip(db, user, params))]
 #[post("/send/")]
 async fn send_web_push_endpoint(
     db: Data<Db>,

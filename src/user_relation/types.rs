@@ -52,7 +52,7 @@ impl SpecialTicketAvailabilityQueryParam {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SearchRequest {
     pub text: String,
 }
