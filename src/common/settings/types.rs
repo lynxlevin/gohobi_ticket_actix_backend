@@ -11,7 +11,10 @@ pub struct Settings {
 
 impl Settings {
     pub fn base_settings() -> Self {
-        Self { application: ApplicationSettings { port: 8000, ..Default::default() }, ..Default::default() }
+        Self {
+            application: ApplicationSettings { port: 8000, max_log_files: 14, ..Default::default() },
+            ..Default::default()
+        }
     }
 }
 
@@ -19,6 +22,7 @@ impl Settings {
 pub struct ApplicationSettings {
     pub port: u64,
     pub host: String,
+    pub max_log_files: usize,
     pub max_login_attempts: u64,
     pub login_attempts_cool_time_seconds: u64,
     pub slack_host: String,
