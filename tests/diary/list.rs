@@ -12,8 +12,8 @@ use common::factory::{self, *};
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-    let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db.db).await?;
 
     let diaries = create_diaries(
         vec![
@@ -49,7 +49,7 @@ async fn happy_path() -> Result<(), DbErr> {
         &db,
     )
     .await?;
-    let tag = factory::diary_tag(user_relation.id).insert(&db).await?;
+    let tag = factory::diary_tag(user_relation.id).insert(&db.db).await?;
     let _ = factory::link_diary_tag(&db, diaries.get("diary_2").unwrap().id, tag.id).await?;
 
     let req = test::TestRequest::get()
@@ -98,15 +98,15 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn happy_path_date_gte_lte() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
     let now = Utc::now();
     let diaries = (1..10).map(|i| factory::diary(user_relation.id).date((now - TimeDelta::days(i)).date_naive()));
-    diaries_diary::Entity::insert_many(diaries).exec(&db).await?;
+    diaries_diary::Entity::insert_many(diaries).exec(&db.db).await?;
     let diaries = diaries_diary::Entity::find()
         .filter(diaries_diary::Column::UserRelationId.eq(user_relation.id))
         .order_by_desc(diaries_diary::Column::Date)
-        .all(&db)
+        .all(&db.db)
         .await?;
     let expected = &diaries[3..7];
 
@@ -145,7 +145,7 @@ async fn happy_path_date_gte_lte() -> Result<(), DbErr> {
 async fn not_found_cases() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db).await?;
+    let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db.db).await?;
 
     for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non existent id")] {
         dbg!(case);

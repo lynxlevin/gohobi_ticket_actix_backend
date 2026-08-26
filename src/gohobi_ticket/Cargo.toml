@@ -7,8 +7,13 @@ edition = "2021"
 name = "gohobi_ticket"
 path = "main.rs"
 
+[[bin]]
+name = "init_test_db"
+path = "init_test_db.rs"
+
 [dependencies]
 common = { path = "../common", features = ["db", "redis", "settings"] }
+entities = { path = "../entities" }
 server = { path = "../server" }
 
 actix-session.workspace = true

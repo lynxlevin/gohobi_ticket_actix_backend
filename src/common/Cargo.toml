@@ -9,7 +9,6 @@ path = "lib.rs"
 
 [dependencies]
 entities = { path = "../entities", optional = true }
-migration = { path = "../../migration", optional = true }
 
 actix-web = { workspace = true, optional = true }
 aes-gcm = { workspace = true, optional = true }
@@ -34,7 +33,7 @@ ece.workspace = true
 
 
 [features]
-db = ["dep:sea-orm", "dep:migration", "settings", "dep:aes-gcm", "dep:base64"]
+db = ["dep:sea-orm", "settings", "dep:aes-gcm", "dep:base64"]
 errors = ["dep:actix-web", "dep:serde"]
 factory = ["dep:entities", "dep:sea-orm", "dep:uuid", "dep:chrono", "dep:base64"]
 redis = ["dep:deadpool-redis", "settings"]

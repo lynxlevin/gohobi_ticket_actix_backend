@@ -16,10 +16,10 @@ pub struct Response {
 #[actix_web::test]
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, settings } = init_app().await?;
-    let user = factory::user().insert(&db).await?;
+    let user = factory::user().insert(&db.db).await?;
     let subscription = factory::web_push_subscription(user.id)
         .encrypt_and_encode_sensitive_fields(&settings)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req = test::TestRequest::get().uri(URI).to_request();
@@ -42,7 +42,7 @@ async fn happy_path() -> Result<(), DbErr> {
 #[actix_web::test]
 async fn happy_path_no_subscription() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
-    let user = factory::user().insert(&db).await?;
+    let user = factory::user().insert(&db.db).await?;
 
     let req = test::TestRequest::get().uri(URI).to_request();
     req.extensions_mut().insert(user.clone());

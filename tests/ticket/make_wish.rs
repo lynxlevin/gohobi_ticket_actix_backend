@@ -10,8 +10,8 @@ use common::factory::{self, *};
 async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-    let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db.db).await?;
 
     let use_description = "used".to_string();
     let req = test::TestRequest::put()
@@ -34,7 +34,7 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
     assert_eq!(wish.description, use_description);
     assert_eq!(web_push_result, WebPushResult::NotSent);
 
-    let ticket_in_db = tickets_ticket::Entity::find_by_id(ticket.id).one(&db).await?;
+    let ticket_in_db = tickets_ticket::Entity::find_by_id(ticket.id).one(&db.db).await?;
     assert!(ticket_in_db.is_some());
     let ticket_in_db = ticket_in_db.unwrap();
     assert_eq!(ticket_in_db, receiving_ticket);
@@ -46,8 +46,8 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
 async fn forbidden_on_giving_ticket() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-    let giving_ticket = factory::ticket(user_0.id, user_relation.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let giving_ticket = factory::ticket(user_0.id, user_relation.id).insert(&db.db).await?;
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/use/", giving_ticket.id))
@@ -65,13 +65,13 @@ async fn forbidden_on_giving_ticket() -> Result<(), DbErr> {
 async fn not_found_cases() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-    let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db.db).await?;
     let receiving_draft_ticket = factory::ticket(user_1.id, user_relation.id)
         .status(TicketStatus::Draft.to_value())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
-    let unrelated_ticket = factory::ticket(other_user.id, other_relation.id).insert(&db).await?;
+    let unrelated_ticket = factory::ticket(other_user.id, other_relation.id).insert(&db.db).await?;
 
     for (ticket_id, case) in vec![
         (receiving_draft_ticket.id, "receiving_draft_ticket.id"),
@@ -120,8 +120,8 @@ mod web_push_message {
         let mut mock_server = mockito::Server::new_async().await;
 
         let [user_0, user_1, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-        let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+        let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db.db).await?;
         let endpoint = format!("{}/message", mock_server.url());
         let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
         let private_key = key_pair.raw_components().unwrap();
@@ -131,7 +131,7 @@ mod web_push_message {
             .set_raw_p256dh_key(p256dh_key.clone())
             .set_raw_auth_key(auth_key)
             .encrypt_and_encode_sensitive_fields(&settings)
-            .insert(&db)
+            .insert(&db.db)
             .await?;
 
         let expected_title = Some(format!("{}からのおねがい", user_0.username));
@@ -185,10 +185,10 @@ mod web_push_message {
         let mut mock_server = mockito::Server::new_async().await;
 
         let [user_0, user_1, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
         let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
             .is_special(true)
-            .insert(&db)
+            .insert(&db.db)
             .await?;
         let endpoint = format!("{}/message", mock_server.url());
         let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
@@ -199,7 +199,7 @@ mod web_push_message {
             .set_raw_p256dh_key(p256dh_key.clone())
             .set_raw_auth_key(auth_key)
             .encrypt_and_encode_sensitive_fields(&settings)
-            .insert(&db)
+            .insert(&db.db)
             .await?;
 
         let expected_title = Some(format!("⭐️{}からの特別なおねがい⭐️", user_0.username));

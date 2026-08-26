@@ -1,4 +1,5 @@
 use chrono::{NaiveDate, Utc};
+use common::db::Db;
 use entities::user_relations_userrelation::Model;
 use sea_orm::{ActiveModelTrait, DbConn, DbErr, IntoActiveModel, Set};
 
@@ -7,8 +8,8 @@ pub struct UserRelationMutation<'a> {
 }
 
 impl<'a> UserRelationMutation<'a> {
-    pub fn init(db: &'a DbConn) -> Self {
-        Self { db }
+    pub fn init(db: &'a Db) -> Self {
+        Self { db: &db.db }
     }
 
     pub async fn update_first_user_1_giving_ticket_date(

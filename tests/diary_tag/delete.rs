@@ -10,14 +10,14 @@ use crate::utils::{init_app, Connections};
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
     let tag = factory::diary_tag(user_relation.id)
         .text("tag_0")
         .sort_no(0)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
-    let diary = factory::diary(user_relation.id).insert(&db).await?;
+    let diary = factory::diary(user_relation.id).insert(&db.db).await?;
     factory::link_diary_tag(&db, diary.id, tag.id).await?;
 
     let req = test::TestRequest::delete()
@@ -28,16 +28,16 @@ async fn happy_path() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::NO_CONTENT);
 
-    let diary_tag_in_db = diaries_diarytag::Entity::find_by_id(tag.id).one(&db).await?;
+    let diary_tag_in_db = diaries_diarytag::Entity::find_by_id(tag.id).one(&db.db).await?;
     assert!(diary_tag_in_db.is_none());
 
     let tag_link_count = diaries_diarytagrelation::Entity::find()
         .filter(diaries_diarytagrelation::Column::TagMasterId.eq(tag.id))
-        .count(&db)
+        .count(&db.db)
         .await?;
     assert_eq!(tag_link_count, 0);
 
-    let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db).await?;
+    let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db.db).await?;
     assert!(diary_in_db.is_some());
 
     Ok(())
@@ -48,9 +48,9 @@ async fn not_found_cases() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
-    let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db).await?;
+    let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db.db).await?;
 
     for (tag_id, case) in vec![
         (other_relation_tag.id, "other_relation_tag.id"),

@@ -3,10 +3,10 @@ use actix_web::{
     web::{Data, Path, Query, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::error_responses::{response_401, response_500};
 use db_adapters::ticket::WishQuery;
 use entities::users_user;
-use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 
 use crate::use_cases::wish::list::{list_wishes, ListWishesQueryParam};
@@ -18,7 +18,7 @@ struct PathParam {
 
 #[get("/")]
 async fn list_wishes_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     path_param: Path<PathParam>,
     query_param: Query<ListWishesQueryParam>,

@@ -1,27 +1,51 @@
 mod encryptor;
 
-use migration::{Migrator, MigratorTrait};
-use sea_orm::{ConnectionTrait, Database, DbBackend, DbConn, DbErr};
+use sea_orm::{ConnectionTrait, Database, DbConn, DbErr};
 
 use crate::settings::types::Settings;
+
 pub use encryptor::{decode_and_decrypt, encrypt_and_encode};
 
-pub async fn init_db(settings: &Settings) -> Result<DbConn, DbErr> {
-    let database_url = &settings.database.url;
-    let db = Database::connect(database_url)
+#[derive(Clone)]
+pub struct Db {
+    pub db: DbConn,
+}
+
+pub async fn get_db_connection(settings: &Settings) -> Result<Db, DbErr> {
+    let db = Database::connect(&settings.database.url).await?;
+    Ok(Db { db })
+}
+
+async fn db_migration(db: &DbConn) -> Result<(), DbErr> {
+    db.get_schema_registry("entities::*").sync(db).await
+}
+
+pub async fn init_db(settings: &Settings) -> Result<Db, DbErr> {
+    let db = get_db_connection(&settings).await?;
+    db_migration(&db.db).await?;
+    Ok(db)
+}
+
+pub async fn init_test_db(settings: &Settings) -> () {
+    let db = get_db_connection(&settings).await.unwrap();
+
+    db.db
+        .execute_unprepared(
+            "DROP TABLE IF EXISTS
+            diaries_diary,
+            diaries_diarytag,
+            diaries_diarytagrelation,
+            tickets_ticket,
+            user_relations_userrelation,
+            users_user,
+            web_push_subscription,
+            wish,
+            CASCADE;
+        ",
+        )
         .await
-        .expect("Failed to open DB connection.");
-    let db_conn = match db.get_database_backend() {
-        DbBackend::MySql => {
-            let url = format!("{}", &database_url);
-            Database::connect(&url).await.expect("Failed to open DB connection.")
-        }
-        DbBackend::Postgres => {
-            let url = format!("{}", &database_url);
-            Database::connect(&url).await.expect("Failed to open DB connection.")
-        }
-        DbBackend::Sqlite => db,
-    };
-    Migrator::up(&db_conn, None).await.unwrap();
-    Ok(db_conn)
+        .unwrap();
+
+    db_migration(&db.db).await.unwrap();
+    ()
 }

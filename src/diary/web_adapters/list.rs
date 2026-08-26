@@ -3,25 +3,25 @@ use actix_web::{
     web::{Data, Query, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
 };
 use db_adapters::{diary::DiaryQuery, user_relation::UserRelationQuery};
 use entities::users_user;
-use sea_orm::DbConn;
 
 use crate::{list::ListDiaryQueryParam, use_cases::list::list_diary};
 
 #[get("/")]
 async fn list_diary_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     query_params: Query<ListDiaryQueryParam>,
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let user_relation_query = UserRelationQuery { db: &db };
+            let user_relation_query = UserRelationQuery { db: &db.db };
             let diary_query = DiaryQuery::init(&db);
             match list_diary(
                 user.into_inner(),

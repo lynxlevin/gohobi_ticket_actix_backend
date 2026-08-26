@@ -11,27 +11,27 @@ use crate::utils::{init_app, Connections};
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
     let tag_0 = factory::diary_tag(user_relation.id)
         .text("tag_0")
         .sort_no(0)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let tag_1 = factory::diary_tag(user_relation.id)
         .text("tag_1")
         .sort_no(1)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let tag_2 = factory::diary_tag(user_relation.id)
         .text("tag_2")
         .sort_no(2)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
     let tag_3 = factory::diary_tag(user_relation.id)
         .text("tag_3")
         .sort_no(3)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req_param = BulkUpdateDiaryTagRequest {
@@ -72,7 +72,7 @@ async fn happy_path() -> Result<(), DbErr> {
         .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation.id))
         .order_by_asc(diaries_diarytag::Column::SortNo)
         .order_by_asc(diaries_diarytag::Column::CreatedAt)
-        .all(&db)
+        .all(&db.db)
         .await?;
 
     let actual: Vec<BulkUpdateDiaryTagItem> =
@@ -86,10 +86,10 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn create_new_if_other_relation_tag() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
-    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db.db).await?;
 
-    let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db).await?;
+    let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db.db).await?;
 
     let req_param = BulkUpdateDiaryTagRequest {
         diary_tags: vec![BulkUpdateDiaryTagItem {
@@ -119,7 +119,7 @@ async fn create_new_if_other_relation_tag() -> Result<(), DbErr> {
     let tags_in_db = diaries_diarytag::Entity::find()
         .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation.id))
         .order_by_asc(diaries_diarytag::Column::SortNo)
-        .all(&db)
+        .all(&db.db)
         .await?;
     assert_eq!(tags_in_db.len(), 1);
     assert_eq!(Some(tags_in_db[0].id), res[0].id);
@@ -127,7 +127,7 @@ async fn create_new_if_other_relation_tag() -> Result<(), DbErr> {
     assert_eq!(tags_in_db[0].sort_no, res[0].sort_no);
 
     let other_relation_tag_in_db = diaries_diarytag::Entity::find_by_id(other_relation_tag.id)
-        .one(&db)
+        .one(&db.db)
         .await?
         .unwrap();
     assert_eq!(other_relation_tag_in_db, other_relation_tag);
@@ -139,7 +139,7 @@ async fn create_new_if_other_relation_tag() -> Result<(), DbErr> {
 async fn bad_request_on_duplicate_sort_no() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
     let req_param = BulkUpdateDiaryTagRequest {
         diary_tags: vec![
@@ -165,7 +165,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non existent id")] {

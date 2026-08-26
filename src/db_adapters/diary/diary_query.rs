@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use common::db::Db;
 use entities::{
     diaries_diary::{Column, Entity, Model, Relation},
     diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation,
@@ -23,8 +24,8 @@ pub struct DiaryQuery<'a> {
 }
 
 impl<'a> DiaryQuery<'a> {
-    pub fn init(db: &'a DbConn) -> Self {
-        Self { db, query: Entity::find() }
+    pub fn init(db: &'a Db) -> Self {
+        Self { db: &db.db, query: Entity::find() }
     }
     pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
         self.query = self

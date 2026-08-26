@@ -1,3 +1,4 @@
+use common::db::Db;
 use entities::{diaries_diary, diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation};
 use sea_orm::{
     ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter, QueryOrder, QuerySelect,
@@ -13,8 +14,8 @@ pub struct DiaryTagQuery<'a> {
 }
 
 impl<'a> DiaryTagQuery<'a> {
-    pub fn init_query(db: &'a DbConn) -> Self {
-        Self { db, query: diaries_diarytag::Entity::find() }
+    pub fn init_query(db: &'a Db) -> Self {
+        Self { db: &db.db, query: diaries_diarytag::Entity::find() }
     }
     pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
         self.query = self

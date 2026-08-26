@@ -20,7 +20,7 @@ enum TagLinkTagId {
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
     let entry = "new diary".to_string();
     let today = Utc::now().date_naive();
@@ -46,7 +46,7 @@ async fn happy_path() -> Result<(), DbErr> {
     assert_eq!(res.status, DiaryStatus::Read);
     assert_eq!(res.tags, vec![]);
 
-    let diary_in_db = diaries_diary::Entity::find_by_id(res.id).one(&db).await?;
+    let diary_in_db = diaries_diary::Entity::find_by_id(res.id).one(&db.db).await?;
     assert!(diary_in_db.is_some());
     let diary_in_db = diary_in_db.unwrap();
     assert_eq!(diary_in_db.entry, entry.clone());
@@ -57,12 +57,12 @@ async fn happy_path() -> Result<(), DbErr> {
 
     let tag_link_in_db = diaries_diarytagrelation::Entity::find()
         .filter(diaries_diarytagrelation::Column::DiaryId.eq(res.id))
-        .all(&db)
+        .all(&db.db)
         .await?;
     assert_eq!(tag_link_in_db.len(), tag_ids.len());
 
     let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
-        .one(&db)
+        .one(&db.db)
         .await?
         .unwrap();
     assert_eq!(user_relation_in_db.first_diary_date, Some(today));
@@ -74,10 +74,10 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn happy_path_with_tag_ids() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
-    let diary_tag_0 = factory::diary_tag(user_relation.id).insert(&db).await?;
-    let diary_tag_1 = factory::diary_tag(user_relation.id).insert(&db).await?;
+    let diary_tag_0 = factory::diary_tag(user_relation.id).insert(&db.db).await?;
+    let diary_tag_1 = factory::diary_tag(user_relation.id).insert(&db.db).await?;
     let tags = vec![diary_tag_0, diary_tag_1];
 
     let req = test::TestRequest::post()
@@ -102,7 +102,7 @@ async fn happy_path_with_tag_ids() -> Result<(), DbErr> {
         .select_only()
         .column_as(diaries_diarytagrelation::Column::TagMasterId, TagLinkTagId::TagId)
         .into_values::<_, TagLinkTagId>()
-        .all(&db)
+        .all(&db.db)
         .await?;
     assert_eq!(linked_tag_ids_in_db, tags.iter().map(|tag| tag.id).collect::<Vec<_>>());
 
@@ -116,9 +116,9 @@ async fn happy_path_when_first_diary() -> Result<(), DbErr> {
     let today = Utc::now().date_naive();
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .first_diary_date(Some(today))
-        .insert(&db)
+        .insert(&db.db)
         .await?;
-    let _existing_diary = factory::diary(user_relation.id).date(today).insert(&db).await?;
+    let _existing_diary = factory::diary(user_relation.id).date(today).insert(&db.db).await?;
 
     let new_diary_date = today.checked_sub_days(Days::new(1)).unwrap();
 
@@ -137,7 +137,7 @@ async fn happy_path_when_first_diary() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::CREATED);
 
     let user_relation_in_db = user_relations_userrelation::Entity::find_by_id(user_relation.id)
-        .one(&db)
+        .one(&db.db)
         .await?
         .unwrap();
     assert_eq!(user_relation_in_db.first_diary_date, Some(new_diary_date));
@@ -149,7 +149,7 @@ async fn happy_path_when_first_diary() -> Result<(), DbErr> {
 async fn not_found_if_incorrect_user_relation_id() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db).await?;
+    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db.db).await?;
 
     for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non-existent id")] {
         dbg!(case);

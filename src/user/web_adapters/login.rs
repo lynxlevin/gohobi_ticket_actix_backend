@@ -11,6 +11,7 @@ use actix_web::{
     web::{Data, Json},
     HttpResponse,
 };
+use common::db::Db;
 use common::{
     errors::{
         error_responses::{response_400, response_404, response_500},
@@ -19,18 +20,17 @@ use common::{
     settings::types::Settings,
 };
 use deadpool_redis::Pool;
-use sea_orm::DbConn;
 
 #[post("/login")]
 async fn login_user_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     redis_pool: Data<Pool>,
     settings: Data<Settings>,
     req_user: Json<LoginRequest>,
     session: actix_session::Session,
 ) -> HttpResponse {
-    let user_query = UserQuery { db: &db };
-    let user_mutation = UserMutation { db: &db };
+    let user_query = UserQuery { db: &db.db };
+    let user_mutation = UserMutation { db: &db.db };
     let user_redis = UserRedis { pool: &redis_pool, settings: &settings };
 
     match login_user(req_user.into_inner(), user_query, user_mutation, user_redis).await {

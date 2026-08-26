@@ -6,9 +6,9 @@ use entities::{
     tickets_ticket::{ActiveModel, Entity, Model},
     wish,
 };
-use sea_orm::{ActiveModelTrait, DbConn, DbErr, EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, DbErr, EntityTrait, Set};
 
-use crate::factory::wish as wish_factory;
+use crate::{db::Db, factory::wish as wish_factory};
 
 pub fn ticket(giving_user_id: i64, user_relation_id: i64) -> ActiveModel {
     let now = Utc::now();
@@ -30,7 +30,7 @@ pub trait TicketFactory {
     fn gift_date(self, gift_date: NaiveDate) -> ActiveModel;
     fn status(self, status: String) -> ActiveModel;
     fn is_special(self, is_special: bool) -> ActiveModel;
-    fn insert_with_wish(self, db: &DbConn) -> impl Future<Output = Result<(Model, wish::Model), DbErr>> + Send;
+    fn insert_with_wish(self, db: &Db) -> impl Future<Output = Result<(Model, wish::Model), DbErr>> + Send;
 }
 
 impl TicketFactory for ActiveModel {
@@ -54,9 +54,9 @@ impl TicketFactory for ActiveModel {
         self
     }
 
-    async fn insert_with_wish(self, db: &DbConn) -> Result<(Model, wish::Model), DbErr> {
-        let ticket = self.insert(db).await?;
-        let wish = wish_factory(&ticket).insert(db).await?;
+    async fn insert_with_wish(self, db: &Db) -> Result<(Model, wish::Model), DbErr> {
+        let ticket = self.insert(&db.db).await?;
+        let wish = wish_factory(&ticket).insert(&db.db).await?;
         Ok((ticket, wish))
     }
 }
@@ -72,7 +72,7 @@ pub struct TicketParam {
     pub user_relation_id: i64,
 }
 
-pub async fn create_tickets(params: Vec<TicketParam>, db: &DbConn) -> Result<HashMap<String, Model>, DbErr> {
+pub async fn create_tickets(params: Vec<TicketParam>, db: &Db) -> Result<HashMap<String, Model>, DbErr> {
     let today = Utc::now().date_naive();
     let tickets = params.iter().map(|param| {
         let gift_date = if param.n_days_ago > 0 {
@@ -94,7 +94,7 @@ pub async fn create_tickets(params: Vec<TicketParam>, db: &DbConn) -> Result<Has
             ticket.description(param.name.clone())
         }
     });
-    let tickets = Entity::insert_many(tickets).exec_with_returning_many(db).await?;
+    let tickets = Entity::insert_many(tickets).exec_with_returning(&db.db).await?;
 
     Ok(tickets
         .into_iter()

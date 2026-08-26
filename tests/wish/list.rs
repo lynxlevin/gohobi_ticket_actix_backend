@@ -13,15 +13,15 @@ const URI: &str = "/api/user_relations/{relation_id}/wish/";
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
     let now = Utc::now().fixed_offset();
-    let ticket_0 = factory::ticket(user_0.id, user_relation.id).insert(&db).await?;
+    let ticket_0 = factory::ticket(user_0.id, user_relation.id).insert(&db.db).await?;
     let wish_0 = factory::wish(&ticket_0)
         .created_at(now.checked_sub_days(Days::new(1)).unwrap())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
-    let ticket_1 = factory::ticket(user_0.id, user_relation.id).insert(&db).await?;
-    let wish_1 = factory::wish(&ticket_1).created_at(now).insert(&db).await?;
+    let ticket_1 = factory::ticket(user_0.id, user_relation.id).insert(&db.db).await?;
+    let wish_1 = factory::wish(&ticket_1).created_at(now).insert(&db.db).await?;
 
     let req = test::TestRequest::get()
         .uri(&URI.replace("{relation_id}", &user_relation.id.to_string()))
@@ -45,24 +45,24 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn happy_path_created_at_gte_lte() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
     let now = Utc::now().fixed_offset();
     let tickets = (1..10).map(|_| factory::ticket(user_0.id, user_relation.id));
-    tickets_ticket::Entity::insert_many(tickets).exec(&db).await?;
+    tickets_ticket::Entity::insert_many(tickets).exec(&db.db).await?;
     let tickets = tickets_ticket::Entity::find()
         .filter(tickets_ticket::Column::GivingUserId.eq(user_0.id))
         .order_by_desc(tickets_ticket::Column::GiftDate)
-        .all(&db)
+        .all(&db.db)
         .await?;
 
     let wishes =
         (1..10).map(|i: i64| factory::wish(&tickets[(i as usize) - 1]).created_at(now - TimeDelta::days(i)));
-    wish::Entity::insert_many(wishes).exec(&db).await?;
+    wish::Entity::insert_many(wishes).exec(&db.db).await?;
     let wishes = wish::Entity::find()
         .filter(wish::Column::UserRelationId.eq(user_relation.id))
         .order_by_desc(wish::Column::CreatedAt)
-        .all(&db)
+        .all(&db.db)
         .await?;
     let expected = &wishes.iter().zip(&tickets).collect::<Vec<_>>()[3..7];
     let oldest_wish = expected.last().unwrap().0;
@@ -97,24 +97,24 @@ async fn happy_path_created_at_gte_lte() -> Result<(), DbErr> {
 async fn happy_path_created_at_gte_lt() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
 
     let now = Utc::now().fixed_offset();
     let tickets = (1..10).map(|_| factory::ticket(user_0.id, user_relation.id));
-    tickets_ticket::Entity::insert_many(tickets).exec(&db).await?;
+    tickets_ticket::Entity::insert_many(tickets).exec(&db.db).await?;
     let tickets = tickets_ticket::Entity::find()
         .filter(tickets_ticket::Column::GivingUserId.eq(user_0.id))
         .order_by_desc(tickets_ticket::Column::GiftDate)
-        .all(&db)
+        .all(&db.db)
         .await?;
 
     let wishes =
         (1..10).map(|i: i64| factory::wish(&tickets[(i as usize) - 1]).created_at(now - TimeDelta::days(i)));
-    wish::Entity::insert_many(wishes).exec(&db).await?;
+    wish::Entity::insert_many(wishes).exec(&db.db).await?;
     let wishes = wish::Entity::find()
         .filter(wish::Column::UserRelationId.eq(user_relation.id))
         .order_by_desc(wish::Column::CreatedAt)
-        .all(&db)
+        .all(&db.db)
         .await?;
     let expected = &wishes.iter().zip(&tickets).collect::<Vec<_>>()[3..7];
     let oldest_wish = expected.last().unwrap().0;

@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use chrono::{Days, NaiveDate, Utc};
 use entities::diaries_diary::{ActiveModel, Entity, Model};
-use sea_orm::{DbConn, DbErr, EntityTrait, Set};
+use sea_orm::{DbErr, EntityTrait, Set};
+
+use crate::db::Db;
 
 pub fn diary(user_relation_id: i64) -> ActiveModel {
     let now = Utc::now();
@@ -58,7 +60,7 @@ pub struct DiaryParam {
     pub user_relation_id: i64,
 }
 
-pub async fn create_diaries(params: Vec<DiaryParam>, db: &DbConn) -> Result<HashMap<String, Model>, DbErr> {
+pub async fn create_diaries(params: Vec<DiaryParam>, db: &Db) -> Result<HashMap<String, Model>, DbErr> {
     let today = Utc::now().date_naive();
     let diaries = params.iter().map(|param| {
         let date = if param.n_days_ago > 0 {
@@ -87,7 +89,7 @@ pub async fn create_diaries(params: Vec<DiaryParam>, db: &DbConn) -> Result<Hash
             diary
         }
     });
-    let diaries = Entity::insert_many(diaries).exec_with_returning_many(db).await?;
+    let diaries = Entity::insert_many(diaries).exec_with_returning(&db.db).await?;
 
     Ok(diaries
         .into_iter()

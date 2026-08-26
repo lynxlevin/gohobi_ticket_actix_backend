@@ -14,7 +14,7 @@ fn get_uri(user_relation_id: i64) -> String {
 async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [me, you, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(me.id, you.id).insert(&db).await?;
+    let user_relation = factory::user_relation(me.id, you.id).insert(&db.db).await?;
 
     let tickets = create_tickets(
         vec![
@@ -82,9 +82,11 @@ async fn happy_path() -> Result<(), DbErr> {
         &db,
     )
     .await?;
-    let _ = factory::wish(tickets.get("_used_ticket").unwrap()).insert(&db).await?;
+    let _ = factory::wish(tickets.get("_used_ticket").unwrap())
+        .insert(&db.db)
+        .await?;
     let _ = factory::wish(tickets.get("_used_special_ticket").unwrap())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req = test::TestRequest::get().uri(&get_uri(user_relation.id)).to_request();
@@ -112,7 +114,7 @@ async fn happy_path() -> Result<(), DbErr> {
 async fn happy_path_none_available() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [me, you, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(me.id, you.id).insert(&db).await?;
+    let user_relation = factory::user_relation(me.id, you.id).insert(&db.db).await?;
 
     let tickets = create_tickets(
         vec![
@@ -150,9 +152,11 @@ async fn happy_path_none_available() -> Result<(), DbErr> {
         &db,
     )
     .await?;
-    let _ = factory::wish(tickets.get("_used_ticket").unwrap()).insert(&db).await?;
+    let _ = factory::wish(tickets.get("_used_ticket").unwrap())
+        .insert(&db.db)
+        .await?;
     let _ = factory::wish(tickets.get("_used_special_ticket").unwrap())
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req = test::TestRequest::get().uri(&get_uri(user_relation.id)).to_request();
@@ -174,7 +178,7 @@ async fn not_found_on_unrelated_relation() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [me, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
-        .insert(&db)
+        .insert(&db.db)
         .await?;
 
     let req = test::TestRequest::get().uri(&get_uri(other_relation.id)).to_request();

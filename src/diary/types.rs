@@ -1,8 +1,8 @@
 use chrono::NaiveDate;
 use db_adapters::diary::types::DiaryStatus;
 use entities::diaries_diarytag;
-use sea_orm::prelude::Uuid;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct DiaryTag {

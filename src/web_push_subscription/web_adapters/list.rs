@@ -3,16 +3,18 @@ use actix_web::{
     web::{Data, ReqData},
     HttpResponse,
 };
-use common::errors::error_responses::{response_401, response_500};
+use common::{
+    db::Db,
+    errors::error_responses::{response_401, response_500},
+};
 use db_adapters::web_push_subscription::WebPushSubscriptionQuery;
 use entities::users_user;
-use sea_orm::DbConn;
 
 use crate::use_cases::list::list_web_push_subscription;
 
 #[get("")]
 pub async fn list_web_push_subscription_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
 ) -> HttpResponse {
     match user {

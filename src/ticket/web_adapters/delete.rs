@@ -3,10 +3,10 @@ use actix_web::{
     web::{Data, Path, ReqData},
     HttpResponse,
 };
+use common::db::Db;
 use common::errors::error_responses::{response_401, response_403, response_404, response_500};
 use db_adapters::ticket_service::TicketService;
 use entities::users_user;
-use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 
 use crate::use_cases::delete::{delete_ticket, DeleteTicketError};
@@ -18,7 +18,7 @@ struct PathParam {
 
 #[delete("/{ticket_id}/")]
 async fn delete_ticket_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     path_param: Path<PathParam>,
 ) -> HttpResponse {

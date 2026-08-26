@@ -1,4 +1,5 @@
 use chrono::{DateTime, FixedOffset};
+use common::db::Db;
 use entities::{
     tickets_ticket, user_relations_userrelation,
     wish::{Column, Entity, Model, Relation},
@@ -19,8 +20,8 @@ pub struct WishQuery<'a> {
 }
 
 impl<'a> WishQuery<'a> {
-    pub fn init_query(db: &'a DbConn) -> Self {
-        Self { db, query: Entity::find() }
+    pub fn init_query(db: &'a Db) -> Self {
+        Self { db: &db.db, query: Entity::find() }
     }
 
     pub fn join_ticket(mut self) -> Self {

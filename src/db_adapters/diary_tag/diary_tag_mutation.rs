@@ -1,8 +1,8 @@
 use chrono::Utc;
+use common::db::Db;
 use entities::{diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation};
 use sea_orm::{
     ActiveModelTrait, ActiveValue::NotSet, ColumnTrait, DbConn, DbErr, EntityTrait, ModelTrait, QueryFilter, Set,
-    TryInsertResult,
 };
 use uuid::Uuid;
 
@@ -13,8 +13,8 @@ pub struct DiaryTagMutation<'a> {
 }
 
 impl<'a> DiaryTagMutation<'a> {
-    pub fn init(db: &'a DbConn) -> Self {
-        Self { db }
+    pub fn init(db: &'a Db) -> Self {
+        Self { db: &db.db }
     }
 
     pub async fn create_many(
@@ -31,14 +31,9 @@ impl<'a> DiaryTagMutation<'a> {
             updated_at: Set(now.into()),
             user_relation_id: Set(user_relation.id),
         });
-        match diaries_diarytag::Entity::insert_many(tags_to_create)
-            .on_empty_do_nothing()
-            .exec_with_returning_many(self.db)
-            .await?
-        {
-            TryInsertResult::Inserted(tags) => Ok(tags),
-            _ => Ok(vec![]),
-        }
+        diaries_diarytag::Entity::insert_many(tags_to_create)
+            .exec_with_returning(self.db)
+            .await
     }
 
     pub async fn update_many(

@@ -4,10 +4,10 @@ use actix_web::{
     HttpResponse,
 };
 use chrono::NaiveDate;
+use common::db::Db;
 use common::errors::error_responses::{response_401, response_500};
 use db_adapters::ticket_service::TicketService;
 use entities::users_user;
-use sea_orm::DbConn;
 use serde::Deserialize;
 
 use crate::{list::ListTicketsParams, use_cases::list::list_tickets};
@@ -22,7 +22,7 @@ pub struct ListTicketsQueryParam {
 
 #[get("/")]
 async fn list_tickets_endpoint(
-    db: Data<DbConn>,
+    db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     query: Query<ListTicketsQueryParam>,
 ) -> HttpResponse {

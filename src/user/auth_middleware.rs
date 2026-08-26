@@ -9,8 +9,8 @@ use actix_web::{
     web::Data,
     Error, HttpMessage,
 };
+use common::db::Db;
 use futures::future::LocalBoxFuture;
-use sea_orm::DbConn;
 
 use crate::{constants::USER_ID_KEY, db_adapters::UserQuery};
 
@@ -72,8 +72,8 @@ async fn set_user(req: &ServiceRequest) -> Result<(), String> {
         Err(e) => return Err(e.to_string()),
     };
 
-    let user_query = match req.app_data::<Data<DbConn>>() {
-        Some(data) => UserQuery { db: &data },
+    let user_query = match req.app_data::<Data<Db>>() {
+        Some(data) => UserQuery { db: &data.db },
         None => return Err("Error acquiring DB connection.".to_string()),
     };
 
@@ -102,14 +102,14 @@ mod tests {
     use actix_web::test;
     use sea_orm::prelude::ActiveModelTrait;
 
-    use common::{db::init_db, factory, settings::get_test_settings};
+    use common::{db::get_db_connection, factory, settings::get_test_settings};
     use entities::users_user;
 
     #[actix_web::test]
     async fn test_set_user() -> Result<(), String> {
         let settings = get_test_settings();
-        let db = init_db(&settings).await.unwrap();
-        let user = factory::user().insert(&db).await.unwrap();
+        let db = get_db_connection(&settings).await.unwrap();
+        let user = factory::user().insert(&db.db).await.unwrap();
         let srv_req = test::TestRequest::default()
             .app_data(Data::new(db.clone()))
             .to_srv_request();
