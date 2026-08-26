@@ -1,3 +1,5 @@
+mod request_logger;
+
 use actix_session::{
     config::{PersistentSession, SessionMiddlewareBuilder},
     storage::RedisSessionStore,
@@ -11,6 +13,8 @@ pub use user::auth_middleware::AuthenticateUser;
 use user::auth_routes;
 use user_relation::user_relation_routes;
 use web_push_subscription::web_push_subscription_routes;
+
+pub use request_logger::RequestLogger;
 
 pub async fn get_preps_for_redis_session_store(settings: &Settings) -> (RedisSessionStore, cookie::Key) {
     let secret_key = cookie::Key::from(settings.secret.hmac_secret.as_bytes());

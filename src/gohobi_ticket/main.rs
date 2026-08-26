@@ -1,7 +1,10 @@
 use actix_session::SessionMiddleware;
 use actix_web::{middleware::Compress, web::Data, App, HttpServer};
 use common::{db::init_db, redis::init_redis_pool, settings::get_settings};
-use server::{get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder, AuthenticateUser};
+use server::{
+    get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder, AuthenticateUser,
+    RequestLogger,
+};
 
 mod telemetry;
 
@@ -30,6 +33,7 @@ async fn main() -> std::io::Result<()> {
                 )
                 .build(),
             )
+            .wrap(RequestLogger)
             .service(get_routes())
             .app_data(Data::new(db.clone()))
             .app_data(Data::new(redis_pool.clone()))
