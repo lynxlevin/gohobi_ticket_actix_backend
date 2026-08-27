@@ -1,10 +1,11 @@
 use common::errors::use_case_errors::UseCaseError;
 use db_adapters::{diary_tag::DiaryTagQuery, user_relation::UserRelationQuery};
+use entities::users_user::UserId;
 
 use crate::types::ListDiaryTagsResponse;
 
 pub async fn list_diary_tags(
-    user_id: i64,
+    user_id: UserId,
     user_relation_id: i64,
     diary_tag_query: DiaryTagQuery<'_>,
     user_relation_query: UserRelationQuery<'_>,

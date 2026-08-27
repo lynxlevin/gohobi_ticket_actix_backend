@@ -4,6 +4,7 @@ use db_adapters::{
     ticket_service::{TicketService, TicketServiceError, TicketServiceQuery},
     user_relation::UserRelationQuery,
 };
+use entities::users_user::UserId;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -24,7 +25,7 @@ impl From<TicketServiceError> for CheckSpecialTicketAvailabilityError {
 }
 
 pub async fn check_special_ticket_availability(
-    user_id: i64,
+    user_id: UserId,
     user_relation_id: i64,
     user_relation_query: UserRelationQuery<'_>,
     ticket_service: TicketService<'_>,

@@ -4,13 +4,14 @@ use chrono::{Days, NaiveDate, Utc};
 use entities::{
     custom_types::TicketStatus,
     tickets_ticket::{ActiveModel, Entity, Model},
+    users_user::UserId,
     wish,
 };
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait, Set};
 
 use crate::{db::Db, factory::wish as wish_factory};
 
-pub fn ticket(giving_user_id: i64, user_relation_id: i64) -> ActiveModel {
+pub fn ticket(giving_user_id: UserId, user_relation_id: i64) -> ActiveModel {
     let now = Utc::now();
     ActiveModel {
         description: Set(String::default()),
@@ -68,7 +69,7 @@ pub struct TicketParam {
     pub n_days_ago: i64,
     pub status: TicketStatus,
     pub is_special: bool,
-    pub giving_user_id: i64,
+    pub giving_user_id: UserId,
     pub user_relation_id: i64,
 }
 

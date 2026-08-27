@@ -1,8 +1,8 @@
 use chrono::{NaiveDate, Utc};
-use entities::user_relations_userrelation;
+use entities::{user_relations_userrelation, users_user::UserId};
 use sea_orm::Set;
 
-pub fn user_relation(user_1_id: i64, user_2_id: i64) -> user_relations_userrelation::ActiveModel {
+pub fn user_relation(user_1_id: UserId, user_2_id: UserId) -> user_relations_userrelation::ActiveModel {
     let now = Utc::now();
     user_relations_userrelation::ActiveModel {
         user_1_id: Set(user_1_id),

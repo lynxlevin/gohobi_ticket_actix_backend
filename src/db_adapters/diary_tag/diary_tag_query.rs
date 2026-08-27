@@ -1,5 +1,7 @@
 use common::db::Db;
-use entities::{diaries_diary, diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation};
+use entities::{
+    diaries_diary, diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation, users_user::UserId,
+};
 use sea_orm::{
     ColumnTrait, Condition, DbConn, DbErr, EntityTrait, JoinType::LeftJoin, QueryFilter, QueryOrder, QuerySelect,
     RelationTrait, Select,
@@ -17,7 +19,7 @@ impl<'a> DiaryTagQuery<'a> {
     pub fn init_query(db: &'a Db) -> Self {
         Self { db: &db.db, query: diaries_diarytag::Entity::find() }
     }
-    pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
+    pub fn filter_which_user_has_access(mut self, user_id: UserId) -> Self {
         self.query = self
             .query
             .join(LeftJoin, diaries_diarytag::Relation::UserRelationsUserrelation.def())

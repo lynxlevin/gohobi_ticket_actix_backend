@@ -3,6 +3,8 @@
 use sea_orm::{entity::prelude::*, ActiveValue::Set};
 use serde::{Deserialize, Serialize};
 
+use crate::users_user::UserId;
+
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "web_push_subscription")]
@@ -10,7 +12,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     #[sea_orm(unique)]
-    pub user_id: i64,
+    pub user_id: UserId,
     #[sea_orm(column_type = "String(StringLen::N(64))")]
     pub device_name: String,
     pub endpoint: String,

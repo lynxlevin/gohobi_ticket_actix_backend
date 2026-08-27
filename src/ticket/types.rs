@@ -2,7 +2,9 @@ use chrono::{DateTime, FixedOffset, NaiveDate};
 use db_adapters::ticket_service::{CreateTicketParams, UpdateTicketParams};
 use entities::{
     custom_types::{TicketStatus, WishStatus},
-    tickets_ticket, wish,
+    tickets_ticket,
+    users_user::UserId,
+    wish,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -16,7 +18,7 @@ pub struct ListTicketResponse {
 pub struct TicketVisible {
     pub id: i64,
     pub user_relation_id: i64,
-    pub giving_user_id: i64,
+    pub giving_user_id: UserId,
     pub description: String,
     pub gift_date: NaiveDate,
     pub status: TicketStatus,
@@ -83,7 +85,7 @@ pub struct WishVisible {
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct TicketInner {
     pub id: i64,
-    pub giving_user_id: i64,
+    pub giving_user_id: UserId,
     pub description: String,
     pub gift_date: NaiveDate,
     pub is_special: bool,

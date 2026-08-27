@@ -1,4 +1,4 @@
-use entities::users_user;
+use entities::users_user::{self, UserId};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug, Serialize)]
@@ -9,7 +9,7 @@ pub struct LoginRequest {
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct UserVisible {
-    pub id: i64,
+    pub id: UserId,
     pub username: String,
     pub email: String,
 }

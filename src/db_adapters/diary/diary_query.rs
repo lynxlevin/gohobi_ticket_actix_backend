@@ -3,6 +3,7 @@ use common::db::Db;
 use entities::{
     diaries_diary::{Column, Entity, Model, Relation},
     diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation,
+    users_user::UserId,
 };
 use sea_orm::{
     ColumnTrait, Condition, DbConn, DbErr, DeriveColumn, EntityTrait, EnumIter, JoinType::LeftJoin, QueryFilter,
@@ -27,7 +28,7 @@ impl<'a> DiaryQuery<'a> {
     pub fn init(db: &'a Db) -> Self {
         Self { db: &db.db, query: Entity::find() }
     }
-    pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
+    pub fn filter_which_user_has_access(mut self, user_id: UserId) -> Self {
         self.query = self
             .query
             .join(LeftJoin, Relation::UserRelationsUserrelation.def())

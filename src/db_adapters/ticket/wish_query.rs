@@ -2,6 +2,7 @@ use chrono::{DateTime, FixedOffset};
 use common::db::Db;
 use entities::{
     tickets_ticket, user_relations_userrelation,
+    users_user::UserId,
     wish::{Column, Entity, Model, Relation},
 };
 use sea_orm::{
@@ -34,7 +35,7 @@ impl<'a> WishQuery<'a> {
     }
 
     /// Call with join_user_relation.
-    pub fn filter_which_user_has_access(mut self, user_id: i64) -> Self {
+    pub fn filter_which_user_has_access(mut self, user_id: UserId) -> Self {
         self.query = self.query.filter(
             Condition::any()
                 .add(user_relations_userrelation::Column::User1Id.eq(user_id))
