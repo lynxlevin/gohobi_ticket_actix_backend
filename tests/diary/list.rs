@@ -2,7 +2,7 @@ use actix_web::{http, test, HttpMessage};
 use chrono::{TimeDelta, Utc};
 use db_adapters::diary::types::DiaryStatus;
 use diary::{DiaryTag, DiaryVisible};
-use entities::diaries_diary;
+use entities::{diaries_diary, user_relations_userrelation::UserRelationId};
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, QueryOrder};
 
 use crate::utils::{init_app, Connections};
@@ -147,7 +147,10 @@ async fn not_found_cases() -> Result<(), DbErr> {
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db.db).await?;
 
-    for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non existent id")] {
+    for (user_relation_id, case) in vec![
+        (other_relation.id, "other_relation.id"),
+        (UserRelationId::from(-1), "non existent id"),
+    ] {
         dbg!(case);
         let req = test::TestRequest::get()
             .uri(&format!("/api/diaries/?user_relation_id={}", user_relation_id))

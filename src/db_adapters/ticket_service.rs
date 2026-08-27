@@ -3,8 +3,12 @@ use std::future::Future;
 use chrono::{Datelike, NaiveDate, Utc};
 use common::db::Db;
 use entities::{
-    custom_types::TicketStatus, prelude::TicketsTicket, tickets_ticket, user_relations_userrelation,
-    users_user::UserId, wish,
+    custom_types::TicketStatus,
+    prelude::TicketsTicket,
+    tickets_ticket,
+    user_relations_userrelation::{self, UserRelationId},
+    users_user::UserId,
+    wish,
 };
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseTransaction, DbConn, EntityTrait, IntoActiveModel,
@@ -18,7 +22,7 @@ use thiserror::Error;
 pub struct CreateTicketParams {
     pub gift_date: NaiveDate,
     pub description: String,
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
     pub is_special: bool,
     pub is_draft: bool,
 }
@@ -43,7 +47,7 @@ pub enum TicketServiceError {
     #[error(transparent)]
     DbErr(#[from] sea_orm::DbErr),
     #[error("UserRelation not found for id: {0}")]
-    UserRelationNotFound(i64),
+    UserRelationNotFound(UserRelationId),
     #[error("Ticket not found for id: {0}")]
     TicketNotFound(i64),
     #[error("{0}")]
@@ -75,19 +79,19 @@ pub trait TicketServiceQuery {
     fn get_oldest_available_ticket(
         &self,
         receiving_user_id: UserId,
-        user_relation_id: i64,
+        user_relation_id: UserRelationId,
         is_special: bool,
     ) -> impl Future<Output = Result<Option<tickets_ticket::Model>, TicketServiceError>>;
     fn list_tickets_with_wish(
         &self,
         user_id: UserId,
-        user_relation_id: i64,
+        user_relation_id: UserRelationId,
         params: ListTicketsWithWishParams,
     ) -> impl Future<Output = Result<Vec<(tickets_ticket::Model, Option<wish::Model>)>, TicketServiceError>>;
     fn check_special_ticket_existence(
         &self,
         giving_user_id: UserId,
-        user_relation_id: i64,
+        user_relation_id: UserRelationId,
         date: NaiveDate,
     ) -> impl Future<Output = Result<bool, TicketServiceError>>;
 }
@@ -118,7 +122,7 @@ impl TicketServiceQuery for TicketService<'_> {
     async fn get_oldest_available_ticket(
         &self,
         receiving_user_id: UserId,
-        user_relation_id: i64,
+        user_relation_id: UserRelationId,
         is_special: bool,
     ) -> Result<Option<tickets_ticket::Model>, TicketServiceError> {
         get_query_tickets_with_access_to_user(receiving_user_id)
@@ -136,7 +140,7 @@ impl TicketServiceQuery for TicketService<'_> {
     async fn list_tickets_with_wish(
         &self,
         user_id: UserId,
-        user_relation_id: i64,
+        user_relation_id: UserRelationId,
         params: ListTicketsWithWishParams,
     ) -> Result<Vec<(tickets_ticket::Model, Option<wish::Model>)>, TicketServiceError> {
         let mut query = get_query_tickets_with_access_to_user(user_id)
@@ -180,7 +184,7 @@ impl TicketServiceQuery for TicketService<'_> {
     async fn check_special_ticket_existence(
         &self,
         giving_user_id: UserId,
-        user_relation_id: i64,
+        user_relation_id: UserRelationId,
         date: NaiveDate,
     ) -> Result<bool, TicketServiceError> {
         let start_of_month = match NaiveDate::from_ymd_opt(date.year(), date.month0() + 1, 1) {
@@ -394,7 +398,7 @@ fn parse_transaction_error(e: TransactionError<TicketServiceError>) -> TicketSer
 async fn get_user_relation(
     txn: &DatabaseTransaction,
     user_id: UserId,
-    user_relation_id: i64,
+    user_relation_id: UserRelationId,
 ) -> Result<user_relations_userrelation::Model, TicketServiceError> {
     user_relations_userrelation::Entity::find_by_id(user_relation_id)
         .filter(

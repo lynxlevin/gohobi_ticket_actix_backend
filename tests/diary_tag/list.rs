@@ -2,6 +2,7 @@ use actix_web::{http, test, HttpMessage};
 use common::factory::{self, *};
 use db_adapters::diary_tag::types::DiaryTagVisible;
 use diary_tag::ListDiaryTagsResponse;
+use entities::user_relations_userrelation::UserRelationId;
 use sea_orm::{ActiveModelTrait, DbErr};
 
 use crate::utils::{init_app, Connections};
@@ -84,7 +85,10 @@ async fn not_found_cases() -> Result<(), DbErr> {
         .insert(&db.db)
         .await?;
 
-    for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non existent id")] {
+    for (user_relation_id, case) in vec![
+        (other_relation.id, "other_relation.id"),
+        (UserRelationId::from(-1), "non existent id"),
+    ] {
         dbg!(case);
         let req = test::TestRequest::get()
             .uri(&format!("/api/diary_tags/?user_relation_id={}", user_relation_id))

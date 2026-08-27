@@ -2,7 +2,7 @@ use chrono::NaiveDate;
 use db_adapters::ticket_service::{
     ListTicketsWithWishParams, TicketService, TicketServiceError, TicketServiceQuery,
 };
-use entities::users_user;
+use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -10,7 +10,7 @@ use crate::{ListTicketResponse, TicketVisible};
 
 #[derive(Deserialize, Debug, Default)]
 pub struct ListTicketsParams {
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
     pub text_query: Option<Vec<String>>,
     pub gift_date_gte: Option<NaiveDate>,
     pub gift_date_lte: Option<NaiveDate>,

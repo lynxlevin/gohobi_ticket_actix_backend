@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 
 use chrono::{Days, NaiveDate, Utc};
-use entities::diaries_diary::{ActiveModel, Entity, Model};
+use entities::{
+    diaries_diary::{ActiveModel, Entity, Model},
+    user_relations_userrelation::UserRelationId,
+};
 use sea_orm::{DbErr, EntityTrait, Set};
 
 use crate::db::Db;
 
-pub fn diary(user_relation_id: i64) -> ActiveModel {
+pub fn diary(user_relation_id: UserRelationId) -> ActiveModel {
     let now = Utc::now();
     ActiveModel {
         id: Set(uuid::Uuid::now_v7()),
@@ -57,7 +60,7 @@ pub struct DiaryParam {
     pub n_days_ago: i64,
     pub user_1_status: Option<String>,
     pub user_2_status: Option<String>,
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
 }
 
 pub async fn create_diaries(params: Vec<DiaryParam>, db: &Db) -> Result<HashMap<String, Model>, DbErr> {

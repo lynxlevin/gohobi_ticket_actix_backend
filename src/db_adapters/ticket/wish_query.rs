@@ -1,7 +1,8 @@
 use chrono::{DateTime, FixedOffset};
 use common::db::Db;
 use entities::{
-    tickets_ticket, user_relations_userrelation,
+    tickets_ticket,
+    user_relations_userrelation::{self, UserRelationId},
     users_user::UserId,
     wish::{Column, Entity, Model, Relation},
 };
@@ -43,7 +44,7 @@ impl<'a> WishQuery<'a> {
         );
         self
     }
-    pub fn filter_by_relation(mut self, user_relation_id: i64) -> Self {
+    pub fn filter_by_relation(mut self, user_relation_id: UserRelationId) -> Self {
         self.query = self.query.filter(Column::UserRelationId.eq(user_relation_id));
         self
     }

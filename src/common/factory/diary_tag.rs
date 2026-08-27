@@ -1,8 +1,8 @@
 use chrono::Utc;
-use entities::diaries_diarytag;
+use entities::{diaries_diarytag, user_relations_userrelation::UserRelationId};
 use sea_orm::Set;
 
-pub fn diary_tag(user_relation_id: i64) -> diaries_diarytag::ActiveModel {
+pub fn diary_tag(user_relation_id: UserRelationId) -> diaries_diarytag::ActiveModel {
     let now = Utc::now();
     diaries_diarytag::ActiveModel {
         id: Set(uuid::Uuid::now_v7()),

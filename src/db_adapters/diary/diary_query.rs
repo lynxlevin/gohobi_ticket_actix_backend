@@ -2,7 +2,8 @@ use chrono::NaiveDate;
 use common::db::Db;
 use entities::{
     diaries_diary::{Column, Entity, Model, Relation},
-    diaries_diarytag, diaries_diarytagrelation, user_relations_userrelation,
+    diaries_diarytag, diaries_diarytagrelation,
+    user_relations_userrelation::{self, UserRelationId},
     users_user::UserId,
 };
 use sea_orm::{
@@ -39,7 +40,7 @@ impl<'a> DiaryQuery<'a> {
             );
         self
     }
-    pub fn filter_by_relation(mut self, user_relation_id: i64) -> Self {
+    pub fn filter_by_relation(mut self, user_relation_id: UserRelationId) -> Self {
         self.query = self.query.filter(Column::UserRelationId.eq(user_relation_id));
         self
     }

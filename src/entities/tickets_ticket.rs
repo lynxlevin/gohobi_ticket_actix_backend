@@ -3,7 +3,7 @@
 use sea_orm::{entity::prelude::*, sqlx::types::chrono::Utc, ActiveValue::Set};
 use serde::{Deserialize, Serialize};
 
-use crate::users_user::UserId;
+use crate::{user_relations_userrelation::UserRelationId, users_user::UserId};
 
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize)]
@@ -20,7 +20,7 @@ pub struct Model {
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
     pub giving_user_id: UserId,
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
     #[sea_orm(belongs_to, from = "user_relation_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
     pub user_relations_userrelation: HasOne<super::user_relations_userrelation::Entity>,
     #[sea_orm(belongs_to, from = "giving_user_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]

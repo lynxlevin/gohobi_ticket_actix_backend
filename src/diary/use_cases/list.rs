@@ -4,14 +4,14 @@ use db_adapters::{
     diary::{DiaryQuery, Order},
     user_relation::UserRelationQuery,
 };
-use entities::users_user;
+use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
 
 use crate::{DiaryTag, DiaryVisible};
 
 #[derive(Deserialize, Default, Debug)]
 pub struct ListDiaryQueryParam {
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
     pub date_gte: Option<NaiveDate>,
     pub date_lte: Option<NaiveDate>,
 }

@@ -9,14 +9,14 @@ use common::errors::{
     use_case_errors::UseCaseError,
 };
 use db_adapters::{ticket_service::TicketService, user_relation::UserRelationQuery};
-use entities::users_user;
+use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::{Deserialize, Serialize};
 
 use crate::use_cases::available_tickets::available_tickets;
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
-    user_relation_id: i64,
+    user_relation_id: UserRelationId,
 }
 
 #[tracing::instrument(skip(db, user))]

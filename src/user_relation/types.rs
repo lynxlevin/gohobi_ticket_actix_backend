@@ -1,5 +1,6 @@
 use chrono::NaiveDate;
 use diary::DiaryVisible;
+use entities::user_relations_userrelation::UserRelationId;
 use serde::{Deserialize, Serialize};
 use ticket::TicketVisible;
 
@@ -10,7 +11,7 @@ pub struct ListUserRelationsResponse {
 
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct UserRelationVisible {
-    pub id: i64,
+    pub id: UserRelationId,
     pub related_username: String,
     pub giving_ticket_img: Option<String>,
     pub receiving_ticket_img: Option<String>,

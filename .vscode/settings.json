@@ -6,10 +6,13 @@
   "cSpell.words": [
     "actix",
     "chrono",
+    "codegen",
     "Datelike",
     "deadpool",
     "diarytag",
     "diarytagrelation",
+    "diarytagrelations",
+    "diarytags",
     "diffie",
     "dotenv",
     "dotenvy",

@@ -226,7 +226,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
             ticket: CreateTicketParams {
                 gift_date: Utc::now().date_naive(),
                 description: String::default(),
-                user_relation_id: 1,
+                user_relation_id: 1.into(),
                 is_special: false,
                 is_draft: false,
             },

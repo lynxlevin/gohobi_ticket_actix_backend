@@ -3,6 +3,8 @@
 use sea_orm::{entity::prelude::*, sqlx::types::chrono::Utc, ActiveValue::Set};
 use serde::{Deserialize, Serialize};
 
+use crate::user_relations_userrelation::UserRelationId;
+
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "wish")]
@@ -15,7 +17,7 @@ pub struct Model {
     pub status: String,
     #[sea_orm(unique)]
     pub ticket_id: i64,
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
     #[sea_orm(belongs_to, from = "ticket_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]

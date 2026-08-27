@@ -1,7 +1,7 @@
 use chrono::{DateTime, FixedOffset};
 use common::errors::use_case_errors::UseCaseError;
 use db_adapters::ticket::{Order, WishQuery};
-use entities::users_user;
+use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
 
 use crate::WishVisible;
@@ -16,7 +16,7 @@ pub struct ListWishesQueryParam {
 pub async fn list_wishes(
     user: users_user::Model,
     wish_query: WishQuery<'_>,
-    user_relation_id: i64,
+    user_relation_id: UserRelationId,
     params: ListWishesQueryParam,
 ) -> Result<Vec<WishVisible>, UseCaseError> {
     let mut query = wish_query

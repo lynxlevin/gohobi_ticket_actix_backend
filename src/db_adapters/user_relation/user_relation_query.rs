@@ -1,4 +1,7 @@
-use entities::{user_relations_userrelation, users_user::UserId};
+use entities::{
+    user_relations_userrelation::{self, UserRelationId},
+    users_user::UserId,
+};
 use sea_orm::{
     prelude::Expr, ColumnTrait, Condition, DbConn, DbErr, DeriveIden, EntityTrait, QueryFilter, QueryOrder,
     QuerySelect, RelationTrait,
@@ -26,7 +29,7 @@ pub struct UserRelationQuery<'a> {
 impl UserRelationQuery<'_> {
     pub async fn find_by_id(
         self,
-        id: i64,
+        id: UserRelationId,
         user_id: UserId,
     ) -> Result<Option<user_relations_userrelation::Model>, DbErr> {
         user_relations_userrelation::Entity::find_by_id(id)
@@ -40,7 +43,7 @@ impl UserRelationQuery<'_> {
     }
     pub async fn find_by_id_with_user_name(
         self,
-        id: i64,
+        id: UserRelationId,
         user_id: UserId,
     ) -> Result<Option<UserRelationWithName>, DbErr> {
         user_relations_userrelation::Entity::find_by_id(id)

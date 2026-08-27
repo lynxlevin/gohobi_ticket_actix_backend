@@ -4,6 +4,7 @@ use chrono::{Days, NaiveDate, Utc};
 use entities::{
     custom_types::TicketStatus,
     tickets_ticket::{ActiveModel, Entity, Model},
+    user_relations_userrelation::UserRelationId,
     users_user::UserId,
     wish,
 };
@@ -11,7 +12,7 @@ use sea_orm::{ActiveModelTrait, DbErr, EntityTrait, Set};
 
 use crate::{db::Db, factory::wish as wish_factory};
 
-pub fn ticket(giving_user_id: UserId, user_relation_id: i64) -> ActiveModel {
+pub fn ticket(giving_user_id: UserId, user_relation_id: UserRelationId) -> ActiveModel {
     let now = Utc::now();
     ActiveModel {
         description: Set(String::default()),
@@ -70,7 +71,7 @@ pub struct TicketParam {
     pub status: TicketStatus,
     pub is_special: bool,
     pub giving_user_id: UserId,
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
 }
 
 pub async fn create_tickets(params: Vec<TicketParam>, db: &Db) -> Result<HashMap<String, Model>, DbErr> {

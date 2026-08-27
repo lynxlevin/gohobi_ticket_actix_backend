@@ -1,4 +1,5 @@
 use actix_web::{http, test, HttpMessage};
+use entities::user_relations_userrelation::UserRelationId;
 use sea_orm::{ActiveModelTrait, DbErr};
 use ticket::TicketVisible;
 
@@ -6,7 +7,7 @@ use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
 use user_relation::{AvailableTicketsOldest, AvailableTicketsResponse};
 
-fn get_uri(user_relation_id: i64) -> String {
+fn get_uri(user_relation_id: UserRelationId) -> String {
     format!("/api/user_relations/{}/available_tickets/", user_relation_id,)
 }
 
@@ -194,7 +195,7 @@ async fn not_found_on_unrelated_relation() -> Result<(), DbErr> {
 async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let Connections { app, .. } = init_app().await?;
 
-    let req = test::TestRequest::get().uri(&get_uri(1)).to_request();
+    let req = test::TestRequest::get().uri(&get_uri(1.into())).to_request();
     let res = test::call_service(&app, req).await;
 
     assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);

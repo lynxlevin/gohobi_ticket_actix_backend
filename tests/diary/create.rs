@@ -2,7 +2,10 @@ use actix_web::{http, test, HttpMessage};
 use chrono::{Days, Utc};
 use db_adapters::diary::types::DiaryStatus;
 use diary::{CreateDiaryRequest, DiaryTag, DiaryVisible};
-use entities::{diaries_diary, diaries_diarytagrelation, user_relations_userrelation};
+use entities::{
+    diaries_diary, diaries_diarytagrelation,
+    user_relations_userrelation::{self, UserRelationId},
+};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbErr, DeriveColumn, EntityTrait, EnumIter, QueryFilter, QuerySelect,
 };
@@ -151,7 +154,10 @@ async fn not_found_if_incorrect_user_relation_id() -> Result<(), DbErr> {
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db.db).await?;
 
-    for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non-existent id")] {
+    for (user_relation_id, case) in vec![
+        (other_relation.id, "other_relation.id"),
+        (UserRelationId::from(-1), "non-existent id"),
+    ] {
         dbg!(case);
         let req = test::TestRequest::post()
             .uri("/api/diaries/")
@@ -178,7 +184,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri("/api/diaries/")
         .set_json(CreateDiaryRequest {
-            user_relation_id: 1,
+            user_relation_id: 1.into(),
             entry: String::default(),
             date: Utc::now().date_naive(),
             tag_ids: vec![],

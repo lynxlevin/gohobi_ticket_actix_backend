@@ -3,6 +3,7 @@ use db_adapters::ticket_service::{CreateTicketParams, UpdateTicketParams};
 use entities::{
     custom_types::{TicketStatus, WishStatus},
     tickets_ticket,
+    user_relations_userrelation::UserRelationId,
     users_user::UserId,
     wish,
 };
@@ -17,7 +18,7 @@ pub struct ListTicketResponse {
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct TicketVisible {
     pub id: i64,
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
     pub giving_user_id: UserId,
     pub description: String,
     pub gift_date: NaiveDate,

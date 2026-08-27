@@ -9,7 +9,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{db::decode_and_decrypt, settings::types::Settings};
-use entities::web_push_subscription;
+use entities::{user_relations_userrelation::UserRelationId, web_push_subscription};
 
 use crate::web_push::{
     web_push_message_encryptor::{MessageEncryptor, MessageEncryptorError},
@@ -28,7 +28,7 @@ pub struct Message {
     pub title: Option<String>,
     pub body: String,
     pub message_type: MessageType,
-    pub user_relation_id: Option<i64>,
+    pub user_relation_id: Option<UserRelationId>,
     pub ticket_id: Option<i64>,
     pub wish_id: Option<Uuid>,
 }

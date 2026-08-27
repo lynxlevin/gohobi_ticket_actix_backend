@@ -2,7 +2,7 @@ use actix_web::{http, test, HttpMessage};
 use common::factory::{self, *};
 use db_adapters::diary_tag::types::BulkUpdateDiaryTagItem;
 use diary_tag::{BulkUpdateDiaryTagRequest, BulkUpdateDiaryTagResponse};
-use entities::diaries_diarytag;
+use entities::{diaries_diarytag, user_relations_userrelation::UserRelationId};
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, QueryOrder};
 
 use crate::utils::{init_app, Connections};
@@ -168,7 +168,10 @@ async fn not_found_cases() -> Result<(), DbErr> {
         .insert(&db.db)
         .await?;
 
-    for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non existent id")] {
+    for (user_relation_id, case) in vec![
+        (other_relation.id, "other_relation.id"),
+        (UserRelationId::from(-1), "non existent id"),
+    ] {
         dbg!(case);
         let req = test::TestRequest::post()
             .uri("/api/diary_tags/bulk_update/")
@@ -194,7 +197,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
         .uri("/api/diary_tags/bulk_update/")
         .set_json(BulkUpdateDiaryTagRequest {
             diary_tags: vec![BulkUpdateDiaryTagItem { id: None, text: "tag_0".to_string(), sort_no: 1 }],
-            user_relation_id: 1,
+            user_relation_id: 1.into(),
         })
         .to_request();
     let res = test::call_service(&app, req).await;
