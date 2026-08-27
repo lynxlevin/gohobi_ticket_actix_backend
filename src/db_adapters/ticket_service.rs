@@ -5,7 +5,7 @@ use common::db::Db;
 use entities::{
     custom_types::TicketStatus,
     prelude::TicketsTicket,
-    tickets_ticket,
+    tickets_ticket::{self, TicketId},
     user_relations_userrelation::{self, UserRelationId},
     users_user::UserId,
     wish,
@@ -49,7 +49,7 @@ pub enum TicketServiceError {
     #[error("UserRelation not found for id: {0}")]
     UserRelationNotFound(UserRelationId),
     #[error("Ticket not found for id: {0}")]
-    TicketNotFound(i64),
+    TicketNotFound(TicketId),
     #[error("{0}")]
     ValidationError(String),
 }
@@ -69,12 +69,12 @@ pub trait TicketServiceQuery {
     fn get_ticket_by_id(
         &self,
         user_id: UserId,
-        ticket_id: i64,
+        ticket_id: TicketId,
     ) -> impl Future<Output = Result<tickets_ticket::Model, TicketServiceError>>;
     fn get_ticket_with_wish_by_id(
         &self,
         user_id: UserId,
-        ticket_id: i64,
+        ticket_id: TicketId,
     ) -> impl Future<Output = Result<(tickets_ticket::Model, Option<wish::Model>), TicketServiceError>>;
     fn get_oldest_available_ticket(
         &self,
@@ -100,7 +100,7 @@ impl TicketServiceQuery for TicketService<'_> {
     async fn get_ticket_by_id(
         &self,
         user_id: UserId,
-        ticket_id: i64,
+        ticket_id: TicketId,
     ) -> Result<tickets_ticket::Model, TicketServiceError> {
         get_query_ticket_by_id(user_id, ticket_id)
             .one(self.db)
@@ -110,7 +110,7 @@ impl TicketServiceQuery for TicketService<'_> {
     async fn get_ticket_with_wish_by_id(
         &self,
         user_id: UserId,
-        ticket_id: i64,
+        ticket_id: TicketId,
     ) -> Result<(tickets_ticket::Model, Option<wish::Model>), TicketServiceError> {
         get_query_ticket_by_id(user_id, ticket_id)
             .join(LeftJoin, tickets_ticket::Relation::Wish.def())
@@ -420,6 +420,6 @@ fn get_query_tickets_with_access_to_user(user_id: UserId) -> Select<TicketsTicke
                 .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
         )
 }
-fn get_query_ticket_by_id(user_id: UserId, ticket_id: i64) -> Select<TicketsTicket> {
+fn get_query_ticket_by_id(user_id: UserId, ticket_id: TicketId) -> Select<TicketsTicket> {
     get_query_tickets_with_access_to_user(user_id).filter(tickets_ticket::Column::Id.eq(ticket_id))
 }

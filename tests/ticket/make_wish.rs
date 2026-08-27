@@ -1,5 +1,8 @@
 use actix_web::{http, test, HttpMessage};
-use entities::{custom_types::TicketStatus, tickets_ticket};
+use entities::{
+    custom_types::TicketStatus,
+    tickets_ticket::{self, TicketId},
+};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{MakeWishParams, MakeWishRequest, MakeWishResponse, WebPushResult};
 
@@ -76,7 +79,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
     for (ticket_id, case) in vec![
         (receiving_draft_ticket.id, "receiving_draft_ticket.id"),
         (unrelated_ticket.id, "unrelated_ticket.id"),
-        (-1, "non_existent_id"),
+        (TicketId::from(-1), "non_existent_id"),
     ] {
         dbg!(case);
         let req = test::TestRequest::put()

@@ -1,5 +1,5 @@
 use db_adapters::ticket_service::{TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery};
-use entities::{custom_types::TicketStatus, users_user};
+use entities::{custom_types::TicketStatus, tickets_ticket::TicketId, users_user};
 use thiserror::Error;
 
 use crate::TicketVisible;
@@ -24,7 +24,7 @@ impl From<TicketServiceError> for ReadTicketError {
 
 pub async fn read_ticket(
     user: users_user::Model,
-    ticket_id: i64,
+    ticket_id: TicketId,
     ticket_service: TicketService<'_>,
 ) -> Result<TicketVisible, ReadTicketError> {
     let ticket = ticket_service.get_ticket_by_id(user.id, ticket_id).await?;

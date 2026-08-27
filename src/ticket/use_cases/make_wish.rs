@@ -12,7 +12,7 @@ use db_adapters::{
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
-use entities::{custom_types::TicketStatus, users_user};
+use entities::{custom_types::TicketStatus, tickets_ticket::TicketId, users_user};
 use thiserror::Error;
 
 use crate::{MakeWishParams, TicketVisible};
@@ -42,7 +42,7 @@ pub async fn make_wish(
     wish_mutation: WishMutation<'_>,
     web_push_subscription_query: WebPushSubscriptionQuery<'_>,
     web_push_subscription_mutation: WebPushSubscriptionMutation<'_>,
-    ticket_id: i64,
+    ticket_id: TicketId,
     params: MakeWishParams,
     settings: &Settings,
 ) -> Result<MakeWishResponse, MakeWishError> {

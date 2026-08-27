@@ -1,6 +1,9 @@
 use actix_web::{http, test, HttpMessage};
 use db_adapters::ticket_service::UpdateTicketParams;
-use entities::{custom_types::TicketStatus, tickets_ticket};
+use entities::{
+    custom_types::TicketStatus,
+    tickets_ticket::{self, TicketId},
+};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{TicketVisible, UpdateTicketRequest, UpsertTicketResponse};
 
@@ -226,7 +229,10 @@ async fn not_found_cases() -> Result<(), DbErr> {
         .insert(&db.db)
         .await?;
 
-    for (ticket_id, case) in vec![(unrelated_ticket.id, "unrelated_ticket.id"), (-1, "non_existent_id")] {
+    for (ticket_id, case) in vec![
+        (unrelated_ticket.id, "unrelated_ticket.id"),
+        (TicketId::from(-1), "non_existent_id"),
+    ] {
         dbg!(case);
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/", ticket_id))

@@ -3,6 +3,7 @@ use db_adapters::ticket_service::{
 };
 use entities::{
     custom_types::{TicketStatus, PUBLISHED_STATUSES},
+    tickets_ticket::TicketId,
     users_user,
 };
 use thiserror::Error;
@@ -30,7 +31,7 @@ impl From<TicketServiceError> for PartialUpdateTicketError {
 pub async fn partial_update_ticket(
     user: users_user::Model,
     ticket_service: TicketService<'_>,
-    ticket_id: i64,
+    ticket_id: TicketId,
     params: &mut UpdateTicketParams,
 ) -> Result<TicketVisible, PartialUpdateTicketError> {
     let ticket = ticket_service.get_ticket_by_id(user.id, ticket_id).await?;

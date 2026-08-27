@@ -3,7 +3,7 @@
 use sea_orm::{entity::prelude::*, sqlx::types::chrono::Utc, ActiveValue::Set};
 use serde::{Deserialize, Serialize};
 
-use crate::user_relations_userrelation::UserRelationId;
+use crate::{tickets_ticket::TicketId, user_relations_userrelation::UserRelationId};
 
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize)]
@@ -16,7 +16,7 @@ pub struct Model {
     #[sea_orm(column_type = "String(StringLen::N(8))")]
     pub status: String,
     #[sea_orm(unique)]
-    pub ticket_id: i64,
+    pub ticket_id: TicketId,
     pub user_relation_id: UserRelationId,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,

@@ -14,7 +14,7 @@ use db_adapters::{
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
-use entities::users_user;
+use entities::{tickets_ticket::TicketId, users_user};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -24,7 +24,7 @@ use crate::{
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
-    ticket_id: i64,
+    ticket_id: TicketId,
 }
 
 #[tracing::instrument(skip(db, user, params))]
