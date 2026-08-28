@@ -1,12 +1,9 @@
 use common::errors::use_case_errors::UseCaseError;
 use db_adapters::{
-    diary::{
-        types::{CreateDiaryParams, DiaryStatus},
-        DiaryMutation,
-    },
+    diary::{types::CreateDiaryParams, DiaryMutation},
     user_relation::{UserRelationMutation, UserRelationQuery},
 };
-use entities::users_user;
+use entities::{diaries_diary::DiaryStatus, users_user};
 
 use crate::{CreateDiaryRequest, DiaryTag, DiaryVisible};
 

@@ -6,7 +6,6 @@ use ticket::TicketVisible;
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
-use db_adapters::diary::types::DiaryStatus;
 use user_relation::{SearchRequest, SearchResponse};
 
 fn get_uri(user_relation_id: UserRelationId) -> String {
@@ -180,14 +179,14 @@ async fn happy_path() -> Result<(), DbErr> {
                 entry: diary_entry_hit.entry.clone(),
                 date: diary_entry_hit.date,
                 tags: vec![],
-                status: DiaryStatus::from(&diary_entry_hit.user_1_status),
+                status: diary_entry_hit.user_1_status,
             },
             DiaryVisible {
                 id: diary_tag_hit.id,
                 entry: diary_tag_hit.entry.clone(),
                 date: diary_tag_hit.date,
                 tags: vec![DiaryTag::from(&tag)],
-                status: DiaryStatus::from(&diary_tag_hit.user_1_status),
+                status: diary_tag_hit.user_1_status,
             },
         ],
     };

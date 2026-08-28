@@ -1,13 +1,13 @@
 use common::errors::use_case_errors::UseCaseError;
 use db_adapters::{
-    diary::{
-        types::{DiaryStatus, UpdateDiaryParams},
-        DiaryMutation, DiaryQuery, Order,
-    },
+    diary::{types::UpdateDiaryParams, DiaryMutation, DiaryQuery, Order},
     diary_tag::DiaryTagQuery,
     user_relation::UserRelationMutation,
 };
-use entities::{diaries_diary, users_user};
+use entities::{
+    diaries_diary::{self, DiaryStatus},
+    users_user,
+};
 use uuid::Uuid;
 
 use crate::{DiaryTag, DiaryVisible, UpdateDiaryRequest};
@@ -38,14 +38,8 @@ pub async fn update_diary<'a>(
     let original_date = diary.date;
 
     let (user_1_status, user_2_status) = match user_relation.user_1_id == user.id {
-        true => (
-            Some(DiaryStatus::Read),
-            get_partner_status((&diary.user_2_status).into()),
-        ),
-        false => (
-            get_partner_status((&diary.user_1_status).into()),
-            Some(DiaryStatus::Read),
-        ),
+        true => (Some(DiaryStatus::Read), get_partner_status(diary.user_2_status)),
+        false => (get_partner_status(diary.user_1_status), Some(DiaryStatus::Read)),
     };
     let diary = diary_mutation
         .update(

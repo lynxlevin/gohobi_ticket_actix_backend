@@ -54,8 +54,8 @@ pub async fn list_diary<'a>(
                 entry: diary.entry.clone(),
                 date: diary.date,
                 status: match user_relation.user_1_id == user.id {
-                    true => (&diary.user_1_status).into(),
-                    false => (&diary.user_2_status).into(),
+                    true => diary.user_1_status,
+                    false => diary.user_2_status,
                 },
                 tags: tags
                     .iter()

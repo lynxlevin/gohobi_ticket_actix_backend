@@ -1,6 +1,5 @@
 use actix_web::{http, test, HttpMessage};
-use db_adapters::diary::types::DiaryStatus;
-use entities::diaries_diary;
+use entities::diaries_diary::{self, DiaryStatus};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use uuid::Uuid;
 
@@ -13,8 +12,8 @@ async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
     let diary = factory::diary(user_relation.id)
-        .user_1_status(DiaryStatus::Unread.to_value())
-        .user_2_status(DiaryStatus::Read.to_value())
+        .user_1_status(DiaryStatus::Unread)
+        .user_2_status(DiaryStatus::Read)
         .insert(&db.db)
         .await?;
 
@@ -32,7 +31,7 @@ async fn happy_path_from_unread_to_read() -> Result<(), DbErr> {
     assert_eq!(diary_in_db.entry, diary.entry);
     assert_eq!(diary_in_db.date, diary.date);
     assert_eq!(diary_in_db.user_relation_id, user_relation.id);
-    assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read.to_value());
+    assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read);
     assert_eq!(diary_in_db.user_2_status, diary.user_2_status);
 
     Ok(())
@@ -44,8 +43,8 @@ async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
     let diary = factory::diary(user_relation.id)
-        .user_1_status(DiaryStatus::Edited.to_value())
-        .user_2_status(DiaryStatus::Read.to_value())
+        .user_1_status(DiaryStatus::Edited)
+        .user_2_status(DiaryStatus::Read)
         .insert(&db.db)
         .await?;
 
@@ -63,7 +62,7 @@ async fn happy_path_from_edited_to_read() -> Result<(), DbErr> {
     assert_eq!(diary_in_db.entry, diary.entry);
     assert_eq!(diary_in_db.date, diary.date);
     assert_eq!(diary_in_db.user_relation_id, user_relation.id);
-    assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read.to_value());
+    assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read);
     assert_eq!(diary_in_db.user_2_status, diary.user_2_status);
 
     Ok(())

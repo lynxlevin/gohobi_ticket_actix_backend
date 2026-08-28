@@ -1,9 +1,6 @@
 use common::errors::use_case_errors::UseCaseError;
-use db_adapters::diary::{
-    types::{DiaryStatus, UpdateDiaryParams},
-    DiaryMutation, DiaryQuery,
-};
-use entities::users_user;
+use db_adapters::diary::{types::UpdateDiaryParams, DiaryMutation, DiaryQuery};
+use entities::{diaries_diary::DiaryStatus, users_user};
 use uuid::Uuid;
 
 pub async fn mark_diary_read<'a>(

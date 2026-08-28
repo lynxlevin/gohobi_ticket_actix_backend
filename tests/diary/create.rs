@@ -1,9 +1,9 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{Days, Utc};
-use db_adapters::diary::types::DiaryStatus;
 use diary::{CreateDiaryRequest, DiaryTag, DiaryVisible};
 use entities::{
-    diaries_diary, diaries_diarytagrelation,
+    diaries_diary::{self, DiaryStatus},
+    diaries_diarytagrelation,
     user_relations_userrelation::{self, UserRelationId},
 };
 use sea_orm::{
@@ -55,8 +55,8 @@ async fn happy_path() -> Result<(), DbErr> {
     assert_eq!(diary_in_db.entry, entry.clone());
     assert_eq!(diary_in_db.date, today);
     assert_eq!(diary_in_db.user_relation_id, user_relation.id);
-    assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read.to_value());
-    assert_eq!(diary_in_db.user_2_status, DiaryStatus::Unread.to_value());
+    assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read);
+    assert_eq!(diary_in_db.user_2_status, DiaryStatus::Unread);
 
     let tag_link_in_db = diaries_diarytagrelation::Entity::find()
         .filter(diaries_diarytagrelation::Column::DiaryId.eq(res.id))

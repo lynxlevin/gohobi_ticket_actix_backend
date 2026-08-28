@@ -1,6 +1,5 @@
 use chrono::NaiveDate;
-use db_adapters::diary::types::DiaryStatus;
-use entities::{diaries_diarytag, user_relations_userrelation::UserRelationId};
+use entities::{diaries_diary::DiaryStatus, diaries_diarytag, user_relations_userrelation::UserRelationId};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
