@@ -13,10 +13,10 @@ pub struct Model {
     pub updated_at: DateTimeWithTimeZone,
     pub diary_id: Uuid,
     pub tag_master_id: Uuid,
-    #[sea_orm(belongs_to, from = "diary_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
-    pub diaries_diary: HasOne<super::diaries_diary::Entity>,
-    #[sea_orm(belongs_to, from = "tag_master_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
-    pub diaries_diarytag: HasOne<super::diaries_diarytag::Entity>,
+    #[sea_orm(belongs_to, from = "diary_id", to = "id", on_update = "NoAction", on_delete = "Cascade")]
+    pub diary: HasOne<super::diaries_diary::Entity>,
+    #[sea_orm(belongs_to, from = "tag_master_id", to = "id", on_update = "NoAction", on_delete = "Cascade")]
+    pub tag: HasOne<super::diaries_diarytag::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {

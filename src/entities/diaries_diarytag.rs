@@ -17,8 +17,8 @@ pub struct Model {
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
     pub user_relation_id: UserRelationId,
-    #[sea_orm(has_many)]
-    pub diaries_diarytagrelations: HasMany<super::diaries_diarytagrelation::Entity>,
+    #[sea_orm(has_many, via = "diaries_diarytagrelation")]
+    pub diaries: HasMany<super::diaries_diary::Entity>,
     #[sea_orm(belongs_to, from = "user_relation_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
     pub user_relations_userrelation: HasOne<super::user_relations_userrelation::Entity>,
 }
