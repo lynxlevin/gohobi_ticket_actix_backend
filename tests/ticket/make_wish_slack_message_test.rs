@@ -1,5 +1,5 @@
 use actix_web::{http, test, HttpMessage};
-use entities::custom_types::TicketStatus;
+use entities::tickets_ticket::TicketStatus;
 use sea_orm::{ActiveModelTrait, DbErr};
 use serde_json::json;
 use ticket::{MakeWishParams, MakeWishRequest};
@@ -22,7 +22,7 @@ async fn happy_path_with_slack_message() -> Result<(), DbErr> {
         .insert(&db.db)
         .await?;
     let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
-        .status(TicketStatus::Read.to_value())
+        .status(TicketStatus::Read)
         .insert(&db.db)
         .await?;
 
@@ -76,7 +76,7 @@ async fn happy_path_with_slack_message_special_ticket() -> Result<(), DbErr> {
         .await?;
     let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
         .is_special(true)
-        .status(TicketStatus::Read.to_value())
+        .status(TicketStatus::Read)
         .insert(&db.db)
         .await?;
 
@@ -133,7 +133,7 @@ async fn happy_path_with_slack_message_not_sent_if_not_use_slack() -> Result<(),
         .insert(&db.db)
         .await?;
     let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
-        .status(TicketStatus::Read.to_value())
+        .status(TicketStatus::Read)
         .insert(&db.db)
         .await?;
 

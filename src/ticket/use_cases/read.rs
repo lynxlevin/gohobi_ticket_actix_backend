@@ -1,5 +1,8 @@
 use db_adapters::ticket_service::{TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery};
-use entities::{custom_types::TicketStatus, tickets_ticket::TicketId, users_user};
+use entities::{
+    tickets_ticket::{TicketId, TicketStatus},
+    users_user,
+};
 use thiserror::Error;
 
 use crate::TicketVisible;
@@ -34,7 +37,7 @@ pub async fn read_ticket(
             "You cannot read your own giving ticket.".to_string(),
         ));
     };
-    if ticket.status == TicketStatus::Draft.to_value() {
+    if ticket.status == TicketStatus::Draft {
         return Err(ReadTicketError::NotFound(format!(
             "Ticket not found for id: {ticket_id}"
         )));

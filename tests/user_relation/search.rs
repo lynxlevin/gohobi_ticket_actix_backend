@@ -1,6 +1,6 @@
 use actix_web::{http, test, HttpMessage};
 use diary::{DiaryTag, DiaryVisible};
-use entities::{custom_types::TicketStatus, user_relations_userrelation::UserRelationId};
+use entities::{tickets_ticket::TicketStatus, user_relations_userrelation::UserRelationId};
 use sea_orm::{ActiveModelTrait, DbErr};
 use ticket::TicketVisible;
 

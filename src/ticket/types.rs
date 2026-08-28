@@ -1,8 +1,8 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
 use db_adapters::ticket_service::{CreateTicketParams, UpdateTicketParams};
 use entities::{
-    custom_types::{TicketStatus, WishStatus},
-    tickets_ticket::{self, TicketId},
+    custom_types::WishStatus,
+    tickets_ticket::{self, TicketId, TicketStatus},
     user_relations_userrelation::UserRelationId,
     users_user::UserId,
     wish,
@@ -43,7 +43,7 @@ impl From<tickets_ticket::Model> for TicketVisible {
             giving_user_id: value.giving_user_id,
             description: value.description,
             gift_date: value.gift_date,
-            status: (&value.status).into(),
+            status: value.status,
             is_special: value.is_special,
             wish: None,
         }
@@ -57,7 +57,7 @@ impl From<&tickets_ticket::Model> for TicketVisible {
             giving_user_id: value.giving_user_id,
             description: value.description.to_owned(),
             gift_date: value.gift_date,
-            status: (&value.status).into(),
+            status: value.status,
             is_special: value.is_special,
             wish: None,
         }

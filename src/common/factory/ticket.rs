@@ -2,8 +2,7 @@ use std::{collections::HashMap, future::Future};
 
 use chrono::{Days, NaiveDate, Utc};
 use entities::{
-    custom_types::TicketStatus,
-    tickets_ticket::{ActiveModel, Entity, Model},
+    tickets_ticket::{ActiveModel, Entity, Model, TicketStatus},
     user_relations_userrelation::UserRelationId,
     users_user::UserId,
     wish,
@@ -17,7 +16,7 @@ pub fn ticket(giving_user_id: UserId, user_relation_id: UserRelationId) -> Activ
     ActiveModel {
         description: Set(String::default()),
         gift_date: Set(now.date_naive()),
-        status: Set(TicketStatus::default().to_value()),
+        status: Set(TicketStatus::default()),
         is_special: Set(false),
         giving_user_id: Set(giving_user_id),
         user_relation_id: Set(user_relation_id),
@@ -30,7 +29,7 @@ pub fn ticket(giving_user_id: UserId, user_relation_id: UserRelationId) -> Activ
 pub trait TicketFactory {
     fn description(self, description: String) -> ActiveModel;
     fn gift_date(self, gift_date: NaiveDate) -> ActiveModel;
-    fn status(self, status: String) -> ActiveModel;
+    fn status(self, status: TicketStatus) -> ActiveModel;
     fn is_special(self, is_special: bool) -> ActiveModel;
     fn insert_with_wish(self, db: &Db) -> impl Future<Output = Result<(Model, wish::Model), DbErr>> + Send;
 }
@@ -46,7 +45,7 @@ impl TicketFactory for ActiveModel {
         self
     }
 
-    fn status(mut self, status: String) -> ActiveModel {
+    fn status(mut self, status: TicketStatus) -> ActiveModel {
         self.status = Set(status);
         self
     }
@@ -89,7 +88,7 @@ pub async fn create_tickets(params: Vec<TicketParam>, db: &Db) -> Result<HashMap
         let ticket = ticket(param.giving_user_id, param.user_relation_id)
             .gift_date(gift_date)
             .is_special(param.is_special)
-            .status(param.status.to_value());
+            .status(param.status);
         if param.description.is_some() {
             ticket.description(param.description.clone().unwrap())
         } else {

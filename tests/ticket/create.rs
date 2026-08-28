@@ -1,7 +1,7 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{Days, Utc};
 use db_adapters::ticket_service::CreateTicketParams;
-use entities::{custom_types::TicketStatus, tickets_ticket};
+use entities::tickets_ticket::{self, TicketStatus};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{CreateTicketRequest, TicketVisible, UpsertTicketResponse};
 

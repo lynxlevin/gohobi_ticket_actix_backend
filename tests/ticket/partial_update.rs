@@ -1,9 +1,6 @@
 use actix_web::{http, test, HttpMessage};
 use db_adapters::ticket_service::UpdateTicketParams;
-use entities::{
-    custom_types::TicketStatus,
-    tickets_ticket::{self, TicketId},
-};
+use entities::tickets_ticket::{self, TicketId, TicketStatus};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{TicketVisible, UpdateTicketRequest, UpsertTicketResponse};
 
@@ -49,7 +46,7 @@ async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbE
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
     let ticket = factory::ticket(user_0.id, user_relation.id)
-        .status(TicketStatus::Read.to_value())
+        .status(TicketStatus::Read)
         .insert(&db.db)
         .await?;
 

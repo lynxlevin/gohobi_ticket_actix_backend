@@ -3,9 +3,8 @@ use std::future::Future;
 use chrono::{Datelike, NaiveDate, Utc};
 use common::db::Db;
 use entities::{
-    custom_types::TicketStatus,
     prelude::TicketsTicket,
-    tickets_ticket::{self, TicketId},
+    tickets_ticket::{self, TicketId, TicketStatus},
     user_relations_userrelation::{self, UserRelationId},
     users_user::UserId,
     wish,
@@ -168,7 +167,7 @@ impl TicketServiceQuery for TicketService<'_> {
         } else {
             query = query
                 .filter(tickets_ticket::Column::GivingUserId.ne(user_id))
-                .filter(tickets_ticket::Column::Status.ne(TicketStatus::Draft.to_value()));
+                .filter(tickets_ticket::Column::Status.ne(TicketStatus::Draft));
         }
 
         let tickets = query
@@ -260,7 +259,7 @@ impl TicketServiceMutation for TicketService<'_> {
                         description: Set(params.description),
                         user_relation_id: Set(params.user_relation_id),
                         gift_date: Set(params.gift_date),
-                        status: Set(status.to_value()),
+                        status: Set(status),
                         is_special: Set(params.is_special),
                         created_at: Set(now.into()),
                         updated_at: Set(now.into()),
@@ -308,7 +307,7 @@ impl TicketServiceMutation for TicketService<'_> {
             ticket.description = Set(description);
         };
         if let Some(status) = params.status {
-            ticket.status = Set(status.to_value());
+            ticket.status = Set(status);
         };
         if let Some(is_special) = params.is_special {
             ticket.is_special = Set(is_special);
@@ -324,7 +323,7 @@ impl TicketServiceMutation for TicketService<'_> {
         ticket: tickets_ticket::Model,
     ) -> Result<tickets_ticket::Model, TicketServiceError> {
         let mut ticket = ticket.into_active_model();
-        ticket.status = Set(TicketStatus::Read.to_value());
+        ticket.status = Set(TicketStatus::Read);
         ticket.updated_at = Set(Utc::now().into());
         let ticket = ticket.update(self.db).await?;
 

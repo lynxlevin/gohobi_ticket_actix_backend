@@ -3,57 +3,6 @@ use std::str::FromStr;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
-pub enum TicketStatus {
-    Unread,
-    Read,
-    Edited,
-    Draft,
-    Invalid,
-}
-
-impl TicketStatus {
-    pub fn to_value(&self) -> String {
-        match self {
-            TicketStatus::Unread => "unread".to_string(),
-            TicketStatus::Read => "read".to_string(),
-            TicketStatus::Edited => "edited".to_string(),
-            TicketStatus::Draft => "draft".to_string(),
-            TicketStatus::Invalid => "invalid".to_string(),
-        }
-    }
-}
-
-impl From<&String> for TicketStatus {
-    fn from(value: &String) -> Self {
-        value.parse().unwrap()
-    }
-}
-
-impl FromStr for TicketStatus {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "unread" => Ok(TicketStatus::Unread),
-            "read" => Ok(TicketStatus::Read),
-            "edited" => Ok(TicketStatus::Edited),
-            "draft" => Ok(TicketStatus::Draft),
-            // NOTE: Invalid status should fall back to unread so that after reading, it will safely be turned to read.
-            _ => Ok(TicketStatus::Unread),
-        }
-    }
-}
-
-impl Default for TicketStatus {
-    fn default() -> Self {
-        TicketStatus::Unread
-    }
-}
-
-pub const PUBLISHED_STATUSES: [TicketStatus; 3] = [TicketStatus::Unread, TicketStatus::Read, TicketStatus::Edited];
-
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
-#[serde(rename_all = "lowercase")]
 pub enum WishStatus {
     Unread,
     Read,
