@@ -1,5 +1,5 @@
 use db_adapters::ticket_service::{TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery};
-use entities::users_user;
+use entities::{tickets_ticket::TicketId, users_user};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -22,7 +22,7 @@ impl From<TicketServiceError> for DeleteTicketError {
 
 pub async fn delete_ticket(
     user: users_user::Model,
-    ticket_id: i64,
+    ticket_id: TicketId,
     ticket_service: TicketService<'_>,
 ) -> Result<(), DeleteTicketError> {
     let (ticket, wish) = ticket_service.get_ticket_with_wish_by_id(user.id, ticket_id).await?;

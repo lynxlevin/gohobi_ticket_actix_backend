@@ -7,14 +7,14 @@ use chrono::NaiveDate;
 use common::db::Db;
 use common::errors::error_responses::{response_401, response_500};
 use db_adapters::ticket_service::TicketService;
-use entities::users_user;
+use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
 
 use crate::{list::ListTicketsParams, use_cases::list::list_tickets};
 
 #[derive(Debug, Deserialize, Default)]
 pub struct ListTicketsQueryParam {
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
     pub is_giving: Option<String>,
     pub gift_date_gte: Option<NaiveDate>,
     pub gift_date_lte: Option<NaiveDate>,

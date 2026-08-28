@@ -1,9 +1,10 @@
 use common::errors::use_case_errors::UseCaseError;
 use db_adapters::diary_tag::{DiaryTagMutation, DiaryTagQuery};
+use entities::users_user::UserId;
 use uuid::Uuid;
 
 pub async fn delete_diary_tag<'a>(
-    user_id: i64,
+    user_id: UserId,
     diary_tag_query: DiaryTagQuery<'a>,
     diary_tag_mutation: DiaryTagMutation<'a>,
     diary_tag_id: Uuid,

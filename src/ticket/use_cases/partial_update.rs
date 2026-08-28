@@ -2,7 +2,7 @@ use db_adapters::ticket_service::{
     TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery, UpdateTicketParams,
 };
 use entities::{
-    custom_types::{TicketStatus, PUBLISHED_STATUSES},
+    tickets_ticket::{TicketId, TicketStatus},
     users_user,
 };
 use thiserror::Error;
@@ -30,7 +30,7 @@ impl From<TicketServiceError> for PartialUpdateTicketError {
 pub async fn partial_update_ticket(
     user: users_user::Model,
     ticket_service: TicketService<'_>,
-    ticket_id: i64,
+    ticket_id: TicketId,
     params: &mut UpdateTicketParams,
 ) -> Result<TicketVisible, PartialUpdateTicketError> {
     let ticket = ticket_service.get_ticket_by_id(user.id, ticket_id).await?;
@@ -44,13 +44,13 @@ pub async fn partial_update_ticket(
         .status
         .clone()
         .is_some_and(|status| status == TicketStatus::Draft)
-        && PUBLISHED_STATUSES.contains(&(&ticket.status).into())
+        && ticket.status.is_published()
     {
         return Err(PartialUpdateTicketError::Forbidden(
             "This ticket cannot be turned back to draft state.".to_string(),
         ));
     };
-    if params.description.is_some() && ticket.status == TicketStatus::Read.to_value() {
+    if params.description.is_some() && ticket.status == TicketStatus::Read {
         params.status = Some(TicketStatus::Edited);
     }
 

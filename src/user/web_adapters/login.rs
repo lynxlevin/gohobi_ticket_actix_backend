@@ -20,6 +20,7 @@ use common::{
     settings::types::Settings,
 };
 use deadpool_redis::Pool;
+use entities::users_user::UserId;
 
 #[tracing::instrument(skip(db, redis_pool, settings, req_user, session))]
 #[post("/login")]
@@ -47,7 +48,7 @@ async fn login_user_endpoint(
     }
 }
 
-fn renew_session(session: actix_session::Session, id: i64, email: String) -> Result<(), SessionInsertError> {
+fn renew_session(session: actix_session::Session, id: UserId, email: String) -> Result<(), SessionInsertError> {
     session.renew();
     session.insert(USER_ID_KEY, id)?;
     session.insert(USER_EMAIL_KEY, email)

@@ -1,6 +1,5 @@
 use chrono::NaiveDate;
-use db_adapters::diary::types::DiaryStatus;
-use entities::diaries_diarytag;
+use entities::{diaries_diary::DiaryStatus, diaries_diarytag, user_relations_userrelation::UserRelationId};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -28,7 +27,7 @@ pub struct DiaryVisible {
 
 #[derive(Deserialize, Debug, Serialize, Clone)]
 pub struct CreateDiaryRequest {
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
     pub entry: String,
     pub date: NaiveDate,
     pub tag_ids: Vec<Uuid>,

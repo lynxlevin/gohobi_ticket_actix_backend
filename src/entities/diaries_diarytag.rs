@@ -3,6 +3,8 @@
 use sea_orm::{entity::prelude::*, sqlx::types::chrono::Utc, ActiveValue::Set};
 use serde::{Deserialize, Serialize};
 
+use crate::user_relations_userrelation::UserRelationId;
+
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "diaries_diarytag")]
@@ -14,7 +16,7 @@ pub struct Model {
     pub sort_no: i32,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
-    pub user_relation_id: i64,
+    pub user_relation_id: UserRelationId,
     #[sea_orm(has_many)]
     pub diaries_diarytagrelations: HasMany<super::diaries_diarytagrelation::Entity>,
     #[sea_orm(belongs_to, from = "user_relation_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]

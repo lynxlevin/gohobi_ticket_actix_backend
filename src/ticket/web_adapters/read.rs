@@ -6,7 +6,7 @@ use actix_web::{
 use common::db::Db;
 use common::errors::error_responses::{response_401, response_403, response_404, response_500};
 use db_adapters::ticket_service::TicketService;
-use entities::users_user;
+use entities::{tickets_ticket::TicketId, users_user};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -16,7 +16,7 @@ use crate::{
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
-    ticket_id: i64,
+    ticket_id: TicketId,
 }
 
 #[tracing::instrument(skip(db, user))]

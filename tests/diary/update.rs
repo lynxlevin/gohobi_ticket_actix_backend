@@ -1,8 +1,10 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{Days, Duration, Utc};
-use db_adapters::diary::types::DiaryStatus;
 use diary::{DiaryTag, DiaryVisible, UpdateDiaryRequest};
-use entities::{diaries_diary, diaries_diarytagrelation, user_relations_userrelation};
+use entities::{
+    diaries_diary::{self, DiaryStatus},
+    diaries_diarytagrelation, user_relations_userrelation,
+};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbErr, DeriveColumn, EntityTrait, EnumIter, QueryFilter, QuerySelect,
 };
@@ -45,7 +47,7 @@ async fn happy_path() -> Result<(), DbErr> {
     assert_eq!(diary_in_db.entry, entry);
     assert_eq!(diary_in_db.date, date);
     assert_eq!(diary_in_db.user_relation_id, user_relation.id);
-    assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read.to_value());
+    assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read);
     assert_eq!(diary_in_db.user_2_status, diary.user_2_status);
 
     Ok(())
@@ -111,19 +113,19 @@ async fn assert_user_2_status_changes() -> Result<(), DbErr> {
             DiaryParam {
                 name: "unread_diary".to_string(),
                 user_relation_id: user_relation.id,
-                user_2_status: Some(DiaryStatus::Unread.to_value()),
+                user_2_status: Some(DiaryStatus::Unread),
                 ..Default::default()
             },
             DiaryParam {
                 name: "read_diary".to_string(),
                 user_relation_id: user_relation.id,
-                user_2_status: Some(DiaryStatus::Read.to_value()),
+                user_2_status: Some(DiaryStatus::Read),
                 ..Default::default()
             },
             DiaryParam {
                 name: "edited_diary".to_string(),
                 user_relation_id: user_relation.id,
-                user_2_status: Some(DiaryStatus::Edited.to_value()),
+                user_2_status: Some(DiaryStatus::Edited),
                 ..Default::default()
             },
         ],
@@ -162,8 +164,8 @@ async fn assert_user_2_status_changes() -> Result<(), DbErr> {
         assert_eq!(res.status, DiaryStatus::Read);
 
         let diary_in_db = diaries_diary::Entity::find_by_id(diary.id).one(&db.db).await?.unwrap();
-        assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read.to_value());
-        assert_eq!(diary_in_db.user_2_status, expected_status.to_value());
+        assert_eq!(diary_in_db.user_1_status, DiaryStatus::Read);
+        assert_eq!(diary_in_db.user_2_status, expected_status);
     }
 
     Ok(())

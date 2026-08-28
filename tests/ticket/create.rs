@@ -1,7 +1,7 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{Days, Utc};
 use db_adapters::ticket_service::CreateTicketParams;
-use entities::{custom_types::TicketStatus, tickets_ticket};
+use entities::tickets_ticket::{self, TicketStatus};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{CreateTicketRequest, TicketVisible, UpsertTicketResponse};
 
@@ -226,7 +226,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
             ticket: CreateTicketParams {
                 gift_date: Utc::now().date_naive(),
                 description: String::default(),
-                user_relation_id: 1,
+                user_relation_id: 1.into(),
                 is_special: false,
                 is_draft: false,
             },

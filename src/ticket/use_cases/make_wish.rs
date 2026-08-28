@@ -12,7 +12,10 @@ use db_adapters::{
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
-use entities::{custom_types::TicketStatus, users_user};
+use entities::{
+    tickets_ticket::{TicketId, TicketStatus},
+    users_user,
+};
 use thiserror::Error;
 
 use crate::{MakeWishParams, TicketVisible};
@@ -42,13 +45,13 @@ pub async fn make_wish(
     wish_mutation: WishMutation<'_>,
     web_push_subscription_query: WebPushSubscriptionQuery<'_>,
     web_push_subscription_mutation: WebPushSubscriptionMutation<'_>,
-    ticket_id: i64,
+    ticket_id: TicketId,
     params: MakeWishParams,
     settings: &Settings,
 ) -> Result<MakeWishResponse, MakeWishError> {
     let ticket = ticket_service.get_ticket_by_id(user.id, ticket_id).await?;
 
-    if ticket.status == TicketStatus::Draft.to_value() {
+    if ticket.status == TicketStatus::Draft {
         return Err(MakeWishError::NotFound(format!(
             "Ticket not found for id: {}",
             ticket_id

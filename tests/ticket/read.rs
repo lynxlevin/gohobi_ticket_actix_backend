@@ -1,5 +1,5 @@
 use actix_web::{http, test, HttpMessage};
-use entities::{custom_types::TicketStatus, tickets_ticket};
+use entities::tickets_ticket::{self, TicketId, TicketStatus};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{TicketVisible, UpsertTicketResponse};
 
@@ -40,7 +40,7 @@ async fn read_edited_ticket() -> Result<(), DbErr> {
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
     let receiving_ticket = factory::ticket(user_1.id, user_relation.id)
-        .status(TicketStatus::Edited.to_value())
+        .status(TicketStatus::Edited)
         .insert(&db.db)
         .await?;
 
@@ -90,7 +90,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
     let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db.db).await?;
     let receiving_draft_ticket = factory::ticket(user_1.id, user_relation.id)
-        .status(TicketStatus::Draft.to_value())
+        .status(TicketStatus::Draft)
         .insert(&db.db)
         .await?;
     let unrelated_ticket = factory::ticket(other_user.id, other_relation.id).insert(&db.db).await?;
@@ -98,7 +98,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
     for (ticket_id, case) in vec![
         (receiving_draft_ticket.id, "receiving_draft_ticket.id"),
         (unrelated_ticket.id, "unrelated_ticket.id"),
-        (-1, "non_existent_id"),
+        (TicketId::from(-1), "non_existent_id"),
     ] {
         dbg!(case);
         let req = test::TestRequest::put()

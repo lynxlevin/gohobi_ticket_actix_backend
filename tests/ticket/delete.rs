@@ -1,5 +1,5 @@
 use actix_web::{http, test, HttpMessage};
-use entities::tickets_ticket;
+use entities::tickets_ticket::{self, TicketId};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 
 use crate::utils::{init_app, Connections};
@@ -66,7 +66,7 @@ async fn not_found_responses() -> Result<(), DbErr> {
     let un_related_ticket = factory::ticket(other_user_0.id, other_user_relation.id)
         .insert(&db.db)
         .await?;
-    let non_existent_ticket_id = -1;
+    let non_existent_ticket_id = TicketId::from(-1);
 
     for (id, case) in vec![
         (un_related_ticket.id, "un_related_ticket"),

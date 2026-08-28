@@ -4,12 +4,12 @@ use crate::{SearchRequest, SearchResponse};
 use common::errors::use_case_errors::UseCaseError;
 use db_adapters::{diary::DiaryQuery, ticket_service::TicketService, user_relation::UserRelationQuery};
 use diary::list::{list_diary, ListDiaryQueryParam};
-use entities::users_user;
+use entities::{user_relations_userrelation::UserRelationId, users_user};
 use ticket::list::{list_tickets, ListTicketsParams};
 
 pub async fn search(
     user: users_user::Model,
-    user_relation_id: i64,
+    user_relation_id: UserRelationId,
     params: SearchRequest,
     user_relation_query: UserRelationQuery<'_>,
     ticket_service: TicketService<'_>,

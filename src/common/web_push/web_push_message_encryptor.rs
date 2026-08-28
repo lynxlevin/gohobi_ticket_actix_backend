@@ -172,7 +172,7 @@ mod tests {
         let p256dh_key = key_pair.pub_as_raw().unwrap();
 
         let settings = get_test_settings();
-        let subscription = factory::web_push_subscription(1)
+        let subscription = factory::web_push_subscription(1.into())
             .set_raw_p256dh_key(p256dh_key)
             .set_raw_auth_key(auth_key)
             .encrypt_and_encode_sensitive_fields(&settings)

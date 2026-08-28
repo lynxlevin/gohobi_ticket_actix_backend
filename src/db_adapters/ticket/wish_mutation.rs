@@ -1,8 +1,5 @@
 use chrono::Utc;
-use entities::{
-    custom_types::WishStatus,
-    wish::{ActiveModel, Model},
-};
+use entities::wish::{ActiveModel, Model, WishStatus};
 use sea_orm::{ActiveModelTrait, DbConn, DbErr, Set};
 use uuid::Uuid;
 
@@ -20,7 +17,7 @@ impl<'a> WishMutation<'a> {
             description: Set(params.use_description),
             ticket_id: Set(params.ticket_id),
             user_relation_id: Set(params.user_relation_id),
-            status: Set(WishStatus::Unread.to_value()),
+            status: Set(WishStatus::Unread),
             created_at: Set(now.into()),
             updated_at: Set(now.into()),
         };

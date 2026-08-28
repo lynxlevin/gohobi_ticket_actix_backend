@@ -6,14 +6,14 @@ use actix_web::{
 use common::db::Db;
 use common::errors::error_responses::{response_401, response_500};
 use db_adapters::ticket::WishQuery;
-use entities::users_user;
+use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::{Deserialize, Serialize};
 
 use crate::use_cases::wish::list::{list_wishes, ListWishesQueryParam};
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
-    user_relation_id: i64,
+    user_relation_id: UserRelationId,
 }
 
 #[tracing::instrument(skip(db, user))]

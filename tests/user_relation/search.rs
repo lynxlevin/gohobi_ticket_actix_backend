@@ -1,15 +1,14 @@
 use actix_web::{http, test, HttpMessage};
 use diary::{DiaryTag, DiaryVisible};
-use entities::custom_types::TicketStatus;
+use entities::{tickets_ticket::TicketStatus, user_relations_userrelation::UserRelationId};
 use sea_orm::{ActiveModelTrait, DbErr};
 use ticket::TicketVisible;
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
-use db_adapters::diary::types::DiaryStatus;
 use user_relation::{SearchRequest, SearchResponse};
 
-fn get_uri(user_relation_id: i64) -> String {
+fn get_uri(user_relation_id: UserRelationId) -> String {
     format!("/api/user_relations/{}/search/", user_relation_id,)
 }
 
@@ -180,14 +179,14 @@ async fn happy_path() -> Result<(), DbErr> {
                 entry: diary_entry_hit.entry.clone(),
                 date: diary_entry_hit.date,
                 tags: vec![],
-                status: DiaryStatus::from(&diary_entry_hit.user_1_status),
+                status: diary_entry_hit.user_1_status,
             },
             DiaryVisible {
                 id: diary_tag_hit.id,
                 entry: diary_tag_hit.entry.clone(),
                 date: diary_tag_hit.date,
                 tags: vec![DiaryTag::from(&tag)],
-                status: DiaryStatus::from(&diary_tag_hit.user_1_status),
+                status: diary_tag_hit.user_1_status,
             },
         ],
     };
@@ -223,7 +222,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let Connections { app, .. } = init_app().await?;
 
     let req = test::TestRequest::post()
-        .uri(&get_uri(1))
+        .uri(&get_uri(1.into()))
         .set_json(SearchRequest { text: String::default() })
         .to_request();
     let res = test::call_service(&app, req).await;

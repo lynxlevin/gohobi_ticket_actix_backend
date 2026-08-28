@@ -1,11 +1,11 @@
 use base64::{prelude::BASE64_URL_SAFE_NO_PAD, Engine};
-use entities::web_push_subscription;
+use entities::{users_user::UserId, web_push_subscription};
 use sea_orm::Set;
 use uuid::Uuid;
 
 use crate::{db::encrypt_and_encode, settings::types::Settings};
 
-pub fn web_push_subscription(user_id: i64) -> web_push_subscription::ActiveModel {
+pub fn web_push_subscription(user_id: UserId) -> web_push_subscription::ActiveModel {
     let raw_endpoint = "endpoint".to_string();
     let raw_p256dh_key = "p256dh_key".to_string();
     let raw_auth_key = "auth_key".to_string();

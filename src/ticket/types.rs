@@ -1,8 +1,10 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
 use db_adapters::ticket_service::{CreateTicketParams, UpdateTicketParams};
 use entities::{
-    custom_types::{TicketStatus, WishStatus},
-    tickets_ticket, wish,
+    tickets_ticket::{self, TicketId, TicketStatus},
+    user_relations_userrelation::UserRelationId,
+    users_user::UserId,
+    wish::{self, WishStatus},
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -14,9 +16,9 @@ pub struct ListTicketResponse {
 
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct TicketVisible {
-    pub id: i64,
-    pub user_relation_id: i64,
-    pub giving_user_id: i64,
+    pub id: TicketId,
+    pub user_relation_id: UserRelationId,
+    pub giving_user_id: UserId,
     pub description: String,
     pub gift_date: NaiveDate,
     pub status: TicketStatus,
@@ -40,7 +42,7 @@ impl From<tickets_ticket::Model> for TicketVisible {
             giving_user_id: value.giving_user_id,
             description: value.description,
             gift_date: value.gift_date,
-            status: (&value.status).into(),
+            status: value.status,
             is_special: value.is_special,
             wish: None,
         }
@@ -54,7 +56,7 @@ impl From<&tickets_ticket::Model> for TicketVisible {
             giving_user_id: value.giving_user_id,
             description: value.description.to_owned(),
             gift_date: value.gift_date,
-            status: (&value.status).into(),
+            status: value.status,
             is_special: value.is_special,
             wish: None,
         }
@@ -65,7 +67,7 @@ impl TicketVisible {
         self.wish = Some(WishInner {
             id: wish.id,
             description: wish.description.clone(),
-            status: (&wish.status).into(),
+            status: wish.status,
             created_at: wish.created_at,
         });
         self
@@ -82,8 +84,8 @@ pub struct WishVisible {
 }
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct TicketInner {
-    pub id: i64,
-    pub giving_user_id: i64,
+    pub id: TicketId,
+    pub giving_user_id: UserId,
     pub description: String,
     pub gift_date: NaiveDate,
     pub is_special: bool,
@@ -93,7 +95,7 @@ impl From<(&wish::Model, &tickets_ticket::Model)> for WishVisible {
         Self {
             id: wish.id,
             description: wish.description.to_owned(),
-            status: (&wish.status).into(),
+            status: wish.status,
             created_at: wish.created_at,
             ticket: TicketInner {
                 id: ticket.id,

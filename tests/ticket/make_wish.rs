@@ -1,5 +1,5 @@
 use actix_web::{http, test, HttpMessage};
-use entities::{custom_types::TicketStatus, tickets_ticket};
+use entities::tickets_ticket::{self, TicketId, TicketStatus};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
 use ticket::{MakeWishParams, MakeWishRequest, MakeWishResponse, WebPushResult};
 
@@ -28,7 +28,7 @@ async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
     assert_eq!(ticket.giving_user_id, receiving_ticket.giving_user_id);
     assert_eq!(ticket.description, receiving_ticket.description);
     assert_eq!(ticket.gift_date, receiving_ticket.gift_date);
-    assert_eq!(ticket.status, (&receiving_ticket.status).into());
+    assert_eq!(ticket.status, receiving_ticket.status);
     assert_eq!(ticket.is_special, receiving_ticket.is_special);
     let wish = ticket.wish.unwrap();
     assert_eq!(wish.description, use_description);
@@ -68,7 +68,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
     let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db.db).await?;
     let receiving_draft_ticket = factory::ticket(user_1.id, user_relation.id)
-        .status(TicketStatus::Draft.to_value())
+        .status(TicketStatus::Draft)
         .insert(&db.db)
         .await?;
     let unrelated_ticket = factory::ticket(other_user.id, other_relation.id).insert(&db.db).await?;
@@ -76,7 +76,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
     for (ticket_id, case) in vec![
         (receiving_draft_ticket.id, "receiving_draft_ticket.id"),
         (unrelated_ticket.id, "unrelated_ticket.id"),
-        (-1, "non_existent_id"),
+        (TicketId::from(-1), "non_existent_id"),
     ] {
         dbg!(case);
         let req = test::TestRequest::put()

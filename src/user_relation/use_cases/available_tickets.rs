@@ -4,12 +4,12 @@ use db_adapters::{
     ticket_service::{TicketService, TicketServiceQuery},
     user_relation::UserRelationQuery,
 };
-use entities::users_user;
+use entities::{user_relations_userrelation::UserRelationId, users_user};
 use ticket::TicketVisible;
 
 pub async fn available_tickets(
     user: users_user::Model,
-    user_relation_id: i64,
+    user_relation_id: UserRelationId,
     user_relation_query: UserRelationQuery<'_>,
     ticket_service: TicketService<'_>,
 ) -> Result<AvailableTicketsResponse, UseCaseError> {

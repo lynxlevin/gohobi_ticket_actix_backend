@@ -25,8 +25,8 @@ impl<'a> DiaryMutation<'a> {
             entry: Set(params.entry),
             date: Set(params.date.into()),
             user_relation_id: Set(params.user_relation_id),
-            user_1_status: Set(params.user_1_status.to_value()),
-            user_2_status: Set(params.user_2_status.to_value()),
+            user_1_status: Set(params.user_1_status),
+            user_2_status: Set(params.user_2_status),
             created_at: Set(now.into()),
             updated_at: Set(now.into()),
             ..Default::default()
@@ -75,10 +75,10 @@ impl<'a> DiaryMutation<'a> {
             diary.date = Set(date.into());
         };
         if let Some(user_1_status) = params.user_1_status {
-            diary.user_1_status = Set(user_1_status.to_value());
+            diary.user_1_status = Set(user_1_status);
         };
         if let Some(user_2_status) = params.user_2_status {
-            diary.user_2_status = Set(user_2_status.to_value());
+            diary.user_2_status = Set(user_2_status);
         };
         diary.updated_at = Set(Utc::now().into());
         diary.update(self.db).await

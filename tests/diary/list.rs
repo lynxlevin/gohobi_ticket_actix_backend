@@ -1,8 +1,10 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{TimeDelta, Utc};
-use db_adapters::diary::types::DiaryStatus;
 use diary::{DiaryTag, DiaryVisible};
-use entities::diaries_diary;
+use entities::{
+    diaries_diary::{self, DiaryStatus},
+    user_relations_userrelation::UserRelationId,
+};
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, QueryOrder};
 
 use crate::utils::{init_app, Connections};
@@ -21,21 +23,21 @@ async fn happy_path() -> Result<(), DbErr> {
                 name: "diary_0".to_string(),
                 user_relation_id: user_relation.id,
                 n_days_ago: 2,
-                user_1_status: Some(DiaryStatus::Edited.to_value()),
+                user_1_status: Some(DiaryStatus::Edited),
                 ..Default::default()
             },
             DiaryParam {
                 name: "diary_1".to_string(),
                 user_relation_id: user_relation.id,
                 n_days_ago: 0,
-                user_1_status: Some(DiaryStatus::Read.to_value()),
+                user_1_status: Some(DiaryStatus::Read),
                 ..Default::default()
             },
             DiaryParam {
                 name: "diary_2".to_string(),
                 user_relation_id: user_relation.id,
                 n_days_ago: 1,
-                user_1_status: Some(DiaryStatus::Unread.to_value()),
+                user_1_status: Some(DiaryStatus::Unread),
                 ..Default::default()
             },
             DiaryParam {
@@ -70,21 +72,21 @@ async fn happy_path() -> Result<(), DbErr> {
             entry: diary_1.entry.clone(),
             date: diary_1.date,
             tags: vec![],
-            status: (&diary_1.user_1_status).into(),
+            status: diary_1.user_1_status,
         },
         DiaryVisible {
             id: diary_2.id,
             entry: diary_2.entry.clone(),
             date: diary_2.date,
             tags: vec![DiaryTag { id: tag.id, text: tag.text, sort_no: tag.sort_no }],
-            status: (&diary_2.user_1_status).into(),
+            status: diary_2.user_1_status,
         },
         DiaryVisible {
             id: diary_0.id,
             entry: diary_0.entry.clone(),
             date: diary_0.date,
             tags: vec![],
-            status: (&diary_0.user_1_status).into(),
+            status: diary_0.user_1_status,
         },
     ];
     for (res_diary, expected_diary) in res.iter().zip(expected) {
@@ -133,7 +135,7 @@ async fn happy_path_date_gte_lte() -> Result<(), DbErr> {
                 entry: diary.entry.clone(),
                 date: diary.date,
                 tags: vec![],
-                status: (&diary.user_1_status).into(),
+                status: diary.user_1_status,
             })
             .collect::<Vec<_>>()
     );
@@ -147,7 +149,10 @@ async fn not_found_cases() -> Result<(), DbErr> {
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
     let other_relation = factory::user_relation(other_user.id, user_1.id).insert(&db.db).await?;
 
-    for (user_relation_id, case) in vec![(other_relation.id, "other_relation.id"), (-1, "non existent id")] {
+    for (user_relation_id, case) in vec![
+        (other_relation.id, "other_relation.id"),
+        (UserRelationId::from(-1), "non existent id"),
+    ] {
         dbg!(case);
         let req = test::TestRequest::get()
             .uri(&format!("/api/diaries/?user_relation_id={}", user_relation_id))
