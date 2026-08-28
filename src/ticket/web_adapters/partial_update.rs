@@ -41,10 +41,7 @@ async fn partial_update_ticket_endpoint(
                 Err(e) => match e {
                     PartialUpdateTicketError::Forbidden(message) => response_403(&message),
                     PartialUpdateTicketError::NotFound(message) => response_404(&message),
-                    PartialUpdateTicketError::InternalServerError(message) => {
-                        dbg!(message);
-                        response_500()
-                    }
+                    PartialUpdateTicketError::InternalServerError(_) => response_500(e),
                 },
             }
         }

@@ -1,5 +1,8 @@
+use std::fmt::Debug;
+
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
+use tracing::{event, Level};
 
 #[derive(Serialize, Deserialize)]
 struct ErrorResponse {
@@ -22,12 +25,13 @@ pub fn response_403(message: &str) -> HttpResponse {
 }
 
 /// Not Found
-pub fn response_404(message: &str) -> HttpResponse {
+pub fn response_404(message: impl ToString) -> HttpResponse {
     HttpResponse::NotFound().json(ErrorResponse { error: message.to_string() })
 }
 
 /// Internal Server Error
-pub fn response_500() -> HttpResponse {
+pub fn response_500<T: Debug>(e: T) -> HttpResponse {
+    event!(target: "backend", Level::ERROR, "{:?}", e);
     HttpResponse::InternalServerError()
         .json(ErrorResponse { error: "Some unexpected error happened. Please try again later.".to_string() })
 }

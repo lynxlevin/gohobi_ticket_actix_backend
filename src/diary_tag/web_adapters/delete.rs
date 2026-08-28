@@ -36,7 +36,7 @@ async fn delete_diary_tag_endpoint(
                 Ok(_) => HttpResponse::NoContent().finish(),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("DiaryTag not found."),
-                    _ => response_500(),
+                    _ => response_500(e),
                 },
             }
         }

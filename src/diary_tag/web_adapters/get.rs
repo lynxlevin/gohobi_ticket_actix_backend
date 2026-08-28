@@ -35,7 +35,7 @@ async fn get_diary_tag_endpoint(
                 Ok(tag) => HttpResponse::Ok().json(tag),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("DiaryTag not found."),
-                    _ => response_500(),
+                    _ => response_500(e),
                 },
             }
         }

@@ -28,7 +28,7 @@ pub async fn delete_web_push_subscription_endpoint(
             .await
             {
                 Ok(_) => HttpResponse::NoContent().finish(),
-                Err(_) => response_500(),
+                Err(e) => response_500(e),
             }
         }
         None => response_401(),

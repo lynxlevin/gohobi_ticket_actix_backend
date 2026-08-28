@@ -41,7 +41,7 @@ async fn create_diary_endpoint(
                 Err(e) => match e {
                     UseCaseError::BadRequest => response_400("Invalid tag_id."),
                     UseCaseError::NotFound => response_404("UserRelation not found."),
-                    _ => response_500(),
+                    _ => response_500(e),
                 },
             }
         }

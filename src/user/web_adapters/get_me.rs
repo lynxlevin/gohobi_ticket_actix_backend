@@ -16,7 +16,7 @@ async fn get_me_endpoint(user: Option<ReqData<users_user::Model>>) -> HttpRespon
         Ok(user) => HttpResponse::Ok().json(UserVisible::from(user)),
         Err(e) => match e {
             UseCaseError::Unauthorized => response_401(),
-            _ => response_500(),
+            _ => response_500(e),
         },
     }
 }

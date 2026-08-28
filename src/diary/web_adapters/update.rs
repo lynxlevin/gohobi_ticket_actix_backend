@@ -52,7 +52,7 @@ async fn update_diary_endpoint(
                 Ok(diary) => HttpResponse::Ok().json(diary),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("Diary not found."),
-                    _ => response_500(),
+                    _ => response_500(e),
                 },
             }
         }

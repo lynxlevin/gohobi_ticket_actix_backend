@@ -50,10 +50,7 @@ async fn special_ticket_availability_endpoint(
                             CheckSpecialTicketAvailabilityError::ValidationError(message) => {
                                 response_400(&message)
                             }
-                            CheckSpecialTicketAvailabilityError::InternalServerError(message) => {
-                                dbg!(message);
-                                response_500()
-                            }
+                            CheckSpecialTicketAvailabilityError::InternalServerError(_) => response_500(e),
                         },
                     }
                 }

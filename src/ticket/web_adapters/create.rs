@@ -32,10 +32,7 @@ async fn create_ticket_endpoint(
                 Ok(ticket) => HttpResponse::Created().json(UpsertTicketResponse { ticket }),
                 Err(e) => match e {
                     CreateTicketError::NotFound(message) => response_404(&message),
-                    CreateTicketError::InternalServerError(message) => {
-                        dbg!(message);
-                        response_500()
-                    }
+                    CreateTicketError::InternalServerError(_) => response_500(e),
                 },
             }
         }

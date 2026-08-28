@@ -39,10 +39,7 @@ async fn read_ticket_endpoint(
                 Err(e) => match e {
                     ReadTicketError::Forbidden(message) => response_403(&message),
                     ReadTicketError::NotFound(message) => response_404(&message),
-                    ReadTicketError::InternalServerError(message) => {
-                        dbg!(message);
-                        response_500()
-                    }
+                    ReadTicketError::InternalServerError(_) => response_500(e),
                 },
             }
         }

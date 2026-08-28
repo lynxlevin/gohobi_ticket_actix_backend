@@ -38,12 +38,12 @@ async fn login_user_endpoint(
     match login_user(req_user.into_inner(), user_query, user_mutation, user_redis).await {
         Ok(user) => match renew_session(session, user.id, user.email.clone()) {
             Ok(_) => HttpResponse::Ok().json(UserVisible::from(user)),
-            Err(_) => response_500(),
+            Err(e) => response_500(e),
         },
         Err(error) => match error {
             UseCaseError::BadRequest => response_400(TOO_MANY_LOGIN_ATTEMPTS_MESSAGE),
             UseCaseError::NotFound => response_404(NOT_FOUND_MESSAGE),
-            _ => response_500(),
+            _ => response_500(error),
         },
     }
 }

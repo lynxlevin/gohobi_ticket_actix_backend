@@ -36,10 +36,7 @@ async fn delete_ticket_endpoint(
                 Err(e) => match e {
                     DeleteTicketError::Forbidden(message) => response_403(&message),
                     DeleteTicketError::NotFound(message) => response_404(&message),
-                    DeleteTicketError::InternalServerError(message) => {
-                        dbg!(message);
-                        response_500()
-                    }
+                    DeleteTicketError::InternalServerError(_) => response_500(e),
                 },
             }
         }

@@ -35,7 +35,7 @@ async fn list_diary_tags_endpoint(
                 Ok(tags) => HttpResponse::Ok().json(tags),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("UserRelation not found."),
-                    _ => response_500(),
+                    _ => response_500(e),
                 },
             }
         }

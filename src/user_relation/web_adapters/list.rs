@@ -18,7 +18,7 @@ async fn list_user_relations_endpoint(db: Data<Db>, user: Option<ReqData<users_u
             let user_relation_query = UserRelationQuery { db: &db.db };
             match list_user_relations(user.into_inner(), user_relation_query).await {
                 Ok(user_relations) => HttpResponse::Ok().json(user_relations),
-                Err(_) => response_500(),
+                Err(e) => response_500(e),
             }
         }
         None => response_401(),

@@ -39,7 +39,7 @@ async fn available_tickets_endpoint(
                 Ok(res) => HttpResponse::Ok().json(res),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("NotFound"),
-                    _ => response_500(),
+                    _ => response_500(e),
                 },
             }
         }

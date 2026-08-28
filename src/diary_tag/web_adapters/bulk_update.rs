@@ -41,7 +41,7 @@ async fn bulk_update_diary_tags_endpoint(
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("UserRelation not found."),
                     UseCaseError::BadRequest => response_400("There are duplicate sort_no."),
-                    _ => response_500(),
+                    _ => response_500(e),
                 },
             }
         }

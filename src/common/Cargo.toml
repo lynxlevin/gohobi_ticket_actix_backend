@@ -26,6 +26,7 @@ serde_json = { workspace = true, optional = true }
 sea-orm = { workspace = true, optional = true }
 sha2 = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -34,7 +35,7 @@ ece.workspace = true
 
 [features]
 db = ["dep:sea-orm", "settings", "dep:aes-gcm", "dep:base64"]
-errors = ["dep:actix-web", "dep:serde"]
+errors = ["dep:actix-web", "dep:serde", "dep:tracing"]
 factory = ["dep:entities", "dep:sea-orm", "dep:uuid", "dep:chrono", "dep:base64"]
 redis = ["dep:deadpool-redis", "settings"]
 settings = []
