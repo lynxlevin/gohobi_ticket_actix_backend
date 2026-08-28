@@ -1,5 +1,8 @@
 use chrono::{DateTime, FixedOffset, Utc};
-use entities::{tickets_ticket, wish::ActiveModel};
+use entities::{
+    tickets_ticket,
+    wish::{ActiveModel, WishStatus},
+};
 use sea_orm::Set;
 use uuid::Uuid;
 
@@ -8,7 +11,7 @@ pub fn wish(ticket: &tickets_ticket::Model) -> ActiveModel {
     ActiveModel {
         id: Set(Uuid::now_v7()),
         description: Set("wish".to_string()),
-        status: Set("unread".to_string()),
+        status: Set(WishStatus::Unread),
         ticket_id: Set(ticket.id),
         user_relation_id: Set(ticket.user_relation_id),
         created_at: Set(now.into()),
@@ -19,7 +22,7 @@ pub fn wish(ticket: &tickets_ticket::Model) -> ActiveModel {
 
 pub trait WishFactory {
     fn description(self, description: String) -> ActiveModel;
-    fn status(self, status: String) -> ActiveModel;
+    fn status(self, status: WishStatus) -> ActiveModel;
     fn created_at(self, created_at: DateTime<FixedOffset>) -> ActiveModel;
 }
 
@@ -29,7 +32,7 @@ impl WishFactory for ActiveModel {
         self
     }
 
-    fn status(mut self, status: String) -> ActiveModel {
+    fn status(mut self, status: WishStatus) -> ActiveModel {
         self.status = Set(status);
         self
     }

@@ -1,11 +1,10 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
 use db_adapters::ticket_service::{CreateTicketParams, UpdateTicketParams};
 use entities::{
-    custom_types::WishStatus,
     tickets_ticket::{self, TicketId, TicketStatus},
     user_relations_userrelation::UserRelationId,
     users_user::UserId,
-    wish,
+    wish::{self, WishStatus},
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -68,7 +67,7 @@ impl TicketVisible {
         self.wish = Some(WishInner {
             id: wish.id,
             description: wish.description.clone(),
-            status: (&wish.status).into(),
+            status: wish.status,
             created_at: wish.created_at,
         });
         self
@@ -96,7 +95,7 @@ impl From<(&wish::Model, &tickets_ticket::Model)> for WishVisible {
         Self {
             id: wish.id,
             description: wish.description.to_owned(),
-            status: (&wish.status).into(),
+            status: wish.status,
             created_at: wish.created_at,
             ticket: TicketInner {
                 id: ticket.id,

@@ -3,7 +3,6 @@
 pub mod prelude;
 
 pub mod custom_relations;
-pub mod custom_types;
 pub mod diaries_diary;
 pub mod diaries_diarytag;
 pub mod diaries_diarytagrelation;
