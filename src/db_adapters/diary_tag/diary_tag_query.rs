@@ -44,7 +44,10 @@ impl<'a> DiaryTagQuery<'a> {
         self.query = self
             .query
             .column_as(diaries_diary::Column::Id.count(), "diary_count")
-            .join(LeftJoin, diaries_diarytag::Relation::DiariesDiarytagrelation.def())
+            .join(
+                LeftJoin,
+                diaries_diarytagrelation::Relation::DiariesDiarytag.def().rev(),
+            )
             .join(LeftJoin, diaries_diarytagrelation::Relation::DiariesDiary.def())
             .group_by(diaries_diarytag::Column::Id);
         self

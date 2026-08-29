@@ -2,8 +2,8 @@ use futures::join;
 
 use crate::{SearchRequest, SearchResponse};
 use common::errors::use_case_errors::UseCaseError;
-use db_adapters::{diary::DiaryQuery, ticket_service::TicketService, user_relation::UserRelationQuery};
-use diary::list::{list_diary, ListDiaryQueryParam};
+use db_adapters::{diary_service::DiaryService, ticket_service::TicketService, user_relation::UserRelationQuery};
+use diary::list::{list_diary, DiaryListError, ListDiaryQueryParam};
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use ticket::list::{list_tickets, ListTicketsParams};
 
@@ -13,7 +13,7 @@ pub async fn search(
     params: SearchRequest,
     user_relation_query: UserRelationQuery<'_>,
     ticket_service: TicketService<'_>,
-    diary_query: DiaryQuery<'_>,
+    diary_service: DiaryService<'_>,
 ) -> Result<SearchResponse, UseCaseError> {
     user_relation_query
         .clone()
@@ -56,7 +56,7 @@ pub async fn search(
         user,
         ListDiaryQueryParam { user_relation_id, ..Default::default() },
         user_relation_query,
-        diary_query,
+        diary_service,
         text_query,
     );
 
@@ -70,6 +70,9 @@ pub async fn search(
         receiving_tickets: receiving_tickets_res
             .map_err(|_| UseCaseError::InternalServerError)?
             .tickets,
-        diaries: diaries_res?,
+        diaries: diaries_res.map_err(|e| match e {
+            DiaryListError::NotFound(_) => UseCaseError::NotFound,
+            DiaryListError::InternalServerError(_) => UseCaseError::InternalServerError,
+        })?,
     })
 }

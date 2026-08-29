@@ -97,7 +97,8 @@ impl<'a> DiaryQuery<'a> {
     pub async fn get_tag_ids(self) -> Result<Vec<Uuid>, DbErr> {
         match self
             .query
-            .join(LeftJoin, Relation::DiariesDiarytagrelation.def())
+            .join(LeftJoin, diaries_diarytagrelation::Relation::DiariesDiary.def().rev())
+            .join(LeftJoin, diaries_diarytagrelation::Relation::DiariesDiarytag.def())
             .select_only()
             .column(diaries_diarytagrelation::Column::TagMasterId)
             .into_values::<_, TagId>()
