@@ -2,8 +2,9 @@ use futures::join;
 
 use crate::{SearchRequest, SearchResponse};
 use common::errors::use_case_errors::UseCaseError;
-use db_adapters::{diary_service::DiaryService, ticket_service::TicketService, user_relation::UserRelationQuery};
+use db_adapters::{ticket_service::TicketService, user_relation::UserRelationQuery};
 use diary::list::{list_diary, DiaryListError, ListDiaryQueryParam};
+use domain_services::diary::DiaryService;
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use ticket::list::{list_tickets, ListTicketsParams};
 
@@ -55,7 +56,6 @@ pub async fn search(
     let diaries_future = list_diary(
         user,
         ListDiaryQueryParam { user_relation_id, ..Default::default() },
-        user_relation_query,
         diary_service,
         text_query,
     );

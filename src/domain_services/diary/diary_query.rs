@@ -2,7 +2,7 @@ use std::future::Future;
 
 use chrono::NaiveDate;
 use entities::{
-    diaries_diary::{Column, Entity, Model, Relation},
+    diaries_diary::{Column, Entity, Relation},
     diaries_diarytag as tag,
     user_relations_userrelation::{self as user_relation, UserRelationId},
     users_user::UserId,
@@ -12,7 +12,7 @@ use sea_orm::{
 };
 use serde::Deserialize;
 
-use crate::diary_service::{DiaryService, DiaryServiceError};
+use crate::diary::{DiaryService, DiaryServiceError, DiaryWithTags};
 
 #[derive(Deserialize, Default, Debug)]
 pub struct ListParam {
@@ -27,11 +27,21 @@ pub trait DiaryServiceQuery {
     fn list_with_tags(
         &self,
         params: ListParam,
-    ) -> impl Future<Output = Result<Vec<(Model, Vec<tag::Model>)>, DiaryServiceError>>;
+    ) -> impl Future<Output = Result<Vec<DiaryWithTags>, DiaryServiceError>>;
 }
 
 impl DiaryServiceQuery for DiaryService<'_> {
-    async fn list_with_tags(&self, params: ListParam) -> Result<Vec<(Model, Vec<tag::Model>)>, DiaryServiceError> {
+    async fn list_with_tags(&self, params: ListParam) -> Result<Vec<DiaryWithTags>, DiaryServiceError> {
+        let user_relation = user_relation::Entity::find_by_id(params.user_relation_id)
+            .filter(
+                Condition::any()
+                    .add(user_relation::Column::User1Id.eq(params.user_id))
+                    .add(user_relation::Column::User2Id.eq(params.user_id)),
+            )
+            .one(self.db)
+            .await?
+            .ok_or(DiaryServiceError::UserRelationNotFound())?;
+
         let mut query = Entity::find()
             .join(LeftJoin, Relation::UserRelationsUserrelation.def())
             .filter(
@@ -67,7 +77,16 @@ impl DiaryServiceQuery for DiaryService<'_> {
 
         Ok(diaries
             .into_iter()
-            .map(|(diary, tags)| (diary.into(), tags.into_iter().map(|tag| tag.into()).collect()))
+            .map(|(diary, tags)| DiaryWithTags {
+                id: diary.id,
+                entry: diary.entry,
+                date: diary.date,
+                status: match user_relation.user_1_id == params.user_id {
+                    true => diary.user_1_status,
+                    false => diary.user_2_status,
+                },
+                tags: tags.into_iter().map(|tag| tag.into()).collect(),
+            })
             .collect())
     }
 }

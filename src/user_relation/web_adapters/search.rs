@@ -8,7 +8,8 @@ use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
 };
-use db_adapters::{diary_service::DiaryService, ticket_service::TicketService, user_relation::UserRelationQuery};
+use db_adapters::{ticket_service::TicketService, user_relation::UserRelationQuery};
+use domain_services::diary::DiaryService;
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::{Deserialize, Serialize};
 

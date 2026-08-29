@@ -5,10 +5,7 @@ use actix_web::{
 };
 use common::db::Db;
 use common::errors::error_responses::{response_401, response_404, response_500};
-use db_adapters::{
-    diary_service::DiaryService,
-    user_relation::{UserRelationMutation, UserRelationQuery},
-};
+use domain_services::diary::DiaryService;
 use entities::users_user;
 
 use crate::{
@@ -24,25 +21,13 @@ async fn create_diary_endpoint(
     params: Json<CreateDiaryRequest>,
 ) -> HttpResponse {
     match user {
-        Some(user) => {
-            let user_relation_query = UserRelationQuery { db: &db.db };
-            let user_relation_mutation = UserRelationMutation::init(&db);
-            match create_diary(
-                user.into_inner(),
-                user_relation_query,
-                user_relation_mutation,
-                DiaryService::init(&db),
-                params.into_inner(),
-            )
-            .await
-            {
-                Ok(diary) => HttpResponse::Created().json(diary),
-                Err(e) => match e {
-                    DiaryCreateError::UserRelationNotFound() => response_404(e),
-                    DiaryCreateError::InternalServerError(_) => response_500(e),
-                },
-            }
-        }
+        Some(user) => match create_diary(user.into_inner(), DiaryService::init(&db), params.into_inner()).await {
+            Ok(diary) => HttpResponse::Created().json(diary),
+            Err(e) => match e {
+                DiaryCreateError::UserRelationNotFound() => response_404(e),
+                DiaryCreateError::InternalServerError(_) => response_500(e),
+            },
+        },
         None => response_401(),
     }
 }

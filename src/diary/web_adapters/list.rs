@@ -5,7 +5,7 @@ use actix_web::{
 };
 use common::db::Db;
 use common::errors::error_responses::{response_401, response_404, response_500};
-use db_adapters::{diary_service::DiaryService, user_relation::UserRelationQuery};
+use domain_services::diary::DiaryService;
 use entities::users_user;
 
 use crate::{
@@ -25,7 +25,6 @@ async fn list_diary_endpoint(
             match list_diary(
                 user.into_inner(),
                 query_params.into_inner(),
-                UserRelationQuery { db: &db.db },
                 DiaryService::init(&db),
                 None,
             )

@@ -15,6 +15,7 @@ common = { path = "../common", features = [
     "db",
 ] }
 db_adapters = { path = "../db_adapters" }
+domain_services = { path = "../domain_services" }
 
 actix-web.workspace = true
 chrono.workspace = true

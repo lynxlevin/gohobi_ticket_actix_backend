@@ -1,13 +1,10 @@
 use chrono::NaiveDate;
-use db_adapters::{
-    diary_service::{DiaryService, DiaryServiceError, DiaryServiceQuery, ListParam},
-    user_relation::UserRelationQuery,
-};
+use domain_services::diary::{DiaryService, DiaryServiceError, DiaryServiceQuery, ListParam};
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::{DiaryTag, DiaryVisible};
+use crate::DiaryVisible;
 
 #[derive(Debug, Error)]
 pub enum DiaryListError {
@@ -19,7 +16,8 @@ pub enum DiaryListError {
 impl From<DiaryServiceError> for DiaryListError {
     fn from(e: DiaryServiceError) -> Self {
         match e {
-            _ => DiaryListError::InternalServerError(e.to_string()),
+            DiaryServiceError::UserRelationNotFound() => Self::UserRelationNotFound(),
+            _ => Self::InternalServerError(e.to_string()),
         }
     }
 }
@@ -34,16 +32,9 @@ pub struct ListDiaryQueryParam {
 pub async fn list_diary<'a>(
     user: users_user::Model,
     params: ListDiaryQueryParam,
-    user_relation_query: UserRelationQuery<'a>,
     diary_service: DiaryService<'a>,
     text_query: Option<Vec<String>>,
 ) -> Result<Vec<DiaryVisible>, DiaryListError> {
-    let user_relation = user_relation_query
-        .find_by_id(params.user_relation_id, user.id)
-        .await
-        .map_err(|e| DiaryListError::InternalServerError(e.to_string()))?
-        .ok_or(DiaryListError::UserRelationNotFound())?;
-
     let diaries = diary_service
         .list_with_tags(ListParam {
             user_id: user.id,
@@ -54,20 +45,5 @@ pub async fn list_diary<'a>(
         })
         .await?;
 
-    Ok(diaries
-        .iter()
-        .map(|(diary, tags)| DiaryVisible {
-            id: diary.id,
-            entry: diary.entry.clone(),
-            date: diary.date,
-            status: match user_relation.user_1_id == user.id {
-                true => diary.user_1_status,
-                false => diary.user_2_status,
-            },
-            tags: tags
-                .iter()
-                .map(|tag| DiaryTag { id: tag.id, text: tag.text.clone(), sort_no: tag.sort_no })
-                .collect(),
-        })
-        .collect())
+    Ok(diaries.into_iter().map(|diary| diary.into()).collect())
 }
