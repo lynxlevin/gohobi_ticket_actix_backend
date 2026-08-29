@@ -71,7 +71,7 @@ pub async fn search(
             .map_err(|_| UseCaseError::InternalServerError)?
             .tickets,
         diaries: diaries_res.map_err(|e| match e {
-            DiaryListError::NotFound(_) => UseCaseError::NotFound,
+            DiaryListError::UserRelationNotFound() => UseCaseError::NotFound,
             DiaryListError::InternalServerError(_) => UseCaseError::InternalServerError,
         })?,
     })

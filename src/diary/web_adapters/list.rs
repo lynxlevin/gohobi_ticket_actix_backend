@@ -33,7 +33,7 @@ async fn list_diary_endpoint(
             {
                 Ok(diaries) => HttpResponse::Ok().json(diaries),
                 Err(e) => match e {
-                    DiaryListError::NotFound(message) => response_404(message),
+                    DiaryListError::UserRelationNotFound() => response_404(e),
                     DiaryListError::InternalServerError(_) => response_500(e),
                 },
             }

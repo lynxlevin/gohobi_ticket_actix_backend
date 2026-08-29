@@ -11,8 +11,8 @@ use crate::{DiaryTag, DiaryVisible};
 
 #[derive(Debug, Error)]
 pub enum DiaryListError {
-    #[error("{0}")]
-    NotFound(String),
+    #[error("UserRelation not found.")]
+    UserRelationNotFound(),
     #[error("{0}")]
     InternalServerError(String),
 }
@@ -42,7 +42,7 @@ pub async fn list_diary<'a>(
         .find_by_id(params.user_relation_id, user.id)
         .await
         .map_err(|e| DiaryListError::InternalServerError(e.to_string()))?
-        .ok_or(DiaryListError::NotFound("UserRelation not found.".to_string()))?;
+        .ok_or(DiaryListError::UserRelationNotFound())?;
 
     let diaries = diary_service
         .list_with_tags(ListParam {

@@ -11,10 +11,12 @@ Content-Type: application/json
 }
 
 ###
-# @name list_user_relations
-GET {{endpoint}}/api/user_relations/
-
 @user_relation_id=1
+
+###
+# @name list_diaries
+GET {{endpoint}}/api/diaries/?user_relation_id={{user_relation_id}}
+
 
 ###
 # @name create_diary
