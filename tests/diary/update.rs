@@ -23,14 +23,17 @@ async fn happy_path() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
-    let diary = factory::diary(user_relation.id).insert(&db.db).await?;
+    let diary = factory::diary(user_relation.id)
+        .user_1_status(DiaryStatus::Read)
+        .insert(&db.db)
+        .await?;
 
     let entry = "new_entry".to_string();
     let date = Utc::now().date_naive() - Duration::days(1);
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/diaries/{}/", diary.id))
-        .set_json(UpdateDiaryRequest { entry: entry.clone(), date, tag_ids: None })
+        .set_json(UpdateDiaryRequest { entry: entry.clone(), date, tag_ids: vec![] })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
@@ -64,6 +67,7 @@ async fn assert_tag_change() -> Result<(), DbErr> {
     let tag_1 = factory::diary_tag(user_relation.id).insert(&db.db).await?;
     let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db.db).await?;
     let _tag_0_link = factory::link_diary_tag(&db, diary.id, tag_0.id).await?;
+    let _tag_1_link = factory::link_diary_tag(&db, diary.id, tag_1.id).await?;
 
     let tag_ids = vec![tag_1.id, other_relation_tag.id];
 
@@ -72,7 +76,7 @@ async fn assert_tag_change() -> Result<(), DbErr> {
         .set_json(UpdateDiaryRequest {
             entry: String::default(),
             date: Utc::now().date_naive(),
-            tag_ids: Some(tag_ids.clone()),
+            tag_ids: tag_ids.clone(),
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -113,18 +117,21 @@ async fn assert_user_2_status_changes() -> Result<(), DbErr> {
             DiaryParam {
                 name: "unread_diary".to_string(),
                 user_relation_id: user_relation.id,
+                user_1_status: Some(DiaryStatus::Read),
                 user_2_status: Some(DiaryStatus::Unread),
                 ..Default::default()
             },
             DiaryParam {
                 name: "read_diary".to_string(),
                 user_relation_id: user_relation.id,
+                user_1_status: Some(DiaryStatus::Read),
                 user_2_status: Some(DiaryStatus::Read),
                 ..Default::default()
             },
             DiaryParam {
                 name: "edited_diary".to_string(),
                 user_relation_id: user_relation.id,
+                user_1_status: Some(DiaryStatus::Read),
                 user_2_status: Some(DiaryStatus::Edited),
                 ..Default::default()
             },
@@ -153,7 +160,7 @@ async fn assert_user_2_status_changes() -> Result<(), DbErr> {
         dbg!(case);
         let req = test::TestRequest::put()
             .uri(&format!("/api/diaries/{}/", diary.id))
-            .set_json(UpdateDiaryRequest { entry: diary.entry.clone(), date: diary.date, tag_ids: None })
+            .set_json(UpdateDiaryRequest { entry: diary.entry.clone(), date: diary.date, tag_ids: vec![] })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
         let res = test::call_service(&app, req).await;
@@ -187,7 +194,7 @@ async fn happy_path_change_date_to_oldest() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/diaries/{}/", diary.id))
-        .set_json(UpdateDiaryRequest { entry: diary.entry, date: new_diary_date, tag_ids: None })
+        .set_json(UpdateDiaryRequest { entry: diary.entry, date: new_diary_date, tag_ids: vec![] })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
@@ -207,7 +214,7 @@ async fn happy_path_change_date_to_oldest() -> Result<(), DbErr> {
 async fn happy_path_change_date_of_oldest() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let today = Utc::now().date_naive();
+    let today = Utc::now().fixed_offset().date_naive();
     let yesterday = today.checked_sub_days(Days::new(1)).unwrap();
     let user_relation = factory::user_relation(user_0.id, user_1.id)
         .first_diary_date(Some(yesterday))
@@ -220,7 +227,7 @@ async fn happy_path_change_date_of_oldest() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/diaries/{}/", oldest_diary.id))
-        .set_json(UpdateDiaryRequest { entry: oldest_diary.entry, date: new_diary_date, tag_ids: None })
+        .set_json(UpdateDiaryRequest { entry: oldest_diary.entry, date: new_diary_date, tag_ids: vec![] })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
@@ -253,7 +260,7 @@ async fn not_found_if_incorrect_id() -> Result<(), DbErr> {
             .set_json(UpdateDiaryRequest {
                 entry: String::default(),
                 date: Utc::now().date_naive(),
-                tag_ids: None,
+                tag_ids: vec![],
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
@@ -271,7 +278,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/diaries/{}/", Uuid::now_v7()))
-        .set_json(UpdateDiaryRequest { entry: String::default(), date: Utc::now().date_naive(), tag_ids: None })
+        .set_json(UpdateDiaryRequest { entry: String::default(), date: Utc::now().date_naive(), tag_ids: vec![] })
         .to_request();
     let res = test::call_service(&app, req).await;
 

@@ -53,5 +53,5 @@ pub struct CreateDiaryRequest {
 pub struct UpdateDiaryRequest {
     pub entry: String,
     pub date: NaiveDate,
-    pub tag_ids: Option<Vec<Uuid>>,
+    pub tag_ids: Vec<Uuid>,
 }

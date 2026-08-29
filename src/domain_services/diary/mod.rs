@@ -18,6 +18,8 @@ pub enum DiaryServiceError {
     DbErr(#[from] sea_orm::DbErr),
     #[error("")]
     UserRelationNotFound(),
+    #[error("")]
+    DiaryNotFound(),
     // #[error("Diary cannot be found.")]
     // DiaryNotFound(),
     // #[error("{0}")]
