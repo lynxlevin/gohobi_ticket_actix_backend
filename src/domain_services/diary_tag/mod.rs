@@ -16,8 +16,8 @@ pub enum DiaryTagServiceError {
     DbErr(#[from] sea_orm::DbErr),
     #[error("")]
     UserRelationNotFound(),
-    // #[error("")]
-    // DiaryTagNotFound(),
+    #[error("")]
+    DiaryTagNotFound(),
 }
 impl From<TransactionError<DiaryTagServiceError>> for DiaryTagServiceError {
     fn from(value: TransactionError<DiaryTagServiceError>) -> Self {
