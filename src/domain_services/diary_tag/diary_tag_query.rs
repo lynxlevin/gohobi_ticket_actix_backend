@@ -7,12 +7,10 @@ use entities::{
     user_relations_userrelation::{self as user_relation, UserRelationId},
     users_user::UserId,
 };
-use sea_orm::{
-    ColumnTrait, Condition, EntityTrait, JoinType::LeftJoin, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
-};
+use sea_orm::{ColumnTrait, Condition, EntityTrait, JoinType::LeftJoin, QueryFilter, QuerySelect, RelationTrait};
 use uuid::Uuid;
 
-use crate::diary_tag::{DiaryTagService, DiaryTagServiceError, DiaryTagWithDiaryCount};
+use crate::diary_tag::{list_tags_query, DiaryTagService, DiaryTagServiceError, DiaryTagWithDiaryCount};
 
 pub trait DiaryTagServiceQuery {
     fn list(
@@ -43,10 +41,7 @@ impl DiaryTagServiceQuery for DiaryTagService<'_> {
             .await?
             .ok_or(DiaryTagServiceError::UserRelationNotFound())?;
 
-        Entity::find()
-            .filter(Column::UserRelationId.eq(user_relation_id))
-            .group_by(Column::Id)
-            .order_by_asc(Column::SortNo)
+        list_tags_query(user_relation_id)
             .all(self.db)
             .await
             .map_err(|e| e.into())

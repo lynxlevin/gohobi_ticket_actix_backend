@@ -1,12 +1,20 @@
 use common::db::Db;
-use sea_orm::{DbConn, FromQueryResult, TransactionError};
+use entities::{
+    diaries_diarytag::{Column, Entity},
+    prelude::DiariesDiarytag,
+    user_relations_userrelation::UserRelationId,
+};
+use sea_orm::{
+    ColumnTrait, DbConn, EntityTrait, FromQueryResult, QueryFilter, QueryOrder, QuerySelect, Select,
+    TransactionError,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-// mod diary_tag_mutation;
+mod diary_tag_mutation;
 mod diary_tag_query;
 
-// pub use diary_tag_mutation::*;
+pub use diary_tag_mutation::*;
 pub use diary_tag_query::*;
 use uuid::Uuid;
 
@@ -45,4 +53,11 @@ pub struct DiaryTagWithDiaryCount {
     pub text: String,
     pub sort_no: i32,
     pub diary_count: i64,
+}
+
+fn list_tags_query(user_relation_id: UserRelationId) -> Select<DiariesDiarytag> {
+    Entity::find()
+        .filter(Column::UserRelationId.eq(user_relation_id))
+        .group_by(Column::Id)
+        .order_by_asc(Column::SortNo)
 }

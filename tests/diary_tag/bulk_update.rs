@@ -83,7 +83,7 @@ async fn happy_path() -> Result<(), DbErr> {
 }
 
 #[actix_web::test]
-async fn create_new_if_other_relation_tag() -> Result<(), DbErr> {
+async fn ignore_if_other_relation_tag_id_is_passed() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
@@ -109,22 +109,14 @@ async fn create_new_if_other_relation_tag() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let BulkUpdateDiaryTagResponse { diary_tags: res } = test::read_body_json(res).await;
-    assert_eq!(res.len(), 1);
-
-    assert!(res[0].id.is_some());
-    assert_ne!(res[0].id, Some(other_relation_tag.id));
-    assert_eq!(res[0].text, req_param.diary_tags[0].text);
-    assert_eq!(res[0].sort_no, req_param.diary_tags[0].sort_no);
+    assert_eq!(res.len(), 0);
 
     let tags_in_db = diaries_diarytag::Entity::find()
         .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation.id))
         .order_by_asc(diaries_diarytag::Column::SortNo)
         .all(&db.db)
         .await?;
-    assert_eq!(tags_in_db.len(), 1);
-    assert_eq!(Some(tags_in_db[0].id), res[0].id);
-    assert_eq!(tags_in_db[0].text, res[0].text);
-    assert_eq!(tags_in_db[0].sort_no, res[0].sort_no);
+    assert_eq!(tags_in_db.len(), 0);
 
     let other_relation_tag_in_db = diaries_diarytag::Entity::find_by_id(other_relation_tag.id)
         .one(&db.db)
