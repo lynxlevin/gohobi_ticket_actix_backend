@@ -1,37 +1,31 @@
-use common::errors::use_case_errors::UseCaseError;
-use db_adapters::diary::{types::UpdateDiaryParams, DiaryMutation, DiaryQuery};
-use entities::{diaries_diary::DiaryStatus, users_user};
+use domain_services::diary::{DiaryService, DiaryServiceError, DiaryServiceMutation};
+use entities::users_user;
+use thiserror::Error;
 use uuid::Uuid;
+
+#[derive(Debug, Error)]
+pub enum DiaryMarkReadError {
+    #[error("Diary not found.")]
+    DiaryNotFound(),
+    #[error("UserRelation not found.")]
+    UserRelationNotFound(),
+    #[error("{0}")]
+    InternalServerError(String),
+}
+impl From<DiaryServiceError> for DiaryMarkReadError {
+    fn from(e: DiaryServiceError) -> Self {
+        match e {
+            DiaryServiceError::DiaryNotFound() => Self::DiaryNotFound(),
+            DiaryServiceError::UserRelationNotFound() => Self::UserRelationNotFound(),
+            _ => Self::InternalServerError(e.to_string()),
+        }
+    }
+}
 
 pub async fn mark_diary_read<'a>(
     user: users_user::Model,
-    diary_query: DiaryQuery<'a>,
-    diary_mutation: DiaryMutation<'a>,
+    diary_service: DiaryService<'a>,
     diary_id: Uuid,
-) -> Result<(), UseCaseError> {
-    let (diary, user_relation) = match diary_query
-        .filter_which_user_has_access(user.id)
-        .filter_by_id(diary_id)
-        .get_also_relation()
-        .await
-        .map_err(|_| UseCaseError::InternalServerError)?
-    {
-        Some((diary, user_relation)) => match user_relation {
-            Some(user_relation) => (diary, user_relation),
-            None => return Err(UseCaseError::NotFound),
-        },
-        None => return Err(UseCaseError::NotFound),
-    };
-
-    let (user_1_status, user_2_status) = match user_relation.user_1_id == user.id {
-        true => (Some(DiaryStatus::Read), None),
-        false => (None, Some(DiaryStatus::Read)),
-    };
-
-    let params = UpdateDiaryParams { entry: None, date: None, user_1_status, user_2_status };
-
-    match diary_mutation.update(diary, params).await {
-        Ok(_) => Ok(()),
-        Err(_) => Err(UseCaseError::InternalServerError),
-    }
+) -> Result<(), DiaryMarkReadError> {
+    diary_service.mark_read(user.id, diary_id).await.map_err(|e| e.into())
 }

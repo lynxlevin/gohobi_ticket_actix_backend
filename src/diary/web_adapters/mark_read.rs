@@ -4,16 +4,13 @@ use actix_web::{
     HttpResponse,
 };
 use common::db::Db;
-use common::errors::{
-    error_responses::{response_401, response_404, response_500},
-    use_case_errors::UseCaseError,
-};
-use db_adapters::diary::{DiaryMutation, DiaryQuery};
+use common::errors::error_responses::{response_401, response_404, response_500};
+use domain_services::diary::DiaryService;
 use entities::users_user;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::use_cases::mark_read::mark_diary_read;
+use crate::use_cases::mark_read::{mark_diary_read, DiaryMarkReadError};
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
@@ -29,12 +26,12 @@ async fn mark_diary_read_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let diary_query = DiaryQuery::init(&db);
-            let diary_mutation = DiaryMutation::init(&db);
-            match mark_diary_read(user.into_inner(), diary_query, diary_mutation, path_param.diary_id).await {
+            match mark_diary_read(user.into_inner(), DiaryService::init(&db), path_param.diary_id).await {
                 Ok(_) => HttpResponse::Ok().finish(),
                 Err(e) => match e {
-                    UseCaseError::NotFound => response_404("Diary not found."),
+                    DiaryMarkReadError::UserRelationNotFound() | DiaryMarkReadError::DiaryNotFound() => {
+                        response_404(e)
+                    }
                     _ => response_500(e),
                 },
             }

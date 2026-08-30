@@ -20,10 +20,6 @@ pub enum DiaryServiceError {
     UserRelationNotFound(),
     #[error("")]
     DiaryNotFound(),
-    // #[error("Diary cannot be found.")]
-    // DiaryNotFound(),
-    // #[error("{0}")]
-    // RelatedRecordNotFound(String),
 }
 impl From<TransactionError<DiaryServiceError>> for DiaryServiceError {
     fn from(value: TransactionError<DiaryServiceError>) -> Self {

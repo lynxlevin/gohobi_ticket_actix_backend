@@ -1489,7 +1489,6 @@ dependencies = [
  "actix-web",
  "chrono",
  "common",
- "db_adapters",
  "domain_services",
  "entities",
  "serde",
@@ -1505,8 +1504,10 @@ dependencies = [
  "actix-web",
  "common",
  "db_adapters",
+ "domain_services",
  "entities",
  "serde",
+ "thiserror 2.0.20",
  "tracing",
  "uuid",
 ]

@@ -1,7 +1,6 @@
 use actix_web::{http, test, HttpMessage};
 use common::factory::{self, *};
-use db_adapters::diary_tag::types::DiaryTagVisible;
-use diary_tag::ListDiaryTagsResponse;
+use diary_tag::{DiaryTagVisible, ListDiaryTagsResponse};
 use entities::user_relations_userrelation::UserRelationId;
 use sea_orm::{ActiveModelTrait, DbErr};
 
