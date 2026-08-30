@@ -5,7 +5,6 @@ use actix_web::{
 };
 use common::db::Db;
 use common::errors::error_responses::{response_401, response_404, response_500};
-use domain_services::diary::DiaryService;
 use entities::users_user;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -30,14 +29,7 @@ async fn update_diary_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            match update_diary(
-                user.into_inner(),
-                DiaryService::init(&db),
-                path_param.diary_id,
-                req_param.into_inner(),
-            )
-            .await
-            {
+            match update_diary(user.into_inner(), &db, path_param.diary_id, req_param.into_inner()).await {
                 Ok(diary) => HttpResponse::Ok().json(diary),
                 Err(e) => match e {
                     DiaryUpdateError::DiaryNotFound() | DiaryUpdateError::UserRelationNotFound() => {

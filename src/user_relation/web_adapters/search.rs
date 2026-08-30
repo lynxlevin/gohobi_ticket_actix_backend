@@ -9,7 +9,6 @@ use common::errors::{
     use_case_errors::UseCaseError,
 };
 use db_adapters::{ticket_service::TicketService, user_relation::UserRelationQuery};
-use domain_services::diary::DiaryService;
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::{Deserialize, Serialize};
 
@@ -37,7 +36,7 @@ async fn search_endpoint(
                 params.into_inner(),
                 user_relation_query,
                 TicketService::init(&db),
-                DiaryService::init(&db),
+                &db,
             )
             .await
             {

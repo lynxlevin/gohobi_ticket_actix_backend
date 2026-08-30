@@ -1,3 +1,4 @@
+use common::db::Db;
 use domain_services::diary_tag::{DiaryTagService, DiaryTagServiceError, DiaryTagServiceQuery};
 use entities::{user_relations_userrelation::UserRelationId, users_user::UserId};
 use thiserror::Error;
@@ -23,8 +24,9 @@ impl From<DiaryTagServiceError> for DiaryTagListError {
 pub async fn list_diary_tags<'a>(
     user_id: UserId,
     user_relation_id: UserRelationId,
-    diary_tag_service: DiaryTagService<'a>,
+    db: &Db,
 ) -> Result<ListDiaryTagsResponse, DiaryTagListError> {
+    let diary_tag_service = DiaryTagService::init(&db);
     let tags = diary_tag_service
         .list_with_diary_count(user_id, user_relation_id)
         .await?;

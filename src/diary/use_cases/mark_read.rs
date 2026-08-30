@@ -1,3 +1,4 @@
+use common::db::Db;
 use domain_services::diary::{DiaryService, DiaryServiceError, DiaryServiceMutation};
 use entities::users_user;
 use thiserror::Error;
@@ -24,8 +25,9 @@ impl From<DiaryServiceError> for DiaryMarkReadError {
 
 pub async fn mark_diary_read<'a>(
     user: users_user::Model,
-    diary_service: DiaryService<'a>,
+    db: &Db,
     diary_id: Uuid,
 ) -> Result<(), DiaryMarkReadError> {
+    let diary_service = DiaryService::init(db);
     diary_service.mark_read(user.id, diary_id).await.map_err(|e| e.into())
 }

@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use common::db::Db;
 use domain_services::diary::{DiaryService, DiaryServiceError, DiaryServiceQuery, ListParam};
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
@@ -32,9 +33,10 @@ pub struct ListDiaryQueryParam {
 pub async fn list_diary<'a>(
     user: users_user::Model,
     params: ListDiaryQueryParam,
-    diary_service: DiaryService<'a>,
+    db: &Db,
     text_query: Option<Vec<String>>,
 ) -> Result<Vec<DiaryVisible>, DiaryListError> {
+    let diary_service = DiaryService::init(db);
     let diaries = diary_service
         .list_with_tags(ListParam {
             user_id: user.id,

@@ -5,7 +5,6 @@ use actix_web::{
 };
 use common::db::Db;
 use common::errors::error_responses::{response_401, response_404, response_500};
-use domain_services::diary_tag::DiaryTagService;
 use entities::users_user;
 
 use crate::{
@@ -22,13 +21,7 @@ async fn list_diary_tags_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            match list_diary_tags(
-                user.into_inner().id,
-                query.into_inner().user_relation_id,
-                DiaryTagService::init(&db),
-            )
-            .await
-            {
+            match list_diary_tags(user.into_inner().id, query.into_inner().user_relation_id, &db).await {
                 Ok(tags) => HttpResponse::Ok().json(tags),
                 Err(e) => match e {
                     DiaryTagListError::UserRelationNotFound() => response_404(e),

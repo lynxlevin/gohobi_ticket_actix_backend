@@ -1,3 +1,4 @@
+use common::db::Db;
 use domain_services::diary::{DiaryService, DiaryServiceError, DiaryServiceMutation, DiaryUpdateParams};
 use entities::users_user;
 use thiserror::Error;
@@ -26,10 +27,11 @@ impl From<DiaryServiceError> for DiaryUpdateError {
 
 pub async fn update_diary<'a>(
     user: users_user::Model,
-    diary_service: DiaryService<'a>,
+    db: &Db,
     diary_id: Uuid,
     req_param: UpdateDiaryRequest,
 ) -> Result<DiaryVisible, DiaryUpdateError> {
+    let diary_service = DiaryService::init(db);
     let diary = diary_service
         .update(DiaryUpdateParams {
             updater_id: user.id,

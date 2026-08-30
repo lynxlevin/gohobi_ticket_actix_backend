@@ -5,7 +5,6 @@ use actix_web::{
 };
 use common::db::Db;
 use common::errors::error_responses::{response_401, response_404, response_500};
-use domain_services::diary::DiaryService;
 use entities::users_user;
 
 use crate::{
@@ -21,22 +20,13 @@ async fn list_diary_endpoint(
     query_params: Query<ListDiaryQueryParam>,
 ) -> HttpResponse {
     match user {
-        Some(user) => {
-            match list_diary(
-                user.into_inner(),
-                query_params.into_inner(),
-                DiaryService::init(&db),
-                None,
-            )
-            .await
-            {
-                Ok(diaries) => HttpResponse::Ok().json(diaries),
-                Err(e) => match e {
-                    DiaryListError::UserRelationNotFound() => response_404(e),
-                    DiaryListError::InternalServerError(_) => response_500(e),
-                },
-            }
-        }
+        Some(user) => match list_diary(user.into_inner(), query_params.into_inner(), &db, None).await {
+            Ok(diaries) => HttpResponse::Ok().json(diaries),
+            Err(e) => match e {
+                DiaryListError::UserRelationNotFound() => response_404(e),
+                DiaryListError::InternalServerError(_) => response_500(e),
+            },
+        },
         None => response_401(),
     }
 }
