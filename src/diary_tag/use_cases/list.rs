@@ -27,9 +27,7 @@ pub async fn list_diary_tags<'a>(
     db: &Db,
 ) -> Result<ListDiaryTagsResponse, DiaryTagListError> {
     let diary_tag_service = DiaryTagService::init(&db);
-    let tags = diary_tag_service
-        .list_with_diary_count(user_id, user_relation_id)
-        .await?;
+    let tags = diary_tag_service.list(user_id, user_relation_id).await?;
 
     Ok(ListDiaryTagsResponse { diary_tags: tags.into_iter().map(|tag| tag.into()).collect() })
 }

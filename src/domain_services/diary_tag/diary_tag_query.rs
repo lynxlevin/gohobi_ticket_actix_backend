@@ -2,7 +2,7 @@ use std::future::Future;
 
 use entities::{
     diaries_diary,
-    diaries_diarytag::{Column, Entity},
+    diaries_diarytag::{Column, Entity, Model},
     diaries_diarytagrelation,
     user_relations_userrelation::{self as user_relation, UserRelationId},
     users_user::UserId,
@@ -14,19 +14,19 @@ use sea_orm::{
 use crate::diary_tag::{DiaryTagService, DiaryTagServiceError, DiaryTagWithDiaryCount};
 
 pub trait DiaryTagServiceQuery {
-    fn list_with_diary_count(
+    fn list(
         &self,
         user_id: UserId,
         user_relation_id: UserRelationId,
-    ) -> impl Future<Output = Result<Vec<DiaryTagWithDiaryCount>, DiaryTagServiceError>>;
+    ) -> impl Future<Output = Result<Vec<Model>, DiaryTagServiceError>>;
 }
 
 impl DiaryTagServiceQuery for DiaryTagService<'_> {
-    async fn list_with_diary_count(
+    async fn list(
         &self,
         user_id: UserId,
         user_relation_id: UserRelationId,
-    ) -> Result<Vec<DiaryTagWithDiaryCount>, DiaryTagServiceError> {
+    ) -> Result<Vec<Model>, DiaryTagServiceError> {
         user_relation::Entity::find_by_id(user_relation_id)
             .filter(
                 Condition::any()
@@ -38,16 +38,9 @@ impl DiaryTagServiceQuery for DiaryTagService<'_> {
             .ok_or(DiaryTagServiceError::UserRelationNotFound())?;
 
         Entity::find()
-            .column_as(diaries_diary::Column::Id.count(), "diary_count")
-            .join(
-                LeftJoin,
-                diaries_diarytagrelation::Relation::DiariesDiarytag.def().rev(),
-            )
-            .join(LeftJoin, diaries_diarytagrelation::Relation::DiariesDiary.def())
             .filter(Column::UserRelationId.eq(user_relation_id))
             .group_by(Column::Id)
             .order_by_asc(Column::SortNo)
-            .into_model::<DiaryTagWithDiaryCount>()
             .all(self.db)
             .await
             .map_err(|e| e.into())

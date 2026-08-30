@@ -1,16 +1,29 @@
 use db_adapters::diary_tag::types::BulkUpdateDiaryTagItem;
 use domain_services::diary_tag::DiaryTagWithDiaryCount;
-use entities::user_relations_userrelation::UserRelationId;
+use entities::{diaries_diarytag::Model, user_relations_userrelation::UserRelationId};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct DiaryTagVisible {
     pub id: Uuid,
     pub text: String,
     pub sort_no: i32,
+}
+impl From<Model> for DiaryTagVisible {
+    fn from(value: Model) -> Self {
+        Self { id: value.id, text: value.text, sort_no: value.sort_no }
+    }
+}
+
+#[derive(Deserialize, Debug, Serialize, PartialEq)]
+pub struct DiaryTagVisibleWithDiaryCount {
+    pub id: Uuid,
+    pub text: String,
+    pub sort_no: i32,
     pub diary_count: i64,
 }
-impl From<DiaryTagWithDiaryCount> for DiaryTagVisible {
+impl From<DiaryTagWithDiaryCount> for DiaryTagVisibleWithDiaryCount {
     fn from(value: DiaryTagWithDiaryCount) -> Self {
         Self { id: value.id, text: value.text, sort_no: value.sort_no, diary_count: value.diary_count }
     }
