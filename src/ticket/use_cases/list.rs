@@ -1,7 +1,5 @@
 use chrono::NaiveDate;
-use db_adapters::ticket_service::{
-    ListTicketsWithWishParams, TicketService, TicketServiceError, TicketServiceQuery,
-};
+use domain_services::ticket::{ListTicketsWithWishParams, TicketService, TicketServiceError, TicketServiceQuery};
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
 use thiserror::Error;

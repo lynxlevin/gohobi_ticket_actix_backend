@@ -1,9 +1,7 @@
 use crate::{AvailableTicketsOldest, AvailableTicketsResponse};
 use common::errors::use_case_errors::UseCaseError;
-use db_adapters::{
-    ticket_service::{TicketService, TicketServiceQuery},
-    user_relation::UserRelationQuery,
-};
+use db_adapters::user_relation::UserRelationQuery;
+use domain_services::ticket::{TicketService, TicketServiceQuery};
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use ticket::TicketVisible;
 

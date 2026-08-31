@@ -1,5 +1,5 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
-use db_adapters::ticket_service::{CreateTicketParams, UpdateTicketParams};
+pub use domain_services::ticket::{CreateTicketParams, UpdateTicketParams};
 use entities::{
     tickets_ticket::{self, TicketId, TicketStatus},
     user_relations_userrelation::UserRelationId,

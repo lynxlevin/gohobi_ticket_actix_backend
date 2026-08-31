@@ -1,4 +1,4 @@
-use db_adapters::ticket_service::{
+use domain_services::ticket::{
     TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery, UpdateTicketParams,
 };
 use entities::{
@@ -21,7 +21,7 @@ pub enum PartialUpdateTicketError {
 impl From<TicketServiceError> for PartialUpdateTicketError {
     fn from(e: TicketServiceError) -> Self {
         match e {
-            TicketServiceError::TicketNotFound(_) => PartialUpdateTicketError::NotFound(e.to_string()),
+            TicketServiceError::TicketNotFound() => PartialUpdateTicketError::NotFound(e.to_string()),
             _ => PartialUpdateTicketError::InternalServerError(e.to_string()),
         }
     }

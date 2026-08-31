@@ -1,4 +1,4 @@
-use db_adapters::ticket_service::{TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery};
+use domain_services::ticket::{TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery};
 use entities::{tickets_ticket::TicketId, users_user};
 use thiserror::Error;
 
@@ -14,7 +14,7 @@ pub enum DeleteTicketError {
 impl From<TicketServiceError> for DeleteTicketError {
     fn from(e: TicketServiceError) -> Self {
         match e {
-            TicketServiceError::TicketNotFound(_) => DeleteTicketError::NotFound(e.to_string()),
+            TicketServiceError::TicketNotFound() => DeleteTicketError::NotFound(e.to_string()),
             _ => DeleteTicketError::InternalServerError(e.to_string()),
         }
     }

@@ -5,7 +5,8 @@ use actix_web::{
 };
 use common::db::Db;
 use common::errors::error_responses::{response_400, response_401, response_404, response_500};
-use db_adapters::{ticket_service::TicketService, user_relation::UserRelationQuery};
+use db_adapters::user_relation::UserRelationQuery;
+use domain_services::ticket::TicketService;
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::{Deserialize, Serialize};
 

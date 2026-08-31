@@ -4,13 +4,13 @@ use entities::{diaries_diary::DiaryStatus, diaries_diarytag};
 use sea_orm::{DbConn, TransactionError};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use uuid::Uuid;
 
 mod diary_mutation;
 mod diary_query;
 
 pub use diary_mutation::*;
 pub use diary_query::*;
-use uuid::Uuid;
 
 #[derive(Debug, Error)]
 pub enum DiaryServiceError {
@@ -30,7 +30,6 @@ impl From<TransactionError<DiaryServiceError>> for DiaryServiceError {
     }
 }
 
-#[derive(Clone)]
 pub struct DiaryService<'a> {
     pub db: &'a DbConn,
 }

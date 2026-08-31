@@ -10,10 +10,10 @@ use common::{
 };
 use db_adapters::{
     ticket::WishMutation,
-    ticket_service::TicketService,
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
+use domain_services::ticket::TicketService;
 use entities::{tickets_ticket::TicketId, users_user};
 use serde::{Deserialize, Serialize};
 

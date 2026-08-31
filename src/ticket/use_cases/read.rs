@@ -1,4 +1,4 @@
-use db_adapters::ticket_service::{TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery};
+use domain_services::ticket::{TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery};
 use entities::{
     tickets_ticket::{TicketId, TicketStatus},
     users_user,
@@ -19,7 +19,7 @@ pub enum ReadTicketError {
 impl From<TicketServiceError> for ReadTicketError {
     fn from(e: TicketServiceError) -> Self {
         match e {
-            TicketServiceError::TicketNotFound(_) => ReadTicketError::NotFound(e.to_string()),
+            TicketServiceError::TicketNotFound() => ReadTicketError::NotFound(e.to_string()),
             _ => ReadTicketError::InternalServerError(e.to_string()),
         }
     }

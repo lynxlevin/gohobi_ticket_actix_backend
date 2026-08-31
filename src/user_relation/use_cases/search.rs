@@ -1,8 +1,9 @@
+use domain_services::ticket::TicketService;
 use futures::join;
 
 use crate::{SearchRequest, SearchResponse};
 use common::{db::Db, errors::use_case_errors::UseCaseError};
-use db_adapters::{ticket_service::TicketService, user_relation::UserRelationQuery};
+use db_adapters::user_relation::UserRelationQuery;
 use diary::list::{list_diary, DiaryListError, ListDiaryQueryParam};
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use ticket::list::{list_tickets, ListTicketsParams};

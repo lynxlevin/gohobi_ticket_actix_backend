@@ -1,8 +1,7 @@
 use actix_web::{http, test, HttpMessage};
-use db_adapters::ticket_service::UpdateTicketParams;
 use entities::tickets_ticket::{self, TicketId, TicketStatus};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
-use ticket::{TicketVisible, UpdateTicketRequest, UpsertTicketResponse};
+use ticket::{TicketVisible, UpdateTicketParams, UpdateTicketRequest, UpsertTicketResponse};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};

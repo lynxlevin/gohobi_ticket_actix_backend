@@ -10,13 +10,13 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use uuid::Uuid;
 
 mod diary_tag_mutation;
 mod diary_tag_query;
 
 pub use diary_tag_mutation::*;
 pub use diary_tag_query::*;
-use uuid::Uuid;
 
 #[derive(Debug, Error)]
 pub enum DiaryTagServiceError {
@@ -36,7 +36,6 @@ impl From<TransactionError<DiaryTagServiceError>> for DiaryTagServiceError {
     }
 }
 
-#[derive(Clone)]
 pub struct DiaryTagService<'a> {
     pub db: &'a DbConn,
 }

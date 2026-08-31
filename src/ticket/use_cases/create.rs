@@ -1,4 +1,4 @@
-use db_adapters::ticket_service::{
+use domain_services::ticket::{
     CreateTicketParams, TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery,
 };
 use entities::users_user;
@@ -16,7 +16,7 @@ pub enum CreateTicketError {
 impl From<TicketServiceError> for CreateTicketError {
     fn from(e: TicketServiceError) -> Self {
         match e {
-            TicketServiceError::UserRelationNotFound(_) => CreateTicketError::NotFound(e.to_string()),
+            TicketServiceError::UserRelationNotFound() => CreateTicketError::NotFound(e.to_string()),
             _ => CreateTicketError::InternalServerError(e.to_string()),
         }
     }
