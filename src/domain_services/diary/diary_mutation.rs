@@ -77,7 +77,7 @@ impl DiaryServiceMutation for DiaryService<'_> {
             .await?;
         let res = self
             .db
-            .transaction::<_, DiaryWithTags, DiaryServiceError>(|txn| {
+            .transaction(|txn| {
                 Box::pin(async move {
                     let diary = diary.insert(txn).await?;
 
@@ -127,7 +127,7 @@ impl DiaryServiceMutation for DiaryService<'_> {
         let updater_is_user_1 = params.updater_id == user_relation.user_1_id;
         let res = self
             .db
-            .transaction::<_, DiaryWithTags, DiaryServiceError>(|txn| {
+            .transaction(|txn| {
                 Box::pin(async move {
                     match user_relation.first_diary_date {
                         None => {

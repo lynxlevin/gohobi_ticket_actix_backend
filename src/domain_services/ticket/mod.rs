@@ -28,6 +28,7 @@ impl From<TransactionError<TicketServiceError>> for TicketServiceError {
     }
 }
 
+// MYMEMO: refactor TicketService and ticket use_cases like diary
 // MYMEMO: remove this later
 #[derive(Clone)]
 pub struct TicketService<'a> {

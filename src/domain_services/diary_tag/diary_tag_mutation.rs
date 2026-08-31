@@ -73,7 +73,7 @@ impl DiaryTagServiceMutation for DiaryTagService<'_> {
             .map(|tag| tag.id)
             .collect::<Vec<_>>();
         self.db
-            .transaction::<_, (), DiaryTagServiceError>(|txn| {
+            .transaction(|txn| {
                 Box::pin(async move {
                     Entity::insert_many(tags_to_create.map(|tag| ActiveModel {
                         text: Set(tag.text.clone()),

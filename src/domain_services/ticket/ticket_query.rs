@@ -146,25 +146,15 @@ impl TicketServiceQuery for TicketService<'_> {
         user_relation_id: UserRelationId,
         date: NaiveDate,
     ) -> Result<bool, TicketServiceError> {
-        let start_of_month = match NaiveDate::from_ymd_opt(date.year(), date.month0() + 1, 1) {
-            Some(date) => date,
-            None => {
-                return Err(TicketServiceError::ValidationError(
-                    "start_of_month calculation failed".to_string(),
-                ))
-            }
-        };
-        let end_of_month = match NaiveDate::from_ymd_opt(date.year(), date.month0() + 2, 1)
+        let start_of_month = NaiveDate::from_ymd_opt(date.year(), date.month0() + 1, 1).ok_or(
+            TicketServiceError::ValidationError("start_of_month calculation failed".to_string()),
+        )?;
+        let end_of_month = NaiveDate::from_ymd_opt(date.year(), date.month0() + 2, 1)
             .unwrap_or(NaiveDate::from_ymd_opt(date.year() + 1, 1, 1).unwrap())
             .pred_opt()
-        {
-            Some(date) => date,
-            None => {
-                return Err(TicketServiceError::ValidationError(
-                    "end_of_month calculation failed".to_string(),
-                ))
-            }
-        };
+            .ok_or(TicketServiceError::ValidationError(
+                "end_of_month calculation failed".to_string(),
+            ))?;
         let count = tickets_ticket::Entity::find()
             .filter(tickets_ticket::Column::GivingUserId.eq(giving_user_id))
             .filter(tickets_ticket::Column::UserRelationId.eq(user_relation_id))
