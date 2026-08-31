@@ -18,7 +18,7 @@ use uuid::Uuid;
 
 use crate::diary_tag::{list_tags_query, DiaryTagService, DiaryTagServiceError};
 
-#[derive(Deserialize, Debug, Serialize, PartialEq)]
+#[derive(Deserialize, Debug, Serialize, PartialEq, Clone)]
 pub struct DiaryTagInput {
     pub id: Option<Uuid>,
     pub text: String,
@@ -46,21 +46,31 @@ impl DiaryTagServiceMutation for DiaryTagService<'_> {
         user_relation_id: UserRelationId,
         tags_input: Vec<DiaryTagInput>,
     ) -> Result<Vec<Model>, DiaryTagServiceError> {
-        let res = self
-            .db
-            .transaction::<_, Vec<Model>, DiaryTagServiceError>(|txn| {
-                Box::pin(async move {
-                    user_relation::Entity::find_by_id(user_relation_id)
-                        .filter(
-                            Condition::any()
-                                .add(user_relation::Column::User1Id.eq(user_id))
-                                .add(user_relation::Column::User2Id.eq(user_id)),
-                        )
-                        .one(txn)
-                        .await?
-                        .ok_or(DiaryTagServiceError::UserRelationNotFound())?;
+        user_relation::Entity::find_by_id(user_relation_id)
+            .filter(
+                Condition::any()
+                    .add(user_relation::Column::User1Id.eq(user_id))
+                    .add(user_relation::Column::User2Id.eq(user_id)),
+            )
+            .one(self.db)
+            .await?
+            .ok_or(DiaryTagServiceError::UserRelationNotFound())?;
 
-                    Entity::insert_many(tags_input.iter().filter(|tag| tag.id.is_none()).map(|tag| ActiveModel {
+        let now = Utc::now().fixed_offset();
+        let tags_to_create = tags_input.clone().into_iter().filter(|tag| tag.id.is_none());
+        let tags_to_update = tags_input.clone().into_iter().filter(|tag| tag.id.is_some());
+        let tag_ids_for_the_relation = Entity::find()
+            .filter(Column::UserRelationId.eq(user_relation_id))
+            .filter(Column::Id.is_in(tags_to_update.clone().map(|tag| tag.id)))
+            .all(self.db)
+            .await?
+            .iter()
+            .map(|tag| tag.id)
+            .collect::<Vec<_>>();
+        self.db
+            .transaction::<_, (), DiaryTagServiceError>(|txn| {
+                Box::pin(async move {
+                    Entity::insert_many(tags_to_create.map(|tag| ActiveModel {
                         text: Set(tag.text.clone()),
                         sort_no: Set(tag.sort_no),
                         user_relation_id: Set(user_relation_id),
@@ -69,16 +79,6 @@ impl DiaryTagServiceMutation for DiaryTagService<'_> {
                     .exec_with_returning(txn)
                     .await?;
 
-                    let now = Utc::now().fixed_offset();
-                    let tags_to_update = tags_input.iter().filter(|tag| tag.id.is_some());
-                    let tag_ids_for_the_relation = Entity::find()
-                        .filter(Column::UserRelationId.eq(user_relation_id))
-                        .filter(Column::Id.is_in(tags_to_update.clone().map(|tag| tag.id)))
-                        .all(txn)
-                        .await?
-                        .iter()
-                        .map(|tag| tag.id)
-                        .collect::<Vec<_>>();
                     for tag in tags_to_update
                         .filter(|tag| tag_ids_for_the_relation.contains(&tag.id.unwrap()))
                         .map(|tag| ActiveModel {
@@ -92,13 +92,15 @@ impl DiaryTagServiceMutation for DiaryTagService<'_> {
                     {
                         tag.update(txn).await?;
                     }
-
-                    list_tags_query(user_relation_id).all(txn).await.map_err(|e| e.into())
+                    Ok(())
                 })
             })
             .await?;
 
-        Ok(res)
+        list_tags_query(user_relation_id)
+            .all(self.db)
+            .await
+            .map_err(|e| e.into())
     }
 
     async fn delete(&self, user_id: UserId, diary_tag_id: Uuid) -> Result<(), DiaryTagServiceError> {

@@ -41,46 +41,45 @@ pub trait DiaryServiceMutation {
 
 impl DiaryServiceMutation for DiaryService<'_> {
     async fn create(&self, params: DiaryCreateParams) -> Result<DiaryWithTags, DiaryServiceError> {
+        let user_relation = user_relation::Entity::find_by_id(params.user_relation_id)
+            .filter(
+                Condition::any()
+                    .add(user_relation::Column::User1Id.eq(params.creator_id))
+                    .add(user_relation::Column::User2Id.eq(params.creator_id)),
+            )
+            .one(self.db)
+            .await?
+            .ok_or(DiaryServiceError::UserRelationNotFound())?;
+        let creator_is_user_1 = user_relation.user_1_id == params.creator_id;
+        let diary = ActiveModel {
+            entry: Set(params.entry),
+            date: Set(params.date.into()),
+            user_relation_id: Set(params.user_relation_id),
+            user_1_status: Set(match creator_is_user_1 {
+                true => DiaryStatus::Read,
+                false => DiaryStatus::Unread,
+            }),
+            user_2_status: Set(match creator_is_user_1 {
+                true => DiaryStatus::Unread,
+                false => DiaryStatus::Read,
+            }),
+            ..Default::default()
+        };
+        let tags = tag::Entity::find()
+            .join(LeftJoin, tag::Relation::UserRelationsUserrelation.def())
+            .filter(
+                Condition::any()
+                    .add(user_relation::Column::User1Id.eq(params.creator_id))
+                    .add(user_relation::Column::User2Id.eq(params.creator_id)),
+            )
+            .filter(tag::Column::Id.is_in(params.tag_ids))
+            .all(self.db)
+            .await?;
         let res = self
             .db
             .transaction::<_, DiaryWithTags, DiaryServiceError>(|txn| {
                 Box::pin(async move {
-                    let user_relation = user_relation::Entity::find_by_id(params.user_relation_id)
-                        .filter(
-                            Condition::any()
-                                .add(user_relation::Column::User1Id.eq(params.creator_id))
-                                .add(user_relation::Column::User2Id.eq(params.creator_id)),
-                        )
-                        .one(txn)
-                        .await?
-                        .ok_or(DiaryServiceError::UserRelationNotFound())?;
-
-                    let (user_1_status, user_2_status) = match user_relation.user_1_id == params.creator_id {
-                        true => (DiaryStatus::Read, DiaryStatus::Unread),
-                        false => (DiaryStatus::Unread, DiaryStatus::Read),
-                    };
-
-                    let diary = ActiveModel {
-                        entry: Set(params.entry),
-                        date: Set(params.date.into()),
-                        user_relation_id: Set(params.user_relation_id),
-                        user_1_status: Set(user_1_status),
-                        user_2_status: Set(user_2_status),
-                        ..Default::default()
-                    }
-                    .insert(txn)
-                    .await?;
-
-                    let tags = tag::Entity::find()
-                        .join(LeftJoin, tag::Relation::UserRelationsUserrelation.def())
-                        .filter(
-                            Condition::any()
-                                .add(user_relation::Column::User1Id.eq(params.creator_id))
-                                .add(user_relation::Column::User2Id.eq(params.creator_id)),
-                        )
-                        .filter(tag::Column::Id.is_in(params.tag_ids))
-                        .all(txn)
-                        .await?;
+                    let diary = diary.insert(txn).await?;
 
                     diaries_diarytagrelation::Entity::insert_many(tags.iter().map(|tag| {
                         diaries_diarytagrelation::ActiveModel {
@@ -111,26 +110,25 @@ impl DiaryServiceMutation for DiaryService<'_> {
     }
 
     async fn update(&self, params: DiaryUpdateParams) -> Result<DiaryWithTags, DiaryServiceError> {
+        let diary = Entity::find_by_id(params.diary_id)
+            .join(LeftJoin, Relation::UserRelationsUserrelation.def())
+            .filter(
+                Condition::any()
+                    .add(user_relation::Column::User1Id.eq(params.updater_id))
+                    .add(user_relation::Column::User2Id.eq(params.updater_id)),
+            )
+            .one(self.db)
+            .await?
+            .ok_or(DiaryServiceError::DiaryNotFound())?;
+        let user_relation = user_relation::Entity::find_by_id(diary.user_relation_id)
+            .one(self.db)
+            .await?
+            .ok_or(DiaryServiceError::UserRelationNotFound())?;
+        let updater_is_user_1 = params.updater_id == user_relation.user_1_id;
         let res = self
             .db
             .transaction::<_, DiaryWithTags, DiaryServiceError>(|txn| {
                 Box::pin(async move {
-                    let diary = Entity::find_by_id(params.diary_id)
-                        .join(LeftJoin, Relation::UserRelationsUserrelation.def())
-                        .filter(
-                            Condition::any()
-                                .add(user_relation::Column::User1Id.eq(params.updater_id))
-                                .add(user_relation::Column::User2Id.eq(params.updater_id)),
-                        )
-                        .one(txn)
-                        .await?
-                        .ok_or(DiaryServiceError::DiaryNotFound())?;
-                    let user_relation = user_relation::Entity::find_by_id(diary.user_relation_id)
-                        .one(txn)
-                        .await?
-                        .ok_or(DiaryServiceError::UserRelationNotFound())?;
-                    let update_is_user_1 = params.updater_id == user_relation.user_1_id;
-
                     match user_relation.first_diary_date {
                         None => {
                             update_first_diary_date(txn, user_relation, params.date).await?;
@@ -157,7 +155,7 @@ impl DiaryServiceMutation for DiaryService<'_> {
                     let mut diary = diary.into_active_model();
                     diary.entry = Set(params.entry);
                     diary.date = Set(params.date);
-                    if update_is_user_1 {
+                    if updater_is_user_1 {
                         if diary.user_2_status.as_ref() == &DiaryStatus::Read {
                             diary.user_2_status = Set(DiaryStatus::Edited);
                         }
@@ -211,7 +209,7 @@ impl DiaryServiceMutation for DiaryService<'_> {
                         id: diary.id,
                         entry: diary.entry,
                         date: diary.date,
-                        status: match update_is_user_1 {
+                        status: match updater_is_user_1 {
                             true => diary.user_1_status,
                             false => diary.user_2_status,
                         },
