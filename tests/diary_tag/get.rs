@@ -1,6 +1,6 @@
 use actix_web::{http, test, HttpMessage};
 use common::factory::{self, *};
-use db_adapters::diary_tag::types::DiaryTagVisible;
+use diary_tag::DiaryTagVisibleWithDiaryCount;
 use sea_orm::{ActiveModelTrait, DbErr};
 use uuid::Uuid;
 
@@ -32,8 +32,13 @@ async fn happy_path() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::OK);
 
-    let res: DiaryTagVisible = test::read_body_json(res).await;
-    let expected = DiaryTagVisible { id: tag.id, text: tag.text, sort_no: tag.sort_no, diary_count: diary_count };
+    let res: DiaryTagVisibleWithDiaryCount = test::read_body_json(res).await;
+    let expected = DiaryTagVisibleWithDiaryCount {
+        id: tag.id,
+        text: tag.text,
+        sort_no: tag.sort_no,
+        diary_count: diary_count,
+    };
     assert_eq!(res, expected);
 
     Ok(())

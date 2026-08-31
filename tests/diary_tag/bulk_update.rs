@@ -1,7 +1,8 @@
 use actix_web::{http, test, HttpMessage};
 use common::factory::{self, *};
-use db_adapters::diary_tag::types::BulkUpdateDiaryTagItem;
-use diary_tag::{BulkUpdateDiaryTagRequest, BulkUpdateDiaryTagResponse};
+use diary_tag::{
+    BulkUpdateDiaryTagInput, BulkUpdateDiaryTagItem, BulkUpdateDiaryTagRequest, BulkUpdateDiaryTagResponse,
+};
 use entities::{diaries_diarytag, user_relations_userrelation::UserRelationId};
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, QueryOrder};
 
@@ -36,10 +37,10 @@ async fn happy_path() -> Result<(), DbErr> {
 
     let req_param = BulkUpdateDiaryTagRequest {
         diary_tags: vec![
-            BulkUpdateDiaryTagItem { id: Some(tag_0.id), text: "tag_0->0".to_string(), sort_no: 0 },
-            BulkUpdateDiaryTagItem { id: Some(tag_1.id), text: "tag_1->3".to_string(), sort_no: 3 },
-            BulkUpdateDiaryTagItem { id: Some(tag_2.id), text: "tag_2->1".to_string(), sort_no: 1 },
-            BulkUpdateDiaryTagItem { id: None, text: "new_tag".to_string(), sort_no: 2 },
+            BulkUpdateDiaryTagInput { id: Some(tag_0.id), text: "tag_0->0".to_string(), sort_no: 0 },
+            BulkUpdateDiaryTagInput { id: Some(tag_1.id), text: "tag_1->3".to_string(), sort_no: 3 },
+            BulkUpdateDiaryTagInput { id: Some(tag_2.id), text: "tag_2->1".to_string(), sort_no: 1 },
+            BulkUpdateDiaryTagInput { id: None, text: "new_tag".to_string(), sort_no: 2 },
         ],
         user_relation_id: user_relation.id,
     };
@@ -55,18 +56,23 @@ async fn happy_path() -> Result<(), DbErr> {
     let BulkUpdateDiaryTagResponse { diary_tags: res } = test::read_body_json(res).await;
     assert_eq!(res.len(), req_param.diary_tags.len() + 1);
 
-    assert_eq!(res[0], req_param.diary_tags[0]);
+    assert_eq!(res[0].id, req_param.diary_tags[0].id.unwrap());
+    assert_eq!(res[0].text, req_param.diary_tags[0].text);
+    assert_eq!(res[0].sort_no, req_param.diary_tags[0].sort_no);
 
-    assert_eq!(res[1], req_param.diary_tags[2]);
+    assert_eq!(res[1].id, req_param.diary_tags[2].id.unwrap());
+    assert_eq!(res[1].text, req_param.diary_tags[2].text);
+    assert_eq!(res[1].sort_no, req_param.diary_tags[2].sort_no);
 
-    assert!(res[2].id.is_some());
     assert_eq!(res[2].text, req_param.diary_tags[3].text);
     assert_eq!(res[2].sort_no, req_param.diary_tags[3].sort_no);
 
-    assert_eq!(res[3], req_param.diary_tags[1]);
+    assert_eq!(res[3].id, req_param.diary_tags[1].id.unwrap());
+    assert_eq!(res[3].text, req_param.diary_tags[1].text);
+    assert_eq!(res[3].sort_no, req_param.diary_tags[1].sort_no);
 
     // allow for duplicate sort_no
-    assert_eq!(res[4], BulkUpdateDiaryTagItem::from(&tag_3));
+    assert_eq!(res[4], BulkUpdateDiaryTagItem::from(tag_3));
 
     let tags_in_db = diaries_diarytag::Entity::find()
         .filter(diaries_diarytag::Column::UserRelationId.eq(user_relation.id))
@@ -75,8 +81,10 @@ async fn happy_path() -> Result<(), DbErr> {
         .all(&db.db)
         .await?;
 
-    let actual: Vec<BulkUpdateDiaryTagItem> =
-        tags_in_db.iter().map(|tag| BulkUpdateDiaryTagItem::from(tag)).collect();
+    let actual: Vec<BulkUpdateDiaryTagItem> = tags_in_db
+        .into_iter()
+        .map(|tag| BulkUpdateDiaryTagItem::from(tag))
+        .collect();
     assert_eq!(actual, res);
 
     Ok(())
@@ -92,7 +100,7 @@ async fn ignore_if_other_relation_tag_id_is_passed() -> Result<(), DbErr> {
     let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db.db).await?;
 
     let req_param = BulkUpdateDiaryTagRequest {
-        diary_tags: vec![BulkUpdateDiaryTagItem {
+        diary_tags: vec![BulkUpdateDiaryTagInput {
             id: Some(other_relation_tag.id),
             text: "originally_other_relation".to_string(),
             sort_no: other_relation_tag.sort_no,
@@ -135,8 +143,8 @@ async fn bad_request_on_duplicate_sort_no() -> Result<(), DbErr> {
 
     let req_param = BulkUpdateDiaryTagRequest {
         diary_tags: vec![
-            BulkUpdateDiaryTagItem { id: None, text: "tag_0".to_string(), sort_no: 1 },
-            BulkUpdateDiaryTagItem { id: None, text: "tag_1".to_string(), sort_no: 1 },
+            BulkUpdateDiaryTagInput { id: None, text: "tag_0".to_string(), sort_no: 1 },
+            BulkUpdateDiaryTagInput { id: None, text: "tag_1".to_string(), sort_no: 1 },
         ],
         user_relation_id: user_relation.id,
     };
@@ -168,7 +176,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
         let req = test::TestRequest::post()
             .uri("/api/diary_tags/bulk_update/")
             .set_json(BulkUpdateDiaryTagRequest {
-                diary_tags: vec![BulkUpdateDiaryTagItem { id: None, text: "tag_0".to_string(), sort_no: 1 }],
+                diary_tags: vec![BulkUpdateDiaryTagInput { id: None, text: "tag_0".to_string(), sort_no: 1 }],
                 user_relation_id,
             })
             .to_request();
@@ -188,7 +196,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let req = test::TestRequest::post()
         .uri("/api/diary_tags/bulk_update/")
         .set_json(BulkUpdateDiaryTagRequest {
-            diary_tags: vec![BulkUpdateDiaryTagItem { id: None, text: "tag_0".to_string(), sort_no: 1 }],
+            diary_tags: vec![BulkUpdateDiaryTagInput { id: None, text: "tag_0".to_string(), sort_no: 1 }],
             user_relation_id: 1.into(),
         })
         .to_request();

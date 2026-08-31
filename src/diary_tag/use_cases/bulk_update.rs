@@ -1,12 +1,11 @@
 use std::collections::HashSet;
 
 use common::db::Db;
-use db_adapters::diary_tag::types::BulkUpdateDiaryTagItem;
 use domain_services::diary_tag::{DiaryTagInput, DiaryTagService, DiaryTagServiceError, DiaryTagServiceMutation};
 use entities::users_user;
 use thiserror::Error;
 
-use crate::{BulkUpdateDiaryTagRequest, BulkUpdateDiaryTagResponse};
+use crate::{BulkUpdateDiaryTagItem, BulkUpdateDiaryTagRequest, BulkUpdateDiaryTagResponse};
 
 #[derive(Debug, Error)]
 pub enum DiaryTagBulkUpdateError {
@@ -45,7 +44,7 @@ pub async fn bulk_update_diary_tags(
         )
         .await?;
     Ok(BulkUpdateDiaryTagResponse {
-        diary_tags: tags.iter().map(|tag| BulkUpdateDiaryTagItem::from(tag)).collect(),
+        diary_tags: tags.into_iter().map(|tag| BulkUpdateDiaryTagItem::from(tag)).collect(),
     })
 }
 

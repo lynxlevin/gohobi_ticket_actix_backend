@@ -2,7 +2,7 @@ use std::future::Future;
 
 use chrono::Utc;
 use entities::{
-    diaries_diarytag::{ActiveModel, Column, Entity, Model, Relation},
+    diaries_diarytag::{self, ActiveModel, Column, Entity, Model, Relation},
     user_relations_userrelation::{self as user_relation, UserRelationId},
     users_user::UserId,
 };
@@ -23,6 +23,11 @@ pub struct DiaryTagInput {
     pub id: Option<Uuid>,
     pub text: String,
     pub sort_no: i32,
+}
+impl From<&diaries_diarytag::Model> for DiaryTagInput {
+    fn from(value: &diaries_diarytag::Model) -> Self {
+        Self { id: Some(value.id), text: value.text.clone(), sort_no: value.sort_no }
+    }
 }
 
 pub trait DiaryTagServiceMutation {
