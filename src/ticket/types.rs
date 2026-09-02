@@ -144,3 +144,13 @@ pub struct MakeWishResponse {
     pub ticket: TicketVisible,
     pub web_push_result: WebPushResult,
 }
+
+#[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct WishReplyRequest {
+    pub description: String,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct WishReplyResponse {
+    pub web_push_result: WebPushResult,
+}

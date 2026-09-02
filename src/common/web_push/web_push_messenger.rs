@@ -9,7 +9,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{db::decode_and_decrypt, settings::types::Settings};
-use entities::{user_relations_userrelation::UserRelationId, web_push_subscription};
+use entities::{tickets_ticket::TicketId, user_relations_userrelation::UserRelationId, web_push_subscription};
 
 use crate::web_push::{
     web_push_message_encryptor::{MessageEncryptor, MessageEncryptorError},
@@ -21,6 +21,7 @@ const TTL_SECONDS: u64 = 60 * 60 * 23;
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum MessageType {
     MakeWish,
+    WishReply,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -29,7 +30,7 @@ pub struct Message {
     pub body: String,
     pub message_type: MessageType,
     pub user_relation_id: Option<UserRelationId>,
-    pub ticket_id: Option<i64>,
+    pub ticket_id: Option<TicketId>,
     pub wish_id: Option<Uuid>,
 }
 
