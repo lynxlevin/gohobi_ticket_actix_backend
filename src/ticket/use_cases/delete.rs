@@ -1,4 +1,4 @@
-use db_adapters::ticket_service::{TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery};
+use domain_services::ticket::{TicketService, TicketServiceError, TicketServiceMutation};
 use entities::{tickets_ticket::TicketId, users_user};
 use thiserror::Error;
 
@@ -14,7 +14,12 @@ pub enum DeleteTicketError {
 impl From<TicketServiceError> for DeleteTicketError {
     fn from(e: TicketServiceError) -> Self {
         match e {
-            TicketServiceError::TicketNotFound(_) => DeleteTicketError::NotFound(e.to_string()),
+            TicketServiceError::NotGivingTicket(_) | TicketServiceError::NotUnusedTicket() => {
+                DeleteTicketError::Forbidden(e.to_string())
+            }
+            TicketServiceError::TicketNotFound() | TicketServiceError::UserRelationNotFound() => {
+                DeleteTicketError::NotFound(e.to_string())
+            }
             _ => DeleteTicketError::InternalServerError(e.to_string()),
         }
     }
@@ -25,20 +30,7 @@ pub async fn delete_ticket(
     ticket_id: TicketId,
     ticket_service: TicketService<'_>,
 ) -> Result<(), DeleteTicketError> {
-    let (ticket, wish) = ticket_service.get_ticket_with_wish_by_id(user.id, ticket_id).await?;
-
-    if ticket.giving_user_id != user.id {
-        return Err(DeleteTicketError::Forbidden(
-            "You cannot delete a ticket you received.".to_string(),
-        ));
-    };
-    if wish.is_some() {
-        return Err(DeleteTicketError::Forbidden(
-            "You cannot delete a used ticket.".to_string(),
-        ));
-    };
-
-    ticket_service.delete_ticket(user.id, ticket).await?;
+    ticket_service.delete_ticket(user.id, ticket_id).await?;
 
     Ok(())
 }

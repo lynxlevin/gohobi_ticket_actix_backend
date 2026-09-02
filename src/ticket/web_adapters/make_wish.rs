@@ -10,10 +10,10 @@ use common::{
 };
 use db_adapters::{
     ticket::WishMutation,
-    ticket_service::TicketService,
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
+use domain_services::ticket::TicketService;
 use entities::{tickets_ticket::TicketId, users_user};
 use serde::{Deserialize, Serialize};
 
@@ -55,10 +55,7 @@ async fn make_wish_endpoint(
                 Err(e) => match e {
                     MakeWishError::Forbidden(message) => response_403(&message),
                     MakeWishError::NotFound(message) => response_404(&message),
-                    MakeWishError::InternalServerError(message) => {
-                        dbg!(message);
-                        response_500()
-                    }
+                    MakeWishError::InternalServerError(_) => response_500(e),
                 },
             }
         }

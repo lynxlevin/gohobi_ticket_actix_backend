@@ -5,7 +5,7 @@ use actix_web::{
 };
 use common::db::Db;
 use common::errors::error_responses::{response_401, response_403, response_404, response_500};
-use db_adapters::ticket_service::TicketService;
+use domain_services::ticket::TicketService;
 use entities::{tickets_ticket::TicketId, users_user};
 use serde::{Deserialize, Serialize};
 
@@ -39,10 +39,7 @@ async fn read_ticket_endpoint(
                 Err(e) => match e {
                     ReadTicketError::Forbidden(message) => response_403(&message),
                     ReadTicketError::NotFound(message) => response_404(&message),
-                    ReadTicketError::InternalServerError(message) => {
-                        dbg!(message);
-                        response_500()
-                    }
+                    ReadTicketError::InternalServerError(_) => response_500(e),
                 },
             }
         }

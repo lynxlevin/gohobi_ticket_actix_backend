@@ -21,8 +21,8 @@ pub struct Model {
     pub user_relation_id: UserRelationId,
     pub user_1_status: DiaryStatus,
     pub user_2_status: DiaryStatus,
-    #[sea_orm(has_many)]
-    pub diaries_diarytagrelations: HasMany<super::diaries_diarytagrelation::Entity>,
+    #[sea_orm(has_many, via = "diaries_diarytagrelation")]
+    pub tags: HasMany<super::diaries_diarytag::Entity>,
     #[sea_orm(belongs_to, from = "user_relation_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
     pub user_relations_userrelation: HasOne<super::user_relations_userrelation::Entity>,
 }

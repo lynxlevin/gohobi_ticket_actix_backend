@@ -1,7 +1,6 @@
 use actix_web::{http, test, HttpMessage};
 use common::factory::{self, *};
-use db_adapters::diary_tag::types::DiaryTagVisible;
-use diary_tag::ListDiaryTagsResponse;
+use diary_tag::{DiaryTagVisible, ListDiaryTagsResponse};
 use entities::user_relations_userrelation::UserRelationId;
 use sea_orm::{ActiveModelTrait, DbErr};
 
@@ -37,40 +36,9 @@ async fn happy_path() -> Result<(), DbErr> {
     let res: ListDiaryTagsResponse = test::read_body_json(res).await;
     let expected = ListDiaryTagsResponse {
         diary_tags: vec![
-            DiaryTagVisible { id: tag_0.id, text: tag_0.text, sort_no: tag_0.sort_no, diary_count: 0 },
-            DiaryTagVisible { id: tag_1.id, text: tag_1.text, sort_no: tag_1.sort_no, diary_count: 0 },
+            DiaryTagVisible { id: tag_0.id, text: tag_0.text, sort_no: tag_0.sort_no },
+            DiaryTagVisible { id: tag_1.id, text: tag_1.text, sort_no: tag_1.sort_no },
         ],
-    };
-    assert_eq!(res, expected);
-
-    Ok(())
-}
-
-#[actix_web::test]
-async fn happy_path_with_tag_counts() -> Result<(), DbErr> {
-    let Connections { app, db, .. } = init_app().await?;
-    let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
-
-    let tag = factory::diary_tag(user_relation.id).insert(&db.db).await?;
-    let diary_count = 5;
-
-    for _ in 0..diary_count {
-        let diary = factory::diary(user_relation.id).insert(&db.db).await?;
-        factory::link_diary_tag(&db, diary.id, tag.id).await?;
-    }
-
-    let req = test::TestRequest::get()
-        .uri(&format!("/api/diary_tags/?user_relation_id={}", user_relation.id))
-        .to_request();
-    req.extensions_mut().insert(user_0.clone());
-    let res = test::call_service(&app, req).await;
-
-    assert_eq!(res.status(), http::StatusCode::OK);
-
-    let res: ListDiaryTagsResponse = test::read_body_json(res).await;
-    let expected = ListDiaryTagsResponse {
-        diary_tags: vec![DiaryTagVisible { id: tag.id, text: tag.text, sort_no: tag.sort_no, diary_count }],
     };
     assert_eq!(res, expected);
 

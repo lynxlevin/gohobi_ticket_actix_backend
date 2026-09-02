@@ -42,7 +42,7 @@ async fn send_web_push_endpoint(
                 Ok(res) => HttpResponse::Ok().json(res),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("Web push subscription not found."),
-                    _ => response_500(),
+                    _ => response_500(e),
                 },
             }
         }

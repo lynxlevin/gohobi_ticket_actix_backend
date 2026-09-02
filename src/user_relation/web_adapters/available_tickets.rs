@@ -8,7 +8,8 @@ use common::errors::{
     error_responses::{response_401, response_404, response_500},
     use_case_errors::UseCaseError,
 };
-use db_adapters::{ticket_service::TicketService, user_relation::UserRelationQuery};
+use db_adapters::user_relation::UserRelationQuery;
+use domain_services::ticket::TicketService;
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::{Deserialize, Serialize};
 
@@ -39,7 +40,7 @@ async fn available_tickets_endpoint(
                 Ok(res) => HttpResponse::Ok().json(res),
                 Err(e) => match e {
                     UseCaseError::NotFound => response_404("NotFound"),
-                    _ => response_500(),
+                    _ => response_500(e),
                 },
             }
         }

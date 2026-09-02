@@ -3,9 +3,8 @@ use actix_web::{
     web::{Data, Json, ReqData},
     HttpResponse,
 };
-use common::db::Db;
 use common::errors::error_responses::{response_401, response_404, response_500};
-use db_adapters::ticket_service::TicketService;
+use common::{db::Db, errors::error_responses::response_400};
 use entities::users_user;
 
 use crate::{
@@ -21,24 +20,14 @@ async fn create_ticket_endpoint(
     params: Json<CreateTicketRequest>,
 ) -> HttpResponse {
     match user {
-        Some(user) => {
-            match create_ticket(
-                user.into_inner(),
-                &mut params.into_inner().ticket,
-                TicketService::init(&db),
-            )
-            .await
-            {
-                Ok(ticket) => HttpResponse::Created().json(UpsertTicketResponse { ticket }),
-                Err(e) => match e {
-                    CreateTicketError::NotFound(message) => response_404(&message),
-                    CreateTicketError::InternalServerError(message) => {
-                        dbg!(message);
-                        response_500()
-                    }
-                },
-            }
-        }
+        Some(user) => match create_ticket(user.into_inner(), params.into_inner().ticket, &db).await {
+            Ok(ticket) => HttpResponse::Created().json(UpsertTicketResponse { ticket }),
+            Err(e) => match e {
+                CreateTicketError::ValidationError(e) => response_400(&e.to_string()),
+                CreateTicketError::UserRelationNotFound() => response_404(e),
+                CreateTicketError::InternalServerError(_) => response_500(e),
+            },
+        },
         None => response_401(),
     }
 }

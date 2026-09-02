@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum UseCaseError {
     BadRequest,          // 400
     Unauthorized,        // 401

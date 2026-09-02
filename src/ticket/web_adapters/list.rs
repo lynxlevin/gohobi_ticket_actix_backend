@@ -6,7 +6,7 @@ use actix_web::{
 use chrono::NaiveDate;
 use common::db::Db;
 use common::errors::error_responses::{response_401, response_500};
-use db_adapters::ticket_service::TicketService;
+use domain_services::ticket::TicketService;
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
 
@@ -43,7 +43,7 @@ async fn list_tickets_endpoint(
             .await
             {
                 Ok(tickets) => HttpResponse::Ok().json(tickets),
-                Err(_) => response_500(),
+                Err(e) => response_500(e),
             }
         }
         None => response_401(),

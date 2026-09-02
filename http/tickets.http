@@ -35,6 +35,7 @@ Content-Type: application/json
     "description": "test ticket",
     "user_relation_id": {{user_relation_id}},
     "is_special": true,
+    "is_draft": false,
     "status": "draft"
   }
 }

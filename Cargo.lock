@@ -1067,6 +1067,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "thiserror 2.0.20",
+ "tracing",
  "uuid",
 ]
 
@@ -1488,9 +1489,10 @@ dependencies = [
  "actix-web",
  "chrono",
  "common",
- "db_adapters",
+ "domain_services",
  "entities",
  "serde",
+ "thiserror 2.0.20",
  "tracing",
  "uuid",
 ]
@@ -1502,8 +1504,10 @@ dependencies = [
  "actix-web",
  "common",
  "db_adapters",
+ "domain_services",
  "entities",
  "serde",
+ "thiserror 2.0.20",
  "tracing",
  "uuid",
 ]
@@ -1541,6 +1545,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.3",
+]
+
+[[package]]
+name = "domain_services"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "common",
+ "entities",
+ "sea-orm",
+ "serde",
+ "thiserror 2.0.20",
+ "uuid",
 ]
 
 [[package]]
@@ -4524,6 +4541,7 @@ dependencies = [
  "chrono",
  "common",
  "db_adapters",
+ "domain_services",
  "entities",
  "mockito",
  "serde",
@@ -4946,6 +4964,7 @@ dependencies = [
  "common",
  "db_adapters",
  "diary",
+ "domain_services",
  "entities",
  "futures",
  "serde",

@@ -1,8 +1,7 @@
 use actix_web::{http, test, HttpMessage};
-use db_adapters::ticket_service::UpdateTicketParams;
 use entities::tickets_ticket::{self, TicketId, TicketStatus};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
-use ticket::{TicketVisible, UpdateTicketRequest, UpsertTicketResponse};
+use ticket::{TicketVisible, UpdateTicketParams, UpdateTicketRequest, UpsertTicketResponse};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
@@ -19,7 +18,11 @@ async fn update_description_of_unread_ticket() -> Result<(), DbErr> {
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams { description: Some(description.clone()), ..Default::default() },
+            ticket: UpdateTicketParams {
+                description: description.clone(),
+                status: ticket.status,
+                is_special: ticket.is_special,
+            },
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -55,7 +58,11 @@ async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbE
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams { description: Some(description.clone()), ..Default::default() },
+            ticket: UpdateTicketParams {
+                description: description.clone(),
+                status: ticket.status,
+                is_special: ticket.is_special,
+            },
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -88,7 +95,11 @@ async fn update_only_status() -> Result<(), DbErr> {
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams { status: Some(status.clone()), ..Default::default() },
+            ticket: UpdateTicketParams {
+                description: ticket.description.clone(),
+                status,
+                is_special: ticket.is_special,
+            },
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -119,7 +130,11 @@ async fn update_only_is_special() -> Result<(), DbErr> {
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams { is_special: Some(true), ..Default::default() },
+            ticket: UpdateTicketParams {
+                description: ticket.description.clone(),
+                status: ticket.status,
+                is_special: true,
+            },
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
@@ -141,7 +156,63 @@ async fn update_only_is_special() -> Result<(), DbErr> {
 }
 
 #[actix_web::test]
-async fn forbidden_on_changing_published_tickets_to_draft() -> Result<(), DbErr> {
+async fn not_found_cases() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let [user_0, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
+    let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
+        .insert(&db.db)
+        .await?;
+    let unrelated_ticket = factory::ticket(other_user_0.id, other_relation.id)
+        .insert(&db.db)
+        .await?;
+
+    for (ticket_id, case) in vec![
+        (unrelated_ticket.id, "unrelated_ticket.id"),
+        (TicketId::from(-1), "non_existent_id"),
+    ] {
+        dbg!(case);
+        let req = test::TestRequest::put()
+            .uri(&format!("/api/tickets/{}/", ticket_id))
+            .set_json(UpdateTicketRequest {
+                ticket: UpdateTicketParams {
+                    description: String::default(),
+                    status: TicketStatus::Unread,
+                    is_special: false,
+                },
+            })
+            .to_request();
+        req.extensions_mut().insert(user_0.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::NOT_FOUND);
+    }
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
+    let Connections { app, .. } = init_app().await?;
+
+    let req = test::TestRequest::put()
+        .uri("/api/tickets/1/")
+        .set_json(UpdateTicketRequest {
+            ticket: UpdateTicketParams {
+                description: String::default(),
+                status: TicketStatus::Unread,
+                is_special: false,
+            },
+        })
+        .to_request();
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn bad_request_on_changing_published_tickets_to_draft() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
@@ -182,13 +253,17 @@ async fn forbidden_on_changing_published_tickets_to_draft() -> Result<(), DbErr>
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/", ticket.id))
             .set_json(UpdateTicketRequest {
-                ticket: UpdateTicketParams { status: Some(TicketStatus::Draft), ..Default::default() },
+                ticket: UpdateTicketParams {
+                    description: ticket.description.clone(),
+                    status: TicketStatus::Draft,
+                    is_special: ticket.is_special,
+                },
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
         let res = test::call_service(&app, req).await;
 
-        assert_eq!(res.status(), http::StatusCode::FORBIDDEN);
+        assert_eq!(res.status(), http::StatusCode::BAD_REQUEST);
     }
 
     Ok(())
@@ -204,61 +279,17 @@ async fn forbidden_on_receiving_ticket() -> Result<(), DbErr> {
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", receiving_ticket.id))
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams { description: Some("Some name".to_string()), ..Default::default() },
+            ticket: UpdateTicketParams {
+                description: receiving_ticket.description,
+                status: receiving_ticket.status,
+                is_special: receiving_ticket.is_special,
+            },
         })
         .to_request();
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
 
     assert_eq!(res.status(), http::StatusCode::FORBIDDEN);
-
-    Ok(())
-}
-
-#[actix_web::test]
-async fn not_found_cases() -> Result<(), DbErr> {
-    let Connections { app, db, .. } = init_app().await?;
-    let [user_0, other_user_0, other_user_1, ..] = factory::get_users(&db).await?;
-    let other_relation = factory::user_relation(other_user_0.id, other_user_1.id)
-        .insert(&db.db)
-        .await?;
-    let unrelated_ticket = factory::ticket(other_user_0.id, other_relation.id)
-        .insert(&db.db)
-        .await?;
-
-    for (ticket_id, case) in vec![
-        (unrelated_ticket.id, "unrelated_ticket.id"),
-        (TicketId::from(-1), "non_existent_id"),
-    ] {
-        dbg!(case);
-        let req = test::TestRequest::put()
-            .uri(&format!("/api/tickets/{}/", ticket_id))
-            .set_json(UpdateTicketRequest {
-                ticket: UpdateTicketParams { description: Some("some name".to_string()), ..Default::default() },
-            })
-            .to_request();
-        req.extensions_mut().insert(user_0.clone());
-        let res = test::call_service(&app, req).await;
-
-        assert_eq!(res.status(), http::StatusCode::NOT_FOUND);
-    }
-
-    Ok(())
-}
-
-#[actix_web::test]
-async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
-    let Connections { app, .. } = init_app().await?;
-
-    let req = test::TestRequest::put()
-        .uri("/api/tickets/1/")
-        .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams { description: Some(String::default()), ..Default::default() },
-        })
-        .to_request();
-    let res = test::call_service(&app, req).await;
-
-    assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
 
     Ok(())
 }

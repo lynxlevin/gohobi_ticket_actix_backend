@@ -4,14 +4,13 @@ use actix_web::{
     HttpResponse,
 };
 use common::db::Db;
-use common::errors::{
-    error_responses::{response_401, response_404, response_500},
-    use_case_errors::UseCaseError,
-};
-use db_adapters::{diary::DiaryQuery, user_relation::UserRelationQuery};
+use common::errors::error_responses::{response_401, response_404, response_500};
 use entities::users_user;
 
-use crate::{list::ListDiaryQueryParam, use_cases::list::list_diary};
+use crate::{
+    list::{DiaryListError, ListDiaryQueryParam},
+    use_cases::list::list_diary,
+};
 
 #[tracing::instrument(skip(db, user))]
 #[get("/")]
@@ -21,25 +20,13 @@ async fn list_diary_endpoint(
     query_params: Query<ListDiaryQueryParam>,
 ) -> HttpResponse {
     match user {
-        Some(user) => {
-            let user_relation_query = UserRelationQuery { db: &db.db };
-            let diary_query = DiaryQuery::init(&db);
-            match list_diary(
-                user.into_inner(),
-                query_params.into_inner(),
-                user_relation_query,
-                diary_query,
-                None,
-            )
-            .await
-            {
-                Ok(diaries) => HttpResponse::Ok().json(diaries),
-                Err(e) => match e {
-                    UseCaseError::NotFound => response_404("UserRelation not found."),
-                    _ => response_500(),
-                },
-            }
-        }
+        Some(user) => match list_diary(user.into_inner(), query_params.into_inner(), &db, None).await {
+            Ok(diaries) => HttpResponse::Ok().json(diaries),
+            Err(e) => match e {
+                DiaryListError::UserRelationNotFound() => response_404(e),
+                DiaryListError::InternalServerError(_) => response_500(e),
+            },
+        },
         None => response_401(),
     }
 }

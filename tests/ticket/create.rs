@@ -1,9 +1,8 @@
 use actix_web::{http, test, HttpMessage};
 use chrono::{Days, Utc};
-use db_adapters::ticket_service::CreateTicketParams;
 use entities::tickets_ticket::{self, TicketStatus};
 use sea_orm::{ActiveModelTrait, DbErr, EntityTrait};
-use ticket::{CreateTicketRequest, TicketVisible, UpsertTicketResponse};
+use ticket::{CreateTicketParams, CreateTicketRequest, TicketVisible, UpsertTicketResponse};
 
 use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
@@ -172,20 +171,7 @@ async fn create_special_already_exists() -> Result<(), DbErr> {
     req.extensions_mut().insert(user_0.clone());
     let res = test::call_service(&app, req).await;
 
-    assert_eq!(res.status(), http::StatusCode::CREATED);
-
-    let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
-    assert_eq!(res.gift_date, gift_date);
-    assert_eq!(res.description, description);
-    assert_eq!(res.giving_user_id, user_0.id);
-    assert_eq!(res.is_special, false);
-    assert_eq!(res.status, TicketStatus::Unread);
-    assert_eq!(res.user_relation_id, user_relation.id);
-    assert_eq!(res.wish, None);
-
-    let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db.db).await?;
-    assert!(ticket_in_db.is_some());
-    assert_eq!(TicketVisible::from(ticket_in_db.unwrap()), res);
+    assert_eq!(res.status(), http::StatusCode::BAD_REQUEST);
 
     Ok(())
 }

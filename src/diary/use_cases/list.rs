@@ -1,13 +1,27 @@
 use chrono::NaiveDate;
-use common::errors::use_case_errors::UseCaseError;
-use db_adapters::{
-    diary::{DiaryQuery, Order},
-    user_relation::UserRelationQuery,
-};
+use common::db::Db;
+use domain_services::diary::{DiaryService, DiaryServiceError, DiaryServiceQuery, ListParam};
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
+use thiserror::Error;
 
-use crate::{DiaryTag, DiaryVisible};
+use crate::DiaryVisible;
+
+#[derive(Debug, Error)]
+pub enum DiaryListError {
+    #[error("UserRelation not found.")]
+    UserRelationNotFound(),
+    #[error("{0}")]
+    InternalServerError(String),
+}
+impl From<DiaryServiceError> for DiaryListError {
+    fn from(e: DiaryServiceError) -> Self {
+        match e {
+            DiaryServiceError::UserRelationNotFound() => Self::UserRelationNotFound(),
+            _ => Self::InternalServerError(e.to_string()),
+        }
+    }
+}
 
 #[derive(Deserialize, Default, Debug)]
 pub struct ListDiaryQueryParam {
@@ -19,53 +33,19 @@ pub struct ListDiaryQueryParam {
 pub async fn list_diary<'a>(
     user: users_user::Model,
     params: ListDiaryQueryParam,
-    user_relation_query: UserRelationQuery<'a>,
-    diary_query: DiaryQuery<'a>,
+    db: &Db,
     text_query: Option<Vec<String>>,
-) -> Result<Vec<DiaryVisible>, UseCaseError> {
-    let user_relation = user_relation_query
-        .find_by_id(params.user_relation_id, user.id)
-        .await
-        .map_err(|e| {
-            dbg!(e);
-            UseCaseError::InternalServerError
-        })?
-        .ok_or(UseCaseError::NotFound)?;
+) -> Result<Vec<DiaryVisible>, DiaryListError> {
+    let diary_service = DiaryService::init(db);
+    let diaries = diary_service
+        .list_with_tags(ListParam {
+            user_id: user.id,
+            user_relation_id: params.user_relation_id,
+            text_query: text_query,
+            date_gte: params.date_gte,
+            date_lte: params.date_lte,
+        })
+        .await?;
 
-    let mut diary_query = diary_query
-        .filter_which_user_has_access(user.id)
-        .filter_by_relation(params.user_relation_id);
-
-    if let Some(text_query) = text_query {
-        diary_query = diary_query.filter_contains_texts(text_query);
-    }
-    if let Some(date_gte) = params.date_gte {
-        diary_query = diary_query.filter_date_gte(date_gte);
-    }
-    if let Some(date_lte) = params.date_lte {
-        diary_query = diary_query.filter_date_lte(date_lte);
-    }
-
-    match diary_query.order_by_date(Order::Desc).get_all_with_tags().await {
-        Ok(diaries) => Ok(diaries
-            .iter()
-            .map(|(diary, tags)| DiaryVisible {
-                id: diary.id,
-                entry: diary.entry.clone(),
-                date: diary.date,
-                status: match user_relation.user_1_id == user.id {
-                    true => diary.user_1_status,
-                    false => diary.user_2_status,
-                },
-                tags: tags
-                    .iter()
-                    .map(|tag| DiaryTag { id: tag.id, text: tag.text.clone(), sort_no: tag.sort_no })
-                    .collect(),
-            })
-            .collect()),
-        Err(e) => {
-            dbg!(e);
-            Err(UseCaseError::InternalServerError)
-        }
-    }
+    Ok(diaries.into_iter().map(|diary| diary.into()).collect())
 }

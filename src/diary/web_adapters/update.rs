@@ -4,20 +4,15 @@ use actix_web::{
     HttpResponse,
 };
 use common::db::Db;
-use common::errors::{
-    error_responses::{response_401, response_404, response_500},
-    use_case_errors::UseCaseError,
-};
-use db_adapters::{
-    diary::{DiaryMutation, DiaryQuery},
-    diary_tag::DiaryTagQuery,
-    user_relation::UserRelationMutation,
-};
+use common::errors::error_responses::{response_401, response_404, response_500};
 use entities::users_user;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{use_cases::update::update_diary, UpdateDiaryRequest};
+use crate::{
+    use_cases::update::{update_diary, DiaryUpdateError},
+    UpdateDiaryRequest,
+};
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
@@ -34,25 +29,13 @@ async fn update_diary_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            let diary_query = DiaryQuery::init(&db);
-            let diary_mutation = DiaryMutation::init(&db);
-            let diary_tag_query = DiaryTagQuery::init_query(&db);
-            let user_relation_mutation = UserRelationMutation::init(&db);
-            match update_diary(
-                user.into_inner(),
-                diary_query,
-                diary_mutation,
-                diary_tag_query,
-                user_relation_mutation,
-                path_param.diary_id,
-                req_param.into_inner(),
-            )
-            .await
-            {
+            match update_diary(user.into_inner(), &db, path_param.diary_id, req_param.into_inner()).await {
                 Ok(diary) => HttpResponse::Ok().json(diary),
                 Err(e) => match e {
-                    UseCaseError::NotFound => response_404("Diary not found."),
-                    _ => response_500(),
+                    DiaryUpdateError::DiaryNotFound() | DiaryUpdateError::UserRelationNotFound() => {
+                        response_404(e)
+                    }
+                    DiaryUpdateError::InternalServerError(_) => response_500(e),
                 },
             }
         }

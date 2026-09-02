@@ -16,6 +16,7 @@ common = { path = "../common", features = [
     "web_push",
 ] }
 db_adapters = { path = "../db_adapters" }
+domain_services = { path = "../domain_services" }
 
 actix-tls.workspace = true
 actix-web.workspace = true

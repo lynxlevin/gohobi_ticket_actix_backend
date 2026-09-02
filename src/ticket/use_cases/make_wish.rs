@@ -8,10 +8,10 @@ use common::{
 };
 use db_adapters::{
     ticket::{types::CreateWishParams, WishMutation},
-    ticket_service::{TicketService, TicketServiceError, TicketServiceQuery},
     user_relation::UserRelationQuery,
     web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
 };
+use domain_services::ticket::{TicketService, TicketServiceError, TicketServiceQuery};
 use entities::{
     tickets_ticket::{TicketId, TicketStatus},
     users_user,
@@ -32,7 +32,7 @@ pub enum MakeWishError {
 impl From<TicketServiceError> for MakeWishError {
     fn from(e: TicketServiceError) -> Self {
         match e {
-            TicketServiceError::TicketNotFound(_) => MakeWishError::NotFound(e.to_string()),
+            TicketServiceError::TicketNotFound() => MakeWishError::NotFound(e.to_string()),
             _ => MakeWishError::InternalServerError(e.to_string()),
         }
     }

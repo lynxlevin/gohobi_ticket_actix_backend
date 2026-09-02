@@ -3,14 +3,14 @@ use actix_web::{
     web::{Data, Json, Path, ReqData},
     HttpResponse,
 };
-use common::db::Db;
 use common::errors::error_responses::{response_401, response_403, response_404, response_500};
-use db_adapters::ticket_service::TicketService;
+use common::{db::Db, errors::error_responses::response_400};
+use domain_services::ticket::TicketService;
 use entities::{tickets_ticket::TicketId, users_user};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    use_cases::partial_update::{partial_update_ticket, PartialUpdateTicketError},
+    use_cases::update::{update_ticket, UpdateTicketError},
     UpdateTicketRequest, UpsertTicketResponse,
 };
 
@@ -21,7 +21,7 @@ struct PathParam {
 
 #[tracing::instrument(skip(db, user, params))]
 #[put("/{ticket_id}/")]
-async fn partial_update_ticket_endpoint(
+async fn update_ticket_endpoint(
     db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     params: Json<UpdateTicketRequest>,
@@ -29,22 +29,20 @@ async fn partial_update_ticket_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            match partial_update_ticket(
+            match update_ticket(
                 user.into_inner(),
                 TicketService::init(&db),
-                path_param.into_inner().ticket_id,
-                &mut params.into_inner().ticket,
+                path_param.ticket_id,
+                params.into_inner().ticket,
             )
             .await
             {
                 Ok(ticket) => HttpResponse::Ok().json(UpsertTicketResponse { ticket }),
                 Err(e) => match e {
-                    PartialUpdateTicketError::Forbidden(message) => response_403(&message),
-                    PartialUpdateTicketError::NotFound(message) => response_404(&message),
-                    PartialUpdateTicketError::InternalServerError(message) => {
-                        dbg!(message);
-                        response_500()
-                    }
+                    UpdateTicketError::ValidationError(message) => response_400(&message),
+                    UpdateTicketError::Forbidden(message) => response_403(&message),
+                    UpdateTicketError::NotFound(message) => response_404(&message),
+                    UpdateTicketError::InternalServerError(_) => response_500(e),
                 },
             }
         }
