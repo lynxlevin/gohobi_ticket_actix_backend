@@ -16,6 +16,10 @@ pub enum TicketServiceError {
     UserRelationNotFound(),
     #[error("")]
     TicketNotFound(),
+    #[error("You can only update a ticket you gave.")]
+    NotGivingTicket(),
+    #[error("You can only read a ticket you received.")]
+    NotReceivingTicket(),
     #[error("{0}")]
     ValidationError(String),
 }

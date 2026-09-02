@@ -1,8 +1,5 @@
-use domain_services::ticket::{TicketService, TicketServiceError, TicketServiceMutation, TicketServiceQuery};
-use entities::{
-    tickets_ticket::{TicketId, TicketStatus},
-    users_user,
-};
+use domain_services::ticket::{TicketService, TicketServiceError, TicketServiceMutation};
+use entities::{tickets_ticket::TicketId, users_user};
 use thiserror::Error;
 
 use crate::TicketVisible;
@@ -19,6 +16,7 @@ pub enum ReadTicketError {
 impl From<TicketServiceError> for ReadTicketError {
     fn from(e: TicketServiceError) -> Self {
         match e {
+            TicketServiceError::NotReceivingTicket() => ReadTicketError::Forbidden(e.to_string()),
             TicketServiceError::TicketNotFound() => ReadTicketError::NotFound(e.to_string()),
             _ => ReadTicketError::InternalServerError(e.to_string()),
         }
@@ -30,20 +28,7 @@ pub async fn read_ticket(
     ticket_id: TicketId,
     ticket_service: TicketService<'_>,
 ) -> Result<TicketVisible, ReadTicketError> {
-    let ticket = ticket_service.get_ticket_by_id(user.id, ticket_id).await?;
-
-    if ticket.giving_user_id == user.id {
-        return Err(ReadTicketError::Forbidden(
-            "You cannot read your own giving ticket.".to_string(),
-        ));
-    };
-    if ticket.status == TicketStatus::Draft {
-        return Err(ReadTicketError::NotFound(format!(
-            "Ticket not found for id: {ticket_id}"
-        )));
-    }
-
-    let ticket = ticket_service.mark_ticket_read(ticket).await?;
+    let ticket = ticket_service.mark_ticket_read(user.id, ticket_id).await?;
 
     Ok(TicketVisible::from(ticket))
 }

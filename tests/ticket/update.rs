@@ -211,89 +211,85 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     Ok(())
 }
 
-mod forbidden {
-    use super::*;
+#[actix_web::test]
+async fn bad_request_on_changing_published_tickets_to_draft() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let tickets = create_tickets(
+        vec![
+            TicketParam {
+                name: "unread_ticket".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: user_0.id,
+                status: TicketStatus::default(),
+                ..Default::default()
+            },
+            TicketParam {
+                name: "read_ticket".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: user_0.id,
+                status: TicketStatus::Read,
+                ..Default::default()
+            },
+            TicketParam {
+                name: "edited_ticket".to_string(),
+                user_relation_id: user_relation.id,
+                giving_user_id: user_0.id,
+                status: TicketStatus::Edited,
+                ..Default::default()
+            },
+        ],
+        &db,
+    )
+    .await?;
 
-    #[actix_web::test]
-    async fn changing_published_tickets_to_draft() -> Result<(), DbErr> {
-        let Connections { app, db, .. } = init_app().await?;
-        let [user_0, user_1, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
-        let tickets = create_tickets(
-            vec![
-                TicketParam {
-                    name: "unread_ticket".to_string(),
-                    user_relation_id: user_relation.id,
-                    giving_user_id: user_0.id,
-                    status: TicketStatus::default(),
-                    ..Default::default()
-                },
-                TicketParam {
-                    name: "read_ticket".to_string(),
-                    user_relation_id: user_relation.id,
-                    giving_user_id: user_0.id,
-                    status: TicketStatus::Read,
-                    ..Default::default()
-                },
-                TicketParam {
-                    name: "edited_ticket".to_string(),
-                    user_relation_id: user_relation.id,
-                    giving_user_id: user_0.id,
-                    status: TicketStatus::Edited,
-                    ..Default::default()
-                },
-            ],
-            &db,
-        )
-        .await?;
-
-        for (ticket, case) in vec![
-            (tickets.get("unread_ticket").unwrap(), "unread_ticket"),
-            (tickets.get("read_ticket").unwrap(), "read_ticket"),
-            (tickets.get("edited_ticket").unwrap(), "edited_ticket"),
-        ] {
-            dbg!(case);
-            let req = test::TestRequest::put()
-                .uri(&format!("/api/tickets/{}/", ticket.id))
-                .set_json(UpdateTicketRequest {
-                    ticket: UpdateTicketParams {
-                        description: ticket.description.clone(),
-                        status: TicketStatus::Draft,
-                        is_special: ticket.is_special,
-                    },
-                })
-                .to_request();
-            req.extensions_mut().insert(user_0.clone());
-            let res = test::call_service(&app, req).await;
-
-            assert_eq!(res.status(), http::StatusCode::FORBIDDEN);
-        }
-
-        Ok(())
-    }
-
-    #[actix_web::test]
-    async fn receiving_ticket() -> Result<(), DbErr> {
-        let Connections { app, db, .. } = init_app().await?;
-        let [user_0, user_1, ..] = factory::get_users(&db).await?;
-        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
-        let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db.db).await?;
-
+    for (ticket, case) in vec![
+        (tickets.get("unread_ticket").unwrap(), "unread_ticket"),
+        (tickets.get("read_ticket").unwrap(), "read_ticket"),
+        (tickets.get("edited_ticket").unwrap(), "edited_ticket"),
+    ] {
+        dbg!(case);
         let req = test::TestRequest::put()
-            .uri(&format!("/api/tickets/{}/", receiving_ticket.id))
+            .uri(&format!("/api/tickets/{}/", ticket.id))
             .set_json(UpdateTicketRequest {
                 ticket: UpdateTicketParams {
-                    description: receiving_ticket.description,
-                    status: receiving_ticket.status,
-                    is_special: receiving_ticket.is_special,
+                    description: ticket.description.clone(),
+                    status: TicketStatus::Draft,
+                    is_special: ticket.is_special,
                 },
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
         let res = test::call_service(&app, req).await;
 
-        assert_eq!(res.status(), http::StatusCode::FORBIDDEN);
-
-        Ok(())
+        assert_eq!(res.status(), http::StatusCode::BAD_REQUEST);
     }
+
+    Ok(())
+}
+
+#[actix_web::test]
+async fn forbidden_on_receiving_ticket() -> Result<(), DbErr> {
+    let Connections { app, db, .. } = init_app().await?;
+    let [user_0, user_1, ..] = factory::get_users(&db).await?;
+    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+    let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db.db).await?;
+
+    let req = test::TestRequest::put()
+        .uri(&format!("/api/tickets/{}/", receiving_ticket.id))
+        .set_json(UpdateTicketRequest {
+            ticket: UpdateTicketParams {
+                description: receiving_ticket.description,
+                status: receiving_ticket.status,
+                is_special: receiving_ticket.is_special,
+            },
+        })
+        .to_request();
+    req.extensions_mut().insert(user_0.clone());
+    let res = test::call_service(&app, req).await;
+
+    assert_eq!(res.status(), http::StatusCode::FORBIDDEN);
+
+    Ok(())
 }

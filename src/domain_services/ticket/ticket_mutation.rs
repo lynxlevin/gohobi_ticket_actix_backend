@@ -2,13 +2,14 @@ use std::future::Future;
 
 use chrono::{Datelike, NaiveDate, Utc};
 use entities::{
-    tickets_ticket::{self, TicketStatus},
+    tickets_ticket::{ActiveModel, Column, Entity, Model, Relation, TicketId, TicketStatus},
     user_relations_userrelation::{self as user_relation, UserRelationId},
     users_user::UserId,
 };
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseTransaction, DbErr, EntityTrait,
-    IntoActiveModel, ModelTrait, Order, PaginatorTrait, QueryFilter, QueryOrder, Set, TransactionTrait,
+    IntoActiveModel, JoinType::LeftJoin, ModelTrait, Order, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
+    RelationTrait, Set, TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
 
@@ -35,20 +36,22 @@ pub trait TicketServiceMutation {
         &self,
         user_id: UserId,
         params: CreateTicketParams,
-    ) -> impl Future<Output = Result<tickets_ticket::Model, TicketServiceError>>;
+    ) -> impl Future<Output = Result<Model, TicketServiceError>>;
     fn update_ticket(
         &self,
-        ticket: tickets_ticket::Model,
+        user_id: UserId,
+        ticket_id: TicketId,
         params: UpdateTicketParams,
-    ) -> impl Future<Output = Result<tickets_ticket::Model, TicketServiceError>>;
+    ) -> impl Future<Output = Result<Model, TicketServiceError>>;
     fn mark_ticket_read(
         &self,
-        ticket: tickets_ticket::Model,
-    ) -> impl Future<Output = Result<tickets_ticket::Model, TicketServiceError>>;
+        user_id: UserId,
+        ticket_id: TicketId,
+    ) -> impl Future<Output = Result<Model, TicketServiceError>>;
     fn delete_ticket(
         &self,
         user_id: UserId,
-        ticket: tickets_ticket::Model,
+        ticket: Model,
     ) -> impl Future<Output = Result<(), TicketServiceError>>;
 }
 
@@ -57,7 +60,7 @@ impl TicketServiceMutation for TicketService<'_> {
         &self,
         creator_id: UserId,
         params: CreateTicketParams,
-    ) -> Result<tickets_ticket::Model, TicketServiceError> {
+    ) -> Result<Model, TicketServiceError> {
         if params.is_special {
             // MYMEMO: code is same as check_special_ticket_existence.
             let start_of_month =
@@ -70,11 +73,11 @@ impl TicketServiceMutation for TicketService<'_> {
                 .ok_or(TicketServiceError::ValidationError(
                     "end_of_month calculation failed".to_string(),
                 ))?;
-            let existing_special_ticket_count = tickets_ticket::Entity::find()
-                .filter(tickets_ticket::Column::GivingUserId.eq(creator_id))
-                .filter(tickets_ticket::Column::UserRelationId.eq(params.user_relation_id))
-                .filter(tickets_ticket::Column::IsSpecial.eq(true))
-                .filter(tickets_ticket::Column::GiftDate.between(start_of_month, end_of_month))
+            let existing_special_ticket_count = Entity::find()
+                .filter(Column::GivingUserId.eq(creator_id))
+                .filter(Column::UserRelationId.eq(params.user_relation_id))
+                .filter(Column::IsSpecial.eq(true))
+                .filter(Column::GiftDate.between(start_of_month, end_of_month))
                 .count(self.db)
                 .await?;
             if existing_special_ticket_count > 0 {
@@ -100,7 +103,7 @@ impl TicketServiceMutation for TicketService<'_> {
             .db
             .transaction(|txn| {
                 Box::pin(async move {
-                    let ticket = tickets_ticket::ActiveModel {
+                    let ticket = ActiveModel {
                         giving_user_id: Set(creator_id),
                         description: Set(params.description),
                         user_relation_id: Set(params.user_relation_id),
@@ -142,12 +145,38 @@ impl TicketServiceMutation for TicketService<'_> {
 
     async fn update_ticket(
         &self,
-        ticket: tickets_ticket::Model,
+        user_id: UserId,
+        ticket_id: TicketId,
         params: UpdateTicketParams,
-    ) -> Result<tickets_ticket::Model, TicketServiceError> {
+    ) -> Result<Model, TicketServiceError> {
+        let ticket = Entity::find_by_id(ticket_id)
+            .join(LeftJoin, Relation::UserRelationsUserrelation.def())
+            .filter(
+                Condition::any()
+                    .add(user_relation::Column::User1Id.eq(user_id))
+                    .add(user_relation::Column::User2Id.eq(user_id)),
+            )
+            .one(self.db)
+            .await?
+            .ok_or(TicketServiceError::TicketNotFound())?;
+
+        if ticket.giving_user_id != user_id {
+            return Err(TicketServiceError::NotGivingTicket());
+        }
+        if params.status == TicketStatus::Draft && ticket.status.is_published() {
+            return Err(TicketServiceError::ValidationError(
+                "This ticket cannot be turned back to draft state.".to_string(),
+            ));
+        };
+        let status = if ticket.status == TicketStatus::Read && params.description != ticket.description {
+            TicketStatus::Edited
+        } else {
+            params.status
+        };
+
         let mut ticket = ticket.into_active_model();
         ticket.description = Set(params.description);
-        ticket.status = Set(params.status);
+        ticket.status = Set(status);
         ticket.is_special = Set(params.is_special);
         ticket.updated_at = Set(Utc::now().into());
         let ticket = ticket.update(self.db).await?;
@@ -155,10 +184,23 @@ impl TicketServiceMutation for TicketService<'_> {
         Ok(ticket)
     }
 
-    async fn mark_ticket_read(
-        &self,
-        ticket: tickets_ticket::Model,
-    ) -> Result<tickets_ticket::Model, TicketServiceError> {
+    async fn mark_ticket_read(&self, user_id: UserId, ticket_id: TicketId) -> Result<Model, TicketServiceError> {
+        let ticket = Entity::find_by_id(ticket_id)
+            .join(LeftJoin, Relation::UserRelationsUserrelation.def())
+            .filter(
+                Condition::any()
+                    .add(user_relation::Column::User1Id.eq(user_id))
+                    .add(user_relation::Column::User2Id.eq(user_id)),
+            )
+            .filter(Column::Status.ne(TicketStatus::Draft))
+            .one(self.db)
+            .await?
+            .ok_or(TicketServiceError::TicketNotFound())?;
+
+        if ticket.giving_user_id == user_id {
+            return Err(TicketServiceError::NotReceivingTicket());
+        }
+
         let mut ticket = ticket.into_active_model();
         ticket.status = Set(TicketStatus::Read);
         ticket.updated_at = Set(Utc::now().into());
@@ -167,11 +209,7 @@ impl TicketServiceMutation for TicketService<'_> {
         Ok(ticket)
     }
 
-    async fn delete_ticket(
-        &self,
-        user_id: UserId,
-        ticket: tickets_ticket::Model,
-    ) -> Result<(), TicketServiceError> {
+    async fn delete_ticket(&self, user_id: UserId, ticket: Model) -> Result<(), TicketServiceError> {
         self.db
             .transaction(|txn| {
                 Box::pin(async move {
@@ -185,10 +223,10 @@ impl TicketServiceMutation for TicketService<'_> {
                             .first_user_1_giving_ticket_date
                             .is_some_and(|date| date == gift_date)
                         {
-                            let oldest_ticket = tickets_ticket::Entity::find()
-                                .filter(tickets_ticket::Column::UserRelationId.eq(user_relation.id))
-                                .filter(tickets_ticket::Column::GivingUserId.eq(user_id))
-                                .order_by(tickets_ticket::Column::GiftDate, Order::Asc)
+                            let oldest_ticket = Entity::find()
+                                .filter(Column::UserRelationId.eq(user_relation.id))
+                                .filter(Column::GivingUserId.eq(user_id))
+                                .order_by(Column::GiftDate, Order::Asc)
                                 .one(txn)
                                 .await?;
                             let mut user_relation = user_relation.into_active_model();
@@ -202,10 +240,10 @@ impl TicketServiceMutation for TicketService<'_> {
                             .first_user_2_giving_ticket_date
                             .is_some_and(|date| date == gift_date)
                         {
-                            let oldest_ticket = tickets_ticket::Entity::find()
-                                .filter(tickets_ticket::Column::UserRelationId.eq(user_relation.id))
-                                .filter(tickets_ticket::Column::GivingUserId.eq(user_id))
-                                .order_by(tickets_ticket::Column::GiftDate, Order::Asc)
+                            let oldest_ticket = Entity::find()
+                                .filter(Column::UserRelationId.eq(user_relation.id))
+                                .filter(Column::GivingUserId.eq(user_id))
+                                .order_by(Column::GiftDate, Order::Asc)
                                 .one(txn)
                                 .await?;
                             let mut user_relation = user_relation.into_active_model();
