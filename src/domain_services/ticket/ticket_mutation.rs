@@ -5,15 +5,19 @@ use entities::{
     tickets_ticket::{ActiveModel, Column, Entity, Model, Relation, TicketId, TicketStatus},
     user_relations_userrelation::{self as user_relation, UserRelationId},
     users_user::UserId,
+    wish,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseTransaction, DbErr, EntityTrait,
-    IntoActiveModel, JoinType::LeftJoin, ModelTrait, Order, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
+    ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DbErr, EntityLoaderTrait, EntityTrait,
+    IntoActiveModel, JoinType::LeftJoin, Order, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
     RelationTrait, Set, TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::ticket::{TicketService, TicketServiceError};
+use crate::ticket::{
+    TicketService,
+    TicketServiceError::{self},
+};
 
 #[derive(Deserialize, Debug, Serialize, Clone)]
 pub struct CreateTicketParams {
@@ -51,7 +55,7 @@ pub trait TicketServiceMutation {
     fn delete_ticket(
         &self,
         user_id: UserId,
-        ticket: Model,
+        ticket_id: TicketId,
     ) -> impl Future<Output = Result<(), TicketServiceError>>;
 }
 
@@ -125,14 +129,16 @@ impl TicketServiceMutation for TicketService<'_> {
                             .first_user_1_giving_ticket_date
                             .is_none_or(|date| date > ticket.gift_date)
                         {
-                            update_first_user_1_giving_ticket_date(txn, user_relation, ticket.gift_date).await?;
+                            update_first_user_1_giving_ticket_date(txn, user_relation, Some(ticket.gift_date))
+                                .await?;
                         }
                     } else {
                         if user_relation
                             .first_user_2_giving_ticket_date
                             .is_none_or(|date| date > ticket.gift_date)
                         {
-                            update_first_user_2_giving_ticket_date(txn, user_relation, ticket.gift_date).await?;
+                            update_first_user_2_giving_ticket_date(txn, user_relation, Some(ticket.gift_date))
+                                .await?;
                         }
                     }
 
@@ -161,7 +167,9 @@ impl TicketServiceMutation for TicketService<'_> {
             .ok_or(TicketServiceError::TicketNotFound())?;
 
         if ticket.giving_user_id != user_id {
-            return Err(TicketServiceError::NotGivingTicket());
+            return Err(TicketServiceError::NotGivingTicket(
+                "You can only update a ticket you gave.".to_string(),
+            ));
         }
         if params.status == TicketStatus::Draft && ticket.status.is_published() {
             return Err(TicketServiceError::ValidationError(
@@ -209,50 +217,79 @@ impl TicketServiceMutation for TicketService<'_> {
         Ok(ticket)
     }
 
-    async fn delete_ticket(&self, user_id: UserId, ticket: Model) -> Result<(), TicketServiceError> {
+    async fn delete_ticket(&self, user_id: UserId, ticket_id: TicketId) -> Result<(), TicketServiceError> {
+        let mut ticket = Entity::load()
+            .with(user_relation::Entity)
+            .with(wish::Entity)
+            .filter(
+                Condition::any()
+                    .add(user_relation::Column::User1Id.eq(user_id))
+                    .add(user_relation::Column::User2Id.eq(user_id)),
+            )
+            .filter_by_id(ticket_id)
+            .one(self.db)
+            .await?
+            .ok_or(TicketServiceError::TicketNotFound())?;
+
+        if ticket.giving_user_id != user_id {
+            return Err(TicketServiceError::NotGivingTicket(
+                "You can only delete a ticket you gave.".to_string(),
+            ));
+        };
+        if !ticket.wish.is_none() {
+            return Err(TicketServiceError::NotUnusedTicket());
+        };
+
+        let user_relation = ticket
+            .user_relation
+            .take()
+            .ok_or(TicketServiceError::UserRelationNotFound())?;
+        let giving_user_is_user_1 = ticket.giving_user_id == user_relation.user_1_id;
+
         self.db
             .transaction(|txn| {
                 Box::pin(async move {
-                    let user_relation = get_user_relation(txn, user_id, ticket.user_relation_id).await?;
-                    let gift_date = ticket.gift_date;
-                    let giving_user_id = ticket.giving_user_id;
-                    ticket.delete(txn).await?;
-
-                    if giving_user_id == user_relation.user_1_id {
+                    if giving_user_is_user_1 {
                         if user_relation
                             .first_user_1_giving_ticket_date
-                            .is_some_and(|date| date == gift_date)
+                            .is_some_and(|date| date == ticket.gift_date)
                         {
-                            let oldest_ticket = Entity::find()
+                            let first_ticket = Entity::find()
                                 .filter(Column::UserRelationId.eq(user_relation.id))
                                 .filter(Column::GivingUserId.eq(user_id))
+                                .filter(Column::Id.ne(ticket.id))
                                 .order_by(Column::GiftDate, Order::Asc)
                                 .one(txn)
                                 .await?;
-                            let mut user_relation = user_relation.into_active_model();
-                            user_relation.first_user_1_giving_ticket_date =
-                                Set(oldest_ticket.and_then(|t| Some(t.gift_date)));
-                            user_relation.updated_at = Set(Utc::now().into());
-                            user_relation.update(txn).await?;
+                            update_first_user_1_giving_ticket_date(
+                                txn,
+                                user_relation.into(),
+                                first_ticket.and_then(|t| Some(t.gift_date)),
+                            )
+                            .await?;
                         }
                     } else {
                         if user_relation
                             .first_user_2_giving_ticket_date
-                            .is_some_and(|date| date == gift_date)
+                            .is_some_and(|date| date == ticket.gift_date)
                         {
-                            let oldest_ticket = Entity::find()
+                            let first_ticket = Entity::find()
                                 .filter(Column::UserRelationId.eq(user_relation.id))
                                 .filter(Column::GivingUserId.eq(user_id))
+                                .filter(Column::Id.ne(ticket.id))
                                 .order_by(Column::GiftDate, Order::Asc)
                                 .one(txn)
                                 .await?;
-                            let mut user_relation = user_relation.into_active_model();
-                            user_relation.first_user_2_giving_ticket_date =
-                                Set(oldest_ticket.and_then(|t| Some(t.gift_date)));
-                            user_relation.updated_at = Set(Utc::now().into());
-                            user_relation.update(txn).await?;
+                            update_first_user_2_giving_ticket_date(
+                                txn,
+                                user_relation.into(),
+                                first_ticket.and_then(|t| Some(t.gift_date)),
+                            )
+                            .await?;
                         }
                     }
+
+                    ticket.delete(txn).await?;
 
                     Ok(())
                 })
@@ -262,39 +299,23 @@ impl TicketServiceMutation for TicketService<'_> {
     }
 }
 
-async fn get_user_relation(
-    txn: &DatabaseTransaction,
-    user_id: UserId,
-    user_relation_id: UserRelationId,
-) -> Result<user_relation::Model, TicketServiceError> {
-    user_relation::Entity::find_by_id(user_relation_id)
-        .filter(
-            Condition::any()
-                .add(user_relation::Column::User1Id.eq(user_id))
-                .add(user_relation::Column::User2Id.eq(user_id)),
-        )
-        .one(txn)
-        .await?
-        .ok_or(TicketServiceError::UserRelationNotFound())
-}
-
 async fn update_first_user_1_giving_ticket_date<T: ConnectionTrait>(
     db: &T,
     user_relation: user_relation::Model,
-    date: NaiveDate,
+    date: Option<NaiveDate>,
 ) -> Result<user_relation::Model, DbErr> {
     let mut user_relation = user_relation.into_active_model();
-    user_relation.first_user_1_giving_ticket_date = Set(Some(date));
+    user_relation.first_user_1_giving_ticket_date = Set(date);
     user_relation.updated_at = Set(Utc::now().into());
     user_relation.update(db).await
 }
 async fn update_first_user_2_giving_ticket_date<T: ConnectionTrait>(
     db: &T,
     user_relation: user_relation::Model,
-    date: NaiveDate,
+    date: Option<NaiveDate>,
 ) -> Result<user_relation::Model, DbErr> {
     let mut user_relation = user_relation.into_active_model();
-    user_relation.first_user_2_giving_ticket_date = Set(Some(date));
+    user_relation.first_user_2_giving_ticket_date = Set(date);
     user_relation.updated_at = Set(Utc::now().into());
     user_relation.update(db).await
 }

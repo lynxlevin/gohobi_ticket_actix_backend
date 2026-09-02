@@ -19,7 +19,7 @@ impl From<TicketServiceError> for UpdateTicketError {
     fn from(e: TicketServiceError) -> Self {
         match e {
             TicketServiceError::ValidationError(_) => UpdateTicketError::ValidationError(e.to_string()),
-            TicketServiceError::NotGivingTicket() => UpdateTicketError::Forbidden(e.to_string()),
+            TicketServiceError::NotGivingTicket(_) => UpdateTicketError::Forbidden(e.to_string()),
             TicketServiceError::TicketNotFound() => UpdateTicketError::NotFound(e.to_string()),
             _ => UpdateTicketError::InternalServerError(e.to_string()),
         }

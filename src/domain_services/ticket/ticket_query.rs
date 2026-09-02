@@ -2,19 +2,20 @@ use std::future::Future;
 
 use chrono::{Datelike, NaiveDate};
 use entities::{
-    prelude::TicketsTicket,
     tickets_ticket::{self, TicketId, TicketStatus},
-    user_relations_userrelation::{self, UserRelationId},
+    user_relations_userrelation::UserRelationId,
     users_user::UserId,
     wish,
 };
 use sea_orm::{
     ColumnTrait, Condition, EntityTrait, JoinType::LeftJoin, Order, PaginatorTrait, QueryFilter, QueryOrder,
-    QuerySelect, RelationTrait, Select,
+    QuerySelect, RelationTrait,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::ticket::{TicketService, TicketServiceError};
+use crate::ticket::{
+    get_query_ticket_by_id, get_query_tickets_with_access_to_user, TicketService, TicketServiceError,
+};
 
 #[derive(Deserialize, Debug, Serialize, Clone, Default)]
 pub struct ListTicketsWithWishParams {
@@ -30,11 +31,6 @@ pub trait TicketServiceQuery {
         user_id: UserId,
         ticket_id: TicketId,
     ) -> impl Future<Output = Result<tickets_ticket::Model, TicketServiceError>>;
-    fn get_ticket_with_wish_by_id(
-        &self,
-        user_id: UserId,
-        ticket_id: TicketId,
-    ) -> impl Future<Output = Result<(tickets_ticket::Model, Option<wish::Model>), TicketServiceError>>;
     fn get_oldest_available_ticket(
         &self,
         receiving_user_id: UserId,
@@ -56,24 +52,13 @@ pub trait TicketServiceQuery {
 }
 
 impl TicketServiceQuery for TicketService<'_> {
+    // MYMEMO: delete after make_wish is refactored
     async fn get_ticket_by_id(
         &self,
         user_id: UserId,
         ticket_id: TicketId,
     ) -> Result<tickets_ticket::Model, TicketServiceError> {
         get_query_ticket_by_id(user_id, ticket_id)
-            .one(self.db)
-            .await?
-            .ok_or(TicketServiceError::TicketNotFound())
-    }
-    async fn get_ticket_with_wish_by_id(
-        &self,
-        user_id: UserId,
-        ticket_id: TicketId,
-    ) -> Result<(tickets_ticket::Model, Option<wish::Model>), TicketServiceError> {
-        get_query_ticket_by_id(user_id, ticket_id)
-            .join(LeftJoin, tickets_ticket::Relation::Wish.def())
-            .select_also(wish::Entity)
             .one(self.db)
             .await?
             .ok_or(TicketServiceError::TicketNotFound())
@@ -164,17 +149,4 @@ impl TicketServiceQuery for TicketService<'_> {
             .await?;
         Ok(count > 0)
     }
-}
-
-fn get_query_tickets_with_access_to_user(user_id: UserId) -> Select<TicketsTicket> {
-    tickets_ticket::Entity::find()
-        .join(LeftJoin, tickets_ticket::Relation::UserRelationsUserrelation.def())
-        .filter(
-            Condition::any()
-                .add(user_relations_userrelation::Column::User1Id.eq(user_id))
-                .add(user_relations_userrelation::Column::User2Id.eq(user_id)),
-        )
-}
-fn get_query_ticket_by_id(user_id: UserId, ticket_id: TicketId) -> Select<TicketsTicket> {
-    get_query_tickets_with_access_to_user(user_id).filter(tickets_ticket::Column::Id.eq(ticket_id))
 }

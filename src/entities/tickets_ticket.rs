@@ -23,7 +23,7 @@ pub struct Model {
     pub giving_user_id: UserId,
     pub user_relation_id: UserRelationId,
     #[sea_orm(belongs_to, from = "user_relation_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
-    pub user_relations_userrelation: HasOne<super::user_relations_userrelation::Entity>,
+    pub user_relation: HasOne<super::user_relations_userrelation::Entity>,
     #[sea_orm(belongs_to, from = "giving_user_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
     pub users_user: HasOne<super::users_user::Entity>,
     #[sea_orm(has_one)]
