@@ -9,28 +9,21 @@ use db_adapters::{
 };
 use entities::users_user;
 
-use crate::types::SendWebPushRequest;
-
 pub async fn send_web_push_use_case(
     user: users_user::Model,
     wish_query: WishQuery<'_>,
     web_push_subscription_query: WebPushSubscriptionQuery<'_>,
     web_push_subscription_mutation: WebPushSubscriptionMutation<'_>,
     settings: &Settings,
-    params: SendWebPushRequest,
 ) -> Result<(), UseCaseError> {
-    match params.r#type {
-        MessageType::MakeWish => {
-            handle_make_wish_case(
-                user,
-                wish_query,
-                web_push_subscription_query,
-                web_push_subscription_mutation,
-                settings,
-            )
-            .await
-        }
-    }
+    handle_make_wish_case(
+        user,
+        wish_query,
+        web_push_subscription_query,
+        web_push_subscription_mutation,
+        settings,
+    )
+    .await
 }
 
 async fn handle_make_wish_case(

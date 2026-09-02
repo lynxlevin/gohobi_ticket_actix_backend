@@ -1,4 +1,3 @@
-use common::web_push::MessageType;
 use entities::web_push_subscription;
 use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};
@@ -29,9 +28,4 @@ pub struct WebPushSubscriptionCreateRequest {
     pub expiration_epoch_time: Option<i64>,
     pub p256dh_key: String,
     pub auth_key: String,
-}
-
-#[derive(Deserialize, Debug, Serialize)]
-pub struct SendWebPushRequest {
-    pub r#type: MessageType,
 }

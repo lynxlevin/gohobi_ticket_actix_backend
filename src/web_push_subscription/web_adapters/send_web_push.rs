@@ -1,6 +1,6 @@
 use actix_web::{
     post,
-    web::{Data, Json, ReqData},
+    web::{Data, ReqData},
     HttpResponse,
 };
 use common::{
@@ -17,15 +17,14 @@ use db_adapters::{
 };
 use entities::users_user;
 
-use crate::{types::SendWebPushRequest, use_cases::send_web_push::send_web_push_use_case};
+use crate::use_cases::send_web_push::send_web_push_use_case;
 
-#[tracing::instrument(skip(db, user, params))]
+#[tracing::instrument(skip(db, settings, user))]
 #[post("/send/")]
 async fn send_web_push_endpoint(
     db: Data<Db>,
     settings: Data<Settings>,
     user: Option<ReqData<users_user::Model>>,
-    params: Json<SendWebPushRequest>,
 ) -> HttpResponse {
     match user {
         Some(user) => {
@@ -35,7 +34,6 @@ async fn send_web_push_endpoint(
                 WebPushSubscriptionQuery::init_query(&db),
                 WebPushSubscriptionMutation { db: &db.db },
                 &settings,
-                params.into_inner(),
             )
             .await
             {
