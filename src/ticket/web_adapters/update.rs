@@ -10,7 +10,7 @@ use entities::{tickets_ticket::TicketId, users_user};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    use_cases::partial_update::{partial_update_ticket, PartialUpdateTicketError},
+    use_cases::update::{update_ticket, PartialUpdateTicketError},
     UpdateTicketRequest, UpsertTicketResponse,
 };
 
@@ -21,7 +21,7 @@ struct PathParam {
 
 #[tracing::instrument(skip(db, user, params))]
 #[put("/{ticket_id}/")]
-async fn partial_update_ticket_endpoint(
+async fn update_ticket_endpoint(
     db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     params: Json<UpdateTicketRequest>,
@@ -29,7 +29,7 @@ async fn partial_update_ticket_endpoint(
 ) -> HttpResponse {
     match user {
         Some(user) => {
-            match partial_update_ticket(
+            match update_ticket(
                 user.into_inner(),
                 TicketService::init(&db),
                 path_param.into_inner().ticket_id,

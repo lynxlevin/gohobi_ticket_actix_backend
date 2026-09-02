@@ -25,9 +25,9 @@ pub struct CreateTicketParams {
 
 #[derive(Deserialize, Debug, Serialize, Clone, Default)]
 pub struct UpdateTicketParams {
-    pub description: Option<String>,
-    pub status: Option<TicketStatus>,
-    pub is_special: Option<bool>,
+    pub description: String,
+    pub status: TicketStatus,
+    pub is_special: bool,
 }
 
 pub trait TicketServiceMutation {
@@ -146,15 +146,9 @@ impl TicketServiceMutation for TicketService<'_> {
         params: UpdateTicketParams,
     ) -> Result<tickets_ticket::Model, TicketServiceError> {
         let mut ticket = ticket.into_active_model();
-        if let Some(description) = params.description {
-            ticket.description = Set(description);
-        };
-        if let Some(status) = params.status {
-            ticket.status = Set(status);
-        };
-        if let Some(is_special) = params.is_special {
-            ticket.is_special = Set(is_special);
-        }
+        ticket.description = Set(params.description);
+        ticket.status = Set(params.status);
+        ticket.is_special = Set(params.is_special);
         ticket.updated_at = Set(Utc::now().into());
         let ticket = ticket.update(self.db).await?;
 

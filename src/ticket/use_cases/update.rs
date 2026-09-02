@@ -27,7 +27,7 @@ impl From<TicketServiceError> for PartialUpdateTicketError {
     }
 }
 
-pub async fn partial_update_ticket(
+pub async fn update_ticket(
     user: users_user::Model,
     ticket_service: TicketService<'_>,
     ticket_id: TicketId,
@@ -40,18 +40,13 @@ pub async fn partial_update_ticket(
             "You cannot update a ticket you received.".to_string(),
         ));
     }
-    if params
-        .status
-        .clone()
-        .is_some_and(|status| status == TicketStatus::Draft)
-        && ticket.status.is_published()
-    {
+    if params.status == TicketStatus::Draft && ticket.status.is_published() {
         return Err(PartialUpdateTicketError::Forbidden(
             "This ticket cannot be turned back to draft state.".to_string(),
         ));
     };
-    if params.description.is_some() && ticket.status == TicketStatus::Read {
-        params.status = Some(TicketStatus::Edited);
+    if ticket.status == TicketStatus::Read && params.description != ticket.description {
+        params.status = TicketStatus::Edited;
     }
 
     let ticket = ticket_service.update_ticket(ticket, params.clone()).await?;
