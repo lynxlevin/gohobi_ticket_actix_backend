@@ -21,6 +21,8 @@ pub struct Model {
     pub tickets_tickets: HasMany<super::tickets_ticket::Entity>,
     #[sea_orm(has_one)]
     pub web_push_subscription: HasOne<super::web_push_subscription::Entity>,
+    #[sea_orm(has_many)]
+    pub wish_replies: HasMany<super::wish_reply::Entity>,
 }
 
 #[derive(DeriveValueType, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Copy, Default)]

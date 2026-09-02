@@ -40,6 +40,7 @@ pub async fn init_test_db(settings: &Settings) -> () {
             users_user,
             web_push_subscription,
             wish,
+            wish_replies,
             CASCADE;
         ",
         )
