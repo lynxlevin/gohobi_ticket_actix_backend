@@ -24,7 +24,7 @@ pub struct Model {
     #[sea_orm(belongs_to, from = "ticket_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
     pub tickets_ticket: HasOne<super::tickets_ticket::Entity>,
     #[sea_orm(belongs_to, from = "user_relation_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
-    pub user_relations_userrelation: HasOne<super::user_relations_userrelation::Entity>,
+    pub user_relation: HasOne<super::user_relations_userrelation::Entity>,
     #[sea_orm(has_many)]
     pub replies: HasMany<super::wish_reply::Entity>,
 }

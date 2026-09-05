@@ -12,7 +12,7 @@ use crate::utils::{init_app, Connections};
 use common::factory;
 
 fn get_uri(user_relation_id: UserRelationId, wish_id: Uuid) -> String {
-    format!("/api/user_relations/{user_relation_id}/wish/{wish_id}/reply")
+    format!("/api/user_relations/{user_relation_id}/wish/{wish_id}/reply/")
 }
 fn get_client() -> TestRequest {
     test::TestRequest::post()
@@ -50,6 +50,7 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
     let req = get_client()
         .uri(&get_uri(UserRelationId::from(1), Uuid::now_v7()))
+        .set_json(WishReplyRequest { description: String::default() })
         .to_request();
     let res = test::call_service(&app, req).await;
 
