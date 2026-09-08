@@ -20,6 +20,7 @@ async fn happy_path() -> Result<(), DbErr> {
         .created_at(now.checked_sub_days(Days::new(1)).unwrap())
         .insert(&db.db)
         .await?;
+    let _reply_0 = factory::wish_reply(wish_0.id, user_0.id).insert(&db.db).await?;
     let ticket_1 = factory::ticket(user_0.id, user_relation.id).insert(&db.db).await?;
     let wish_1 = factory::wish(&ticket_1).created_at(now).insert(&db.db).await?;
 
@@ -34,7 +35,7 @@ async fn happy_path() -> Result<(), DbErr> {
     let res: Vec<WishVisible> = test::read_body_json(res).await;
     let expected = vec![
         WishVisible::from((&wish_1, &ticket_1)),
-        WishVisible::from((&wish_0, &ticket_0)),
+        WishVisible::from((&wish_0, &ticket_0)).has_replies(true),
     ];
     assert_eq!(res, expected);
 

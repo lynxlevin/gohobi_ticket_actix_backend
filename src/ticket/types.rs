@@ -5,6 +5,7 @@ use entities::{
     user_relations_userrelation::UserRelationId,
     users_user::UserId,
     wish::{self, WishStatus},
+    wish_reply,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -81,6 +82,7 @@ pub struct WishVisible {
     pub status: WishStatus,
     pub created_at: DateTime<FixedOffset>,
     pub ticket: TicketInner,
+    pub has_replies: bool,
 }
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct TicketInner {
@@ -104,7 +106,63 @@ impl From<(&wish::Model, &tickets_ticket::Model)> for WishVisible {
                 gift_date: ticket.gift_date,
                 is_special: ticket.is_special,
             },
+            has_replies: false,
         }
+    }
+}
+impl WishVisible {
+    pub fn has_replies(mut self, has_replies: bool) -> Self {
+        self.has_replies = has_replies;
+        self
+    }
+}
+
+#[derive(Deserialize, Debug, Serialize, PartialEq)]
+pub struct WishVisibleWithReplies {
+    pub id: Uuid,
+    pub description: String,
+    pub status: WishStatus,
+    pub created_at: DateTime<FixedOffset>,
+    pub ticket: TicketInner,
+    pub replies: Vec<WishReply>,
+}
+#[derive(Deserialize, Debug, Serialize, PartialEq)]
+pub struct WishReply {
+    pub id: Uuid,
+    pub description: String,
+    pub posted_by_id: UserId,
+    pub created_at: DateTime<FixedOffset>,
+}
+impl From<(&wish::Model, &tickets_ticket::Model)> for WishVisibleWithReplies {
+    fn from((wish, ticket): (&wish::Model, &tickets_ticket::Model)) -> Self {
+        Self {
+            id: wish.id,
+            description: wish.description.to_owned(),
+            status: wish.status,
+            created_at: wish.created_at,
+            ticket: TicketInner {
+                id: ticket.id,
+                giving_user_id: ticket.giving_user_id,
+                description: ticket.description.to_owned(),
+                gift_date: ticket.gift_date,
+                is_special: ticket.is_special,
+            },
+            replies: vec![],
+        }
+    }
+}
+impl WishVisibleWithReplies {
+    pub fn with_replies(mut self, replies: Vec<wish_reply::Model>) -> Self {
+        self.replies = replies
+            .iter()
+            .map(|reply| WishReply {
+                id: reply.id,
+                description: reply.description.clone(),
+                posted_by_id: reply.posted_by_id,
+                created_at: reply.created_at,
+            })
+            .collect();
+        self
     }
 }
 
@@ -142,5 +200,15 @@ pub struct MakeWishRequest {
 #[derive(Deserialize, Debug, Serialize)]
 pub struct MakeWishResponse {
     pub ticket: TicketVisible,
+    pub web_push_result: WebPushResult,
+}
+
+#[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct WishReplyRequest {
+    pub description: String,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct WishReplyResponse {
     pub web_push_result: WebPushResult,
 }
