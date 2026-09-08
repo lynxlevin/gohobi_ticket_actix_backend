@@ -1,10 +1,27 @@
 use chrono::{DateTime, FixedOffset};
-use common::errors::use_case_errors::UseCaseError;
-use db_adapters::ticket::{Order, WishQuery};
+use common::db::Db;
+use domain_services::wish::{ListWishesParam, WishService, WishServiceError, WishServiceQuery};
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
+use thiserror::Error;
 
 use crate::WishVisible;
+
+#[derive(Debug, Error)]
+pub enum ListWishesError {
+    #[error("UserRelation not found.")]
+    UserRelationNotFound(),
+    #[error("{0}")]
+    InternalServerError(String),
+}
+impl From<WishServiceError> for ListWishesError {
+    fn from(e: WishServiceError) -> Self {
+        match e {
+            WishServiceError::UserRelationNotFound() => Self::UserRelationNotFound(),
+            _ => Self::InternalServerError(e.to_string()),
+        }
+    }
+}
 
 #[derive(Deserialize, Default, Debug)]
 pub struct ListWishesQueryParam {
@@ -15,41 +32,25 @@ pub struct ListWishesQueryParam {
 
 pub async fn list_wishes(
     user: users_user::Model,
-    wish_query: WishQuery<'_>,
     user_relation_id: UserRelationId,
+    db: &Db,
     params: ListWishesQueryParam,
-) -> Result<Vec<WishVisible>, UseCaseError> {
-    let mut query = wish_query
-        .join_ticket()
-        .join_user_relation()
-        .filter_which_user_has_access(user.id)
-        .filter_by_relation(user_relation_id);
+) -> Result<Vec<WishVisible>, ListWishesError> {
+    let wish_service = WishService::init(db);
+    let wishes = wish_service
+        .list_wishes(
+            user.id,
+            user_relation_id,
+            ListWishesParam {
+                created_at_gte: params.created_at_gte,
+                created_at_lte: params.created_at_lte,
+                created_at_lt: params.created_at_lt,
+            },
+        )
+        .await?;
 
-    if let Some(created_at_gte) = params.created_at_gte {
-        query = query.filter_created_at_gte(created_at_gte);
-    }
-    if let Some(created_at_lte) = params.created_at_lte {
-        query = query.filter_created_at_lte(created_at_lte);
-    }
-    if let Some(created_at_lt) = params.created_at_lt {
-        query = query.filter_created_at_lt(created_at_lt);
-    }
-
-    query
-        .order_by_created_at(Order::Desc)
-        .get_all_with_ticket()
-        .await
-        .map(|wishes| {
-            wishes
-                .iter()
-                .map(|(wish, ticket)| match ticket {
-                    Some(ticket) => WishVisible::from((wish, ticket)),
-                    None => unreachable!("Wish.ticket_id is required."),
-                })
-                .collect()
-        })
-        .map_err(|e| {
-            dbg!(e);
-            UseCaseError::InternalServerError
-        })
+    Ok(wishes
+        .iter()
+        .map(|(wish, ticket, has_replies)| WishVisible::from((wish, ticket)).has_replies(*has_replies))
+        .collect())
 }

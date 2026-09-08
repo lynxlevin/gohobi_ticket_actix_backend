@@ -82,6 +82,7 @@ pub struct WishVisible {
     pub status: WishStatus,
     pub created_at: DateTime<FixedOffset>,
     pub ticket: TicketInner,
+    pub has_replies: bool,
 }
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct TicketInner {
@@ -105,7 +106,14 @@ impl From<(&wish::Model, &tickets_ticket::Model)> for WishVisible {
                 gift_date: ticket.gift_date,
                 is_special: ticket.is_special,
             },
+            has_replies: false,
         }
+    }
+}
+impl WishVisible {
+    pub fn has_replies(mut self, has_replies: bool) -> Self {
+        self.has_replies = has_replies;
+        self
     }
 }
 

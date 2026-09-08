@@ -22,7 +22,7 @@ pub struct Model {
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
     #[sea_orm(belongs_to, from = "ticket_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
-    pub tickets_ticket: HasOne<super::tickets_ticket::Entity>,
+    pub ticket: HasOne<super::tickets_ticket::Entity>,
     #[sea_orm(belongs_to, from = "user_relation_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
     pub user_relation: HasOne<super::user_relations_userrelation::Entity>,
     #[sea_orm(has_many)]

@@ -14,6 +14,8 @@ pub enum WishServiceError {
     WishNotFound(),
     #[error("")]
     TicketNotFound(),
+    #[error("")]
+    UserRelationNotFound(),
 }
 impl From<TransactionError<WishServiceError>> for WishServiceError {
     fn from(value: TransactionError<WishServiceError>) -> Self {
