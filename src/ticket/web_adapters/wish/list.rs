@@ -35,7 +35,7 @@ async fn list_wishes_endpoint(
             )
             .await
             {
-                Ok(tickets) => HttpResponse::Ok().json(tickets),
+                Ok(wishes) => HttpResponse::Ok().json(wishes),
                 Err(e) => response_500(e),
             }
         }

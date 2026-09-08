@@ -13,7 +13,6 @@ pub struct Model {
     pub id: Uuid,
     #[sea_orm(column_type = "Text")]
     pub description: String,
-    #[sea_orm(unique)]
     pub wish_id: Uuid,
     pub posted_by_id: UserId,
     pub created_at: DateTimeWithTimeZone,

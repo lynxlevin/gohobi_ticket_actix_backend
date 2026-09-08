@@ -4,7 +4,7 @@ use actix_web::{
     HttpMessage,
 };
 use entities::{user_relations_userrelation::UserRelationId, wish_reply};
-use sea_orm::{ActiveModelTrait, DbErr};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter};
 use ticket::WishReplyRequest;
 use uuid::Uuid;
 
@@ -37,7 +37,11 @@ async fn happy_path() -> Result<(), DbErr> {
 
     assert_eq!(res.status(), http::StatusCode::CREATED);
 
-    let created_wish_reply = wish_reply::Entity::find_by_wish_id(wish.id).one(&db.db).await?.unwrap();
+    let created_wish_reply = wish_reply::Entity::find()
+        .filter(wish_reply::Column::WishId.eq(wish.id))
+        .one(&db.db)
+        .await?
+        .unwrap();
     assert_eq!(params.description, created_wish_reply.description);
     assert_eq!(user_0.id, created_wish_reply.posted_by_id);
 
