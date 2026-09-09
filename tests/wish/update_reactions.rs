@@ -84,3 +84,29 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
     Ok(())
 }
+
+mod validations {
+    use super::*;
+
+    #[actix_web::test]
+    async fn wish_creator_cannot_update_reactions() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_0, user_1, ..] = factory::get_users(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+        let ticket = factory::ticket(user_0.id, user_relation.id).insert(&db.db).await?;
+        let wish = factory::wish(&ticket).insert(&db.db).await?;
+
+        let params = UpdateWishReactionRequest { reactions: "🎉😁".to_string() };
+
+        let req = get_client()
+            .uri(&get_uri(user_relation.id, wish.id))
+            .set_json(params.clone())
+            .to_request();
+        req.extensions_mut().insert(user_1.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::BAD_REQUEST);
+
+        Ok(())
+    }
+}

@@ -17,6 +17,8 @@ pub enum WishServiceError {
     #[error("")]
     TicketNotFound(),
     #[error("")]
+    NotWishReceiver(),
+    #[error("")]
     UserRelationNotFound(),
 }
 impl From<TransactionError<WishServiceError>> for WishServiceError {

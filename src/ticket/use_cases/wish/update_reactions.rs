@@ -7,15 +7,20 @@ use uuid::Uuid;
 
 #[derive(Debug, Error)]
 pub enum WishUpdateReactionsError {
-    #[error("Wish not found")]
+    #[error("Wish not found.")]
     WishNotFound(),
+    #[error("You cannot add reactions to your own wish.")]
+    NotWishReceiver(),
     #[error("{0}")]
     InternalServerError(String),
 }
 impl From<WishServiceError> for WishUpdateReactionsError {
     fn from(e: WishServiceError) -> Self {
         match e {
-            WishServiceError::WishNotFound() => WishUpdateReactionsError::WishNotFound(),
+            WishServiceError::WishNotFound() | WishServiceError::TicketNotFound() => {
+                WishUpdateReactionsError::WishNotFound()
+            }
+            WishServiceError::NotWishReceiver() => WishUpdateReactionsError::NotWishReceiver(),
             _ => WishUpdateReactionsError::InternalServerError(e.to_string()),
         }
     }

@@ -3,7 +3,7 @@ use actix_web::{
     web::{Data, Json, Path, ReqData},
     HttpResponse,
 };
-use common::errors::error_responses::{response_401, response_500};
+use common::errors::error_responses::{response_400, response_401, response_500};
 use common::{db::Db, errors::error_responses::response_404};
 use entities::users_user;
 use serde::{Deserialize, Serialize};
@@ -32,6 +32,7 @@ async fn update_wish_reactions_endpoint(
             match update_wish_reactions(user.into_inner(), path_param.wish_id, params.into_inner(), &db).await {
                 Ok(wish) => HttpResponse::Ok().json(wish),
                 Err(e) => match e {
+                    WishUpdateReactionsError::NotWishReceiver() => response_400(&e.to_string()),
                     WishUpdateReactionsError::WishNotFound() => response_404(e.to_string()),
                     WishUpdateReactionsError::InternalServerError(_) => response_500(e),
                 },

@@ -2,6 +2,7 @@ use std::future::Future;
 
 use chrono::Utc;
 use entities::{
+    tickets_ticket as ticket,
     user_relations_userrelation::{self as user_relation},
     users_user::UserId,
     wish::{Entity, Relation},
@@ -30,16 +31,23 @@ impl WishServiceMutation for WishService<'_> {
         wish_id: Uuid,
         reactions: String,
     ) -> Result<(), WishServiceError> {
-        let wish = Entity::find_by_id(wish_id)
+        let (wish, ticket) = Entity::find_by_id(wish_id)
+            .join(LeftJoin, Relation::TicketsTicket.def())
             .join(LeftJoin, Relation::UserRelationsUserrelation.def())
             .filter(
                 Condition::any()
                     .add(user_relation::Column::User1Id.eq(user_id))
                     .add(user_relation::Column::User2Id.eq(user_id)),
             )
+            .select_also(ticket::Entity)
             .one(self.db)
             .await?
             .ok_or(WishServiceError::WishNotFound())?;
+
+        let ticket = ticket.ok_or(WishServiceError::TicketNotFound())?;
+        if ticket.giving_user_id != user_id {
+            return Err(WishServiceError::NotWishReceiver());
+        }
 
         let mut wish = wish.into_active_model();
         wish.reactions = Set(reactions);
