@@ -2,8 +2,10 @@ use common::db::Db;
 use sea_orm::{DbConn, TransactionError};
 use thiserror::Error;
 
+mod wish_mutation;
 mod wish_query;
 
+pub use wish_mutation::*;
 pub use wish_query::*;
 
 #[derive(Debug, Error)]

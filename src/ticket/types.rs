@@ -204,6 +204,11 @@ pub struct MakeWishResponse {
 }
 
 #[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct UpdateWishReactionRequest {
+    pub reactions: String,
+}
+
+#[derive(Deserialize, Debug, Serialize, Clone)]
 pub struct WishReplyRequest {
     pub description: String,
 }

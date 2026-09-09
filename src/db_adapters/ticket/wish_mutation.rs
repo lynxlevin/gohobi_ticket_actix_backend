@@ -20,6 +20,7 @@ impl<'a> WishMutation<'a> {
             status: Set(WishStatus::Unread),
             created_at: Set(now.into()),
             updated_at: Set(now.into()),
+            ..Default::default()
         };
         wish.insert(self.db).await
     }
