@@ -7,8 +7,10 @@ mod make_wish;
 mod read;
 mod update;
 mod wish;
+mod wish_reply;
 
 pub use wish::wish_routes;
+pub use wish_reply::wish_reply_routes;
 
 pub fn ticket_routes(cfg: &mut ServiceConfig) {
     cfg.service(

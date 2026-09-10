@@ -20,11 +20,16 @@ pub fn wish_reply(wish_id: Uuid, user_id: UserId) -> ActiveModel {
 
 pub trait WishReplyFactory {
     fn description(self, description: String) -> ActiveModel;
+    fn reactions(self, reactions: impl ToString) -> ActiveModel;
 }
 
 impl WishReplyFactory for ActiveModel {
     fn description(mut self, description: String) -> ActiveModel {
         self.description = Set(description);
+        self
+    }
+    fn reactions(mut self, reactions: impl ToString) -> ActiveModel {
+        self.reactions = Set(reactions.to_string());
         self
     }
 }

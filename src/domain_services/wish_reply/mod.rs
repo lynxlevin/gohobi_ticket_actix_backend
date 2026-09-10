@@ -11,6 +11,10 @@ pub enum WishReplyServiceError {
     #[error(transparent)]
     DbErr(#[from] sea_orm::DbErr),
     #[error("")]
+    NotWishReplyReceiver(),
+    #[error("")]
+    WishReplyNotFound(),
+    #[error("")]
     WishNotFound(),
     #[error("")]
     UserRelationNotFound(),

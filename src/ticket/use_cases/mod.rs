@@ -5,3 +5,4 @@ pub mod make_wish;
 pub mod read;
 pub mod update;
 pub mod wish;
+pub mod wish_reply;

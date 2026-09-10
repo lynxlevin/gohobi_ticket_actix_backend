@@ -217,3 +217,8 @@ pub struct WishReplyRequest {
 pub struct WishReplyResponse {
     pub web_push_result: WebPushResult,
 }
+
+#[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct UpdateWishReplyReactionRequest {
+    pub reactions: String,
+}
