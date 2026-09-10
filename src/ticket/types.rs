@@ -80,6 +80,7 @@ pub struct WishVisible {
     pub id: Uuid,
     pub description: String,
     pub status: WishStatus,
+    pub reactions: String,
     pub created_at: DateTime<FixedOffset>,
     pub ticket: TicketInner,
     pub has_replies: bool,
@@ -97,6 +98,7 @@ impl From<(&wish::Model, &tickets_ticket::Model)> for WishVisible {
         Self {
             id: wish.id,
             description: wish.description.to_owned(),
+            reactions: wish.reactions.to_owned(),
             status: wish.status,
             created_at: wish.created_at,
             ticket: TicketInner {
@@ -121,6 +123,7 @@ impl WishVisible {
 pub struct WishVisibleWithReplies {
     pub id: Uuid,
     pub description: String,
+    pub reactions: String,
     pub status: WishStatus,
     pub created_at: DateTime<FixedOffset>,
     pub ticket: TicketInner,
@@ -130,6 +133,7 @@ pub struct WishVisibleWithReplies {
 pub struct WishReply {
     pub id: Uuid,
     pub description: String,
+    pub reactions: String,
     pub posted_by_id: UserId,
     pub created_at: DateTime<FixedOffset>,
 }
@@ -138,6 +142,7 @@ impl From<(&wish::Model, &tickets_ticket::Model)> for WishVisibleWithReplies {
         Self {
             id: wish.id,
             description: wish.description.to_owned(),
+            reactions: wish.reactions.to_owned(),
             status: wish.status,
             created_at: wish.created_at,
             ticket: TicketInner {
@@ -157,7 +162,8 @@ impl WishVisibleWithReplies {
             .iter()
             .map(|reply| WishReply {
                 id: reply.id,
-                description: reply.description.clone(),
+                description: reply.description.to_owned(),
+                reactions: reply.reactions.to_owned(),
                 posted_by_id: reply.posted_by_id,
                 created_at: reply.created_at,
             })
