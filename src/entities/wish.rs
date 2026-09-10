@@ -16,6 +16,7 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub description: String,
     pub status: WishStatus,
+    #[sea_orm(default_value = "")]
     pub reactions: String,
     #[sea_orm(unique)]
     pub ticket_id: TicketId,
