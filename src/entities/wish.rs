@@ -16,6 +16,8 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub description: String,
     pub status: WishStatus,
+    #[sea_orm(default_value = "")]
+    pub reactions: String,
     #[sea_orm(unique)]
     pub ticket_id: TicketId,
     pub user_relation_id: UserRelationId,
@@ -69,6 +71,7 @@ impl ActiveModelBehavior for ActiveModel {
     fn new() -> Self {
         Self {
             id: Set(Uuid::now_v7()),
+            reactions: Set(String::default()),
             created_at: Set(Utc::now().into()),
             updated_at: Set(Utc::now().into()),
             ..ActiveModelTrait::default()

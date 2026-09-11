@@ -4,9 +4,12 @@ use entities::{
     user_relations_userrelation as user_relation,
     users_user::UserId,
     wish,
-    wish_reply::{ActiveModel, Model},
+    wish_reply::{ActiveModel, Entity, Model, Relation},
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, EntityLoaderTrait, QueryFilter, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Condition, EntityLoaderTrait, EntityTrait, IntoActiveModel, JoinType::LeftJoin,
+    QueryFilter, QuerySelect, RelationTrait, Set,
+};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -27,6 +30,12 @@ pub trait WishReplyServiceMutation {
         user_id: UserId,
         params: CreateWishReplyParams,
     ) -> impl Future<Output = Result<(Model, wish::Model, user_relation::Model), WishReplyServiceError>>;
+    fn update_reactions(
+        &self,
+        user_id: UserId,
+        wish_reply_id: Uuid,
+        reactions: String,
+    ) -> impl Future<Output = Result<(), WishReplyServiceError>>;
 }
 
 impl WishReplyServiceMutation for WishReplyService<'_> {
@@ -64,5 +73,33 @@ impl WishReplyServiceMutation for WishReplyService<'_> {
         .await?;
 
         Ok((wish_reply, wish.into(), user_relation.into()))
+    }
+
+    async fn update_reactions(
+        &self,
+        user_id: UserId,
+        wish_reply_id: Uuid,
+        reactions: String,
+    ) -> Result<(), WishReplyServiceError> {
+        let wish_reply = Entity::find_by_id(wish_reply_id)
+            .join(LeftJoin, Relation::Wish.def())
+            .join(LeftJoin, wish::Relation::UserRelationsUserrelation.def())
+            .filter(
+                Condition::any()
+                    .add(user_relation::Column::User1Id.eq(user_id))
+                    .add(user_relation::Column::User2Id.eq(user_id)),
+            )
+            .one(self.db)
+            .await?
+            .ok_or(WishReplyServiceError::WishReplyNotFound())?;
+        if wish_reply.posted_by_id == user_id {
+            return Err(WishReplyServiceError::NotWishReplyReceiver());
+        }
+
+        let mut wish_reply = wish_reply.into_active_model();
+        wish_reply.reactions = Set(reactions);
+        wish_reply.save(self.db).await?;
+
+        Ok(())
     }
 }

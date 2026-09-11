@@ -1,27 +1,23 @@
-use chrono::{DateTime, FixedOffset, Utc};
+use chrono::{DateTime, FixedOffset};
 use entities::{
     tickets_ticket,
     wish::{ActiveModel, WishStatus},
 };
 use sea_orm::Set;
-use uuid::Uuid;
 
 pub fn wish(ticket: &tickets_ticket::Model) -> ActiveModel {
-    let now = Utc::now();
     ActiveModel {
-        id: Set(Uuid::now_v7()),
         description: Set("wish".to_string()),
         status: Set(WishStatus::Unread),
         ticket_id: Set(ticket.id),
         user_relation_id: Set(ticket.user_relation_id),
-        created_at: Set(now.into()),
-        updated_at: Set(now.into()),
         ..Default::default()
     }
 }
 
 pub trait WishFactory {
     fn description(self, description: String) -> ActiveModel;
+    fn reactions(self, reactions: impl ToString) -> ActiveModel;
     fn status(self, status: WishStatus) -> ActiveModel;
     fn created_at(self, created_at: DateTime<FixedOffset>) -> ActiveModel;
 }
@@ -29,6 +25,11 @@ pub trait WishFactory {
 impl WishFactory for ActiveModel {
     fn description(mut self, description: String) -> ActiveModel {
         self.description = Set(description);
+        self
+    }
+
+    fn reactions(mut self, reactions: impl ToString) -> ActiveModel {
+        self.reactions = Set(reactions.to_string());
         self
     }
 

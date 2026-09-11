@@ -13,6 +13,8 @@ pub struct Model {
     pub id: Uuid,
     #[sea_orm(column_type = "Text")]
     pub description: String,
+    #[sea_orm(default_value = "")]
+    pub reactions: String,
     pub wish_id: Uuid,
     pub posted_by_id: UserId,
     pub created_at: DateTimeWithTimeZone,
@@ -25,6 +27,11 @@ pub struct Model {
 impl ActiveModelBehavior for ActiveModel {
     /// Create a new ActiveModel with default values. Also used by `Default::default()`.
     fn new() -> Self {
-        Self { id: Set(Uuid::now_v7()), created_at: Set(Utc::now().into()), ..ActiveModelTrait::default() }
+        Self {
+            id: Set(Uuid::now_v7()),
+            created_at: Set(Utc::now().into()),
+            reactions: Set(String::default()),
+            ..ActiveModelTrait::default()
+        }
     }
 }
