@@ -24,11 +24,7 @@ pub fn get_settings(env_file_name: &str) -> Result<Settings, String> {
 fn get_development_settings() -> Result<Settings, String> {
     let b = Settings::base_settings();
     merge_env(Settings {
-        application: ApplicationSettings {
-            host: "127.0.0.1".to_string(),
-            slack_host: "https://hooks.slack.com".to_string(),
-            ..b.application
-        },
+        application: ApplicationSettings { host: "127.0.0.1".to_string(), ..b.application },
         debug: true,
         ..b
     })
@@ -37,11 +33,7 @@ fn get_development_settings() -> Result<Settings, String> {
 fn get_production_settings() -> Result<Settings, String> {
     let b = Settings::base_settings();
     merge_env(Settings {
-        application: ApplicationSettings {
-            host: "0.0.0.0".to_string(),
-            slack_host: "https://hooks.slack.com".to_string(),
-            ..b.application
-        },
+        application: ApplicationSettings { host: "0.0.0.0".to_string(), ..b.application },
         debug: false,
         ..b
     })
@@ -56,7 +48,6 @@ fn merge_env(s: Settings) -> Result<Settings, String> {
             login_attempts_cool_time_seconds: get_env_var("LOGIN_ATTEMPTS_COOL_TIME_SECONDS")?
                 .parse::<u64>()
                 .map_err(|e| e.to_string())?,
-            slack_incoming_webhook_path: get_env_var("SLACK_INCOMING_WEBHOOK_PATH")?,
             vapid_private_key: get_env_var("VAPID_PRIVATE_KEY")?,
             app_owner_email: get_env_var("APP_OWNER_EMAIL")?,
             ..s.application

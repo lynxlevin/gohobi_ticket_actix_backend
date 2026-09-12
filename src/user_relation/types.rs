@@ -15,7 +15,6 @@ pub struct UserRelationVisible {
     pub related_username: String,
     pub giving_ticket_img: Option<String>,
     pub receiving_ticket_img: Option<String>,
-    pub use_slack: bool,
     pub first_giving_ticket_date: Option<NaiveDate>,
     pub first_receiving_ticket_date: Option<NaiveDate>,
     pub first_diary_date: Option<NaiveDate>,

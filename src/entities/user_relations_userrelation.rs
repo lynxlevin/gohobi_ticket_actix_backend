@@ -21,7 +21,6 @@ pub struct Model {
     pub updated_at: DateTimeWithTimeZone,
     pub user_1_id: UserId,
     pub user_2_id: UserId,
-    pub use_slack: bool,
     pub first_diary_date: Option<Date>,
     pub first_user_1_giving_ticket_date: Option<Date>,
     pub first_user_2_giving_ticket_date: Option<Date>,

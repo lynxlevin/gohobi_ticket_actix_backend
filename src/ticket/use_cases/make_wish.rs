@@ -1,7 +1,4 @@
-use crate::{
-    slack_adapter,
-    types::{MakeWishResponse, WebPushResult},
-};
+use crate::types::{MakeWishResponse, WebPushResult};
 use common::{
     settings::types::Settings,
     web_push::{send_web_push, Message, MessageType, SendWebPushResult},
@@ -71,14 +68,6 @@ pub async fn make_wish(
             "UserRelation for ticket_id: {} not found. This should not happen.",
             ticket_id
         )))?;
-
-    if user_relation.use_slack {
-        // TODO: When dropping Slack feature, user_relation can be retrieved alongside with ticket to reduce query.
-        let message = slack_adapter::get_message(&ticket, &user_relation, &params.use_description);
-        slack_adapter::send_slack_message(&message, &settings)
-            .await
-            .map_err(|e| MakeWishError::InternalServerError(e))?;
-    }
 
     let wish = match wish_mutation
         .create(CreateWishParams {
