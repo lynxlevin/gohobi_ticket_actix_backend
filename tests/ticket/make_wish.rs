@@ -7,7 +7,7 @@ use crate::utils::{init_app, Connections};
 use common::factory::{self, *};
 
 #[actix_web::test]
-async fn happy_path_no_slack_message_no_web_push() -> Result<(), DbErr> {
+async fn happy_path_no_web_push() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;

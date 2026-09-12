@@ -1,4 +1,3 @@
-mod slack_adapter;
 mod types;
 mod use_cases;
 mod web_adapters;
