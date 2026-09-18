@@ -172,19 +172,22 @@ impl DiaryServiceMutation for DiaryService<'_> {
                         .filter(diaries_diarytagrelation::Column::TagMasterId.is_not_in(params.tag_ids.clone()))
                         .exec(txn)
                         .await?;
+                    let already_connected_tag_ids = diaries_diarytagrelation::Entity::find()
+                        .filter(diaries_diarytagrelation::Column::DiaryId.eq(diary.id))
+                        .all(txn)
+                        .await?
+                        .into_iter()
+                        .map(|r| r.tag_master_id);
                     let tags_to_add = tag::Entity::find()
                         .join(LeftJoin, tag::Relation::UserRelationsUserrelation.def())
-                        .join(
-                            LeftJoin,
-                            diaries_diarytagrelation::Relation::DiariesDiarytag.def().rev(),
-                        )
                         .filter(
                             Condition::any()
                                 .add(user_relation::Column::User1Id.eq(params.updater_id))
                                 .add(user_relation::Column::User2Id.eq(params.updater_id)),
                         )
-                        .filter(diaries_diarytagrelation::Column::DiaryId.ne(diary.id)) // Exclude already connected tags
                         .filter(tag::Column::Id.is_in(params.tag_ids))
+                        .filter(tag::Column::Id.is_not_in(already_connected_tag_ids))
+                        .distinct_on([tag::Column::Id])
                         .all(txn)
                         .await?;
                     diaries_diarytagrelation::Entity::insert_many(tags_to_add.into_iter().map(|tag| {
