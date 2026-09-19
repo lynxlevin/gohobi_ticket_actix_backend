@@ -57,56 +57,6 @@ async fn happy_path() -> Result<(), DbErr> {
 }
 
 #[actix_web::test]
-async fn assert_tag_change() -> Result<(), DbErr> {
-    let Connections { app, db, .. } = init_app().await?;
-    let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
-    let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db.db).await?;
-    let diary = factory::diary(user_relation.id).insert(&db.db).await?;
-    let tag_0 = factory::diary_tag(user_relation.id).insert(&db.db).await?;
-    let tag_1 = factory::diary_tag(user_relation.id).insert(&db.db).await?;
-    let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db.db).await?;
-    let _tag_0_link = factory::link_diary_tag(&db, diary.id, tag_0.id).await?;
-    let _tag_1_link = factory::link_diary_tag(&db, diary.id, tag_1.id).await?;
-
-    let tag_ids = vec![tag_1.id, other_relation_tag.id];
-
-    let req = test::TestRequest::put()
-        .uri(&format!("/api/diaries/{}/", diary.id))
-        .set_json(UpdateDiaryRequest {
-            entry: String::default(),
-            date: Utc::now().date_naive(),
-            tag_ids: tag_ids.clone(),
-        })
-        .to_request();
-    req.extensions_mut().insert(user_0.clone());
-    let res = test::call_service(&app, req).await;
-
-    assert_eq!(res.status(), http::StatusCode::OK);
-
-    let res: DiaryVisible = test::read_body_json(res).await;
-    let expected_tags = vec![tag_1];
-    assert_eq!(
-        res.tags,
-        expected_tags.iter().map(|tag| DiaryTag::from(tag)).collect::<Vec<_>>()
-    );
-
-    let linked_tag_ids_in_db: Vec<Uuid> = diaries_diarytagrelation::Entity::find()
-        .filter(diaries_diarytagrelation::Column::DiaryId.eq(diary.id))
-        .select_only()
-        .column_as(diaries_diarytagrelation::Column::TagMasterId, TagLinkTagId::TagId)
-        .into_values::<_, TagLinkTagId>()
-        .all(&db.db)
-        .await?;
-    assert_eq!(
-        linked_tag_ids_in_db,
-        expected_tags.iter().map(|tag| tag.id).collect::<Vec<_>>()
-    );
-
-    Ok(())
-}
-
-#[actix_web::test]
 async fn assert_user_2_status_changes() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
@@ -285,4 +235,136 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
 
     Ok(())
+}
+
+mod tags {
+    use common::db::Db;
+
+    use super::*;
+
+    async fn _get_tag_ids_from_db(diary_id: Uuid, db: &Db) -> Result<Vec<Uuid>, DbErr> {
+        diaries_diarytagrelation::Entity::find()
+            .filter(diaries_diarytagrelation::Column::DiaryId.eq(diary_id))
+            .select_only()
+            .column_as(diaries_diarytagrelation::Column::TagMasterId, TagLinkTagId::TagId)
+            .into_values::<_, TagLinkTagId>()
+            .all(&db.db)
+            .await
+    }
+
+    #[actix_web::test]
+    async fn assert_tag_update() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_0, user_1, ..] = factory::get_users(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+        let diary = factory::diary(user_relation.id).insert(&db.db).await?;
+        let tag_0 = factory::diary_tag(user_relation.id).insert(&db.db).await?;
+        let tag_1 = factory::diary_tag(user_relation.id).insert(&db.db).await?;
+        let _tag_0_link = factory::link_diary_tag(&db, diary.id, tag_0.id).await?;
+
+        let tag_ids = vec![tag_1.id];
+
+        let req = test::TestRequest::put()
+            .uri(&format!("/api/diaries/{}/", diary.id))
+            .set_json(UpdateDiaryRequest {
+                entry: String::default(),
+                date: Utc::now().date_naive(),
+                tag_ids: tag_ids.clone(),
+            })
+            .to_request();
+        req.extensions_mut().insert(user_0.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::OK);
+
+        let res: DiaryVisible = test::read_body_json(res).await;
+        let expected_tags = vec![tag_1];
+        assert_eq!(
+            res.tags,
+            expected_tags.iter().map(|tag| DiaryTag::from(tag)).collect::<Vec<_>>()
+        );
+
+        let linked_tag_ids_in_db: Vec<Uuid> = _get_tag_ids_from_db(diary.id, &db).await?;
+        assert_eq!(
+            linked_tag_ids_in_db,
+            expected_tags.iter().map(|tag| tag.id).collect::<Vec<_>>()
+        );
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn non_related_tag_is_ignored() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_0, user_1, other_user, ..] = factory::get_users(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+        let other_relation = factory::user_relation(user_1.id, other_user.id).insert(&db.db).await?;
+        let diary = factory::diary(user_relation.id).insert(&db.db).await?;
+        let other_relation_tag = factory::diary_tag(other_relation.id).insert(&db.db).await?;
+
+        let tag_ids = vec![other_relation_tag.id];
+
+        let req = test::TestRequest::put()
+            .uri(&format!("/api/diaries/{}/", diary.id))
+            .set_json(UpdateDiaryRequest {
+                entry: String::default(),
+                date: Utc::now().date_naive(),
+                tag_ids: tag_ids.clone(),
+            })
+            .to_request();
+        req.extensions_mut().insert(user_0.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::OK);
+
+        let res: DiaryVisible = test::read_body_json(res).await;
+        assert_eq!(res.tags.len(), 0);
+
+        let linked_tag_ids_in_db: Vec<Uuid> = _get_tag_ids_from_db(diary.id, &db).await?;
+        assert_eq!(linked_tag_ids_in_db.len(), 0);
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn assert_no_duplicate_tag_links() -> Result<(), DbErr> {
+        let Connections { app, db, .. } = init_app().await?;
+        let [user_0, user_1, ..] = factory::get_users(&db).await?;
+        let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
+        let diary = factory::diary(user_relation.id).insert(&db.db).await?;
+        let tag_0 = factory::diary_tag(user_relation.id).insert(&db.db).await?;
+        let _tag_0_link = factory::link_diary_tag(&db, diary.id, tag_0.id).await?;
+        let other_diary = factory::diary(user_relation.id).insert(&db.db).await?;
+        let _other_diary_tag_0 = factory::link_diary_tag(&db, other_diary.id, tag_0.id).await?;
+
+        let tag_ids = vec![tag_0.id];
+
+        let req = test::TestRequest::put()
+            .uri(&format!("/api/diaries/{}/", diary.id))
+            .set_json(UpdateDiaryRequest {
+                entry: String::default(),
+                date: Utc::now().date_naive(),
+                tag_ids: tag_ids.clone(),
+            })
+            .to_request();
+        req.extensions_mut().insert(user_0.clone());
+        let res = test::call_service(&app, req).await;
+
+        assert_eq!(res.status(), http::StatusCode::OK);
+
+        let res: DiaryVisible = test::read_body_json(res).await;
+        let expected_tags = vec![tag_0];
+        assert_eq!(
+            res.tags,
+            expected_tags.iter().map(|tag| DiaryTag::from(tag)).collect::<Vec<_>>()
+        );
+
+        let linked_tag_ids_in_db: Vec<Uuid> = _get_tag_ids_from_db(diary.id, &db).await?;
+        assert_eq!(
+            linked_tag_ids_in_db,
+            expected_tags.iter().map(|tag| tag.id).collect::<Vec<_>>()
+        );
+
+        Ok(())
+    }
 }
