@@ -31,7 +31,7 @@ pub struct CreateTicketParams {
 #[derive(Deserialize, Debug, Serialize, Clone, Default)]
 pub struct UpdateTicketParams {
     pub description: String,
-    pub status: TicketStatus,
+    pub publish: bool,
     pub is_special: bool,
 }
 
@@ -171,15 +171,12 @@ impl TicketServiceMutation for TicketService<'_> {
                 "You can only update a ticket you gave.".to_string(),
             ));
         }
-        if params.status == TicketStatus::Draft && ticket.status.is_published() {
-            return Err(TicketServiceError::ValidationError(
-                "This ticket cannot be turned back to draft state.".to_string(),
-            ));
-        };
-        let status = if ticket.status == TicketStatus::Read && params.description != ticket.description {
+        let status = if ticket.status == TicketStatus::Draft && params.publish {
+            TicketStatus::Unread
+        } else if ticket.status == TicketStatus::Read && params.description != ticket.description {
             TicketStatus::Edited
         } else {
-            params.status
+            ticket.status
         };
 
         let mut ticket = ticket.into_active_model();

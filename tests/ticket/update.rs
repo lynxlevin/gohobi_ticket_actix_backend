@@ -20,7 +20,7 @@ async fn update_description_of_unread_ticket() -> Result<(), DbErr> {
         .set_json(UpdateTicketRequest {
             ticket: UpdateTicketParams {
                 description: description.clone(),
-                status: ticket.status,
+                publish: false,
                 is_special: ticket.is_special,
             },
         })
@@ -60,7 +60,7 @@ async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbE
         .set_json(UpdateTicketRequest {
             ticket: UpdateTicketParams {
                 description: description.clone(),
-                status: ticket.status,
+                publish: false,
                 is_special: ticket.is_special,
             },
         })
@@ -84,20 +84,21 @@ async fn update_description_of_read_ticket_changes_to_edited() -> Result<(), DbE
 }
 
 #[actix_web::test]
-async fn update_only_status() -> Result<(), DbErr> {
+async fn publish_draft_ticket() -> Result<(), DbErr> {
     let Connections { app, db, .. } = init_app().await?;
     let [user_0, user_1, ..] = factory::get_users(&db).await?;
     let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
-    let ticket = factory::ticket(user_0.id, user_relation.id).insert(&db.db).await?;
-
-    let status = TicketStatus::Read;
+    let ticket = factory::ticket(user_0.id, user_relation.id)
+        .status(TicketStatus::Draft)
+        .insert(&db.db)
+        .await?;
 
     let req = test::TestRequest::put()
         .uri(&format!("/api/tickets/{}/", ticket.id))
         .set_json(UpdateTicketRequest {
             ticket: UpdateTicketParams {
                 description: ticket.description.clone(),
-                status,
+                publish: true,
                 is_special: ticket.is_special,
             },
         })
@@ -108,7 +109,7 @@ async fn update_only_status() -> Result<(), DbErr> {
     assert_eq!(res.status(), http::StatusCode::OK);
 
     let UpsertTicketResponse { ticket: res } = test::read_body_json(res).await;
-    let expected = TicketVisible { status, ..TicketVisible::from(&ticket) };
+    let expected = TicketVisible { status: TicketStatus::Unread, ..TicketVisible::from(&ticket) };
     assert_eq!(res, expected);
 
     let ticket_in_db = tickets_ticket::Entity::find_by_id(res.id).one(&db.db).await?;
@@ -132,7 +133,7 @@ async fn update_only_is_special() -> Result<(), DbErr> {
         .set_json(UpdateTicketRequest {
             ticket: UpdateTicketParams {
                 description: ticket.description.clone(),
-                status: ticket.status,
+                publish: false,
                 is_special: true,
             },
         })
@@ -174,11 +175,7 @@ async fn not_found_cases() -> Result<(), DbErr> {
         let req = test::TestRequest::put()
             .uri(&format!("/api/tickets/{}/", ticket_id))
             .set_json(UpdateTicketRequest {
-                ticket: UpdateTicketParams {
-                    description: String::default(),
-                    status: TicketStatus::Unread,
-                    is_special: false,
-                },
+                ticket: UpdateTicketParams { description: String::default(), publish: false, is_special: false },
             })
             .to_request();
         req.extensions_mut().insert(user_0.clone());
@@ -197,74 +194,12 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
     let req = test::TestRequest::put()
         .uri("/api/tickets/1/")
         .set_json(UpdateTicketRequest {
-            ticket: UpdateTicketParams {
-                description: String::default(),
-                status: TicketStatus::Unread,
-                is_special: false,
-            },
+            ticket: UpdateTicketParams { description: String::default(), publish: false, is_special: false },
         })
         .to_request();
     let res = test::call_service(&app, req).await;
 
     assert_eq!(res.status(), http::StatusCode::UNAUTHORIZED);
-
-    Ok(())
-}
-
-#[actix_web::test]
-async fn bad_request_on_changing_published_tickets_to_draft() -> Result<(), DbErr> {
-    let Connections { app, db, .. } = init_app().await?;
-    let [user_0, user_1, ..] = factory::get_users(&db).await?;
-    let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
-    let tickets = create_tickets(
-        vec![
-            TicketParam {
-                name: "unread_ticket".to_string(),
-                user_relation_id: user_relation.id,
-                giving_user_id: user_0.id,
-                status: TicketStatus::default(),
-                ..Default::default()
-            },
-            TicketParam {
-                name: "read_ticket".to_string(),
-                user_relation_id: user_relation.id,
-                giving_user_id: user_0.id,
-                status: TicketStatus::Read,
-                ..Default::default()
-            },
-            TicketParam {
-                name: "edited_ticket".to_string(),
-                user_relation_id: user_relation.id,
-                giving_user_id: user_0.id,
-                status: TicketStatus::Edited,
-                ..Default::default()
-            },
-        ],
-        &db,
-    )
-    .await?;
-
-    for (ticket, case) in vec![
-        (tickets.get("unread_ticket").unwrap(), "unread_ticket"),
-        (tickets.get("read_ticket").unwrap(), "read_ticket"),
-        (tickets.get("edited_ticket").unwrap(), "edited_ticket"),
-    ] {
-        dbg!(case);
-        let req = test::TestRequest::put()
-            .uri(&format!("/api/tickets/{}/", ticket.id))
-            .set_json(UpdateTicketRequest {
-                ticket: UpdateTicketParams {
-                    description: ticket.description.clone(),
-                    status: TicketStatus::Draft,
-                    is_special: ticket.is_special,
-                },
-            })
-            .to_request();
-        req.extensions_mut().insert(user_0.clone());
-        let res = test::call_service(&app, req).await;
-
-        assert_eq!(res.status(), http::StatusCode::BAD_REQUEST);
-    }
 
     Ok(())
 }
@@ -281,7 +216,7 @@ async fn forbidden_on_receiving_ticket() -> Result<(), DbErr> {
         .set_json(UpdateTicketRequest {
             ticket: UpdateTicketParams {
                 description: receiving_ticket.description,
-                status: receiving_ticket.status,
+                publish: false,
                 is_special: receiving_ticket.is_special,
             },
         })
