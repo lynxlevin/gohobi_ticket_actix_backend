@@ -23,11 +23,13 @@
     "hmac",
     "iden",
     "keypair",
+    "referer",
     "reqwest",
     "serde",
     "thiserror",
     "typenum",
     "urlencoding",
+    "useragent",
     "userrelation"
   ]
 }
