@@ -30,6 +30,16 @@ pub struct ListWishesQueryParam {
     created_at_lt: Option<DateTime<FixedOffset>>,
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        user_relation_id = user_relation_id.to_string(),
+        params.created_at_gte.is_some = params.created_at_gte.is_some(),
+        params.created_at_lte.is_some = params.created_at_lte.is_some(),
+        params.created_at_lt.is_some = params.created_at_lt.is_some(),
+    ),
+    skip_all
+)]
 pub async fn list_wishes(
     user: users_user::Model,
     user_relation_id: UserRelationId,

@@ -19,7 +19,6 @@ struct PathParam {
     ticket_id: TicketId,
 }
 
-#[tracing::instrument(skip(db, user, params))]
 #[put("/{ticket_id}/")]
 async fn update_ticket_endpoint(
     db: Data<Db>,

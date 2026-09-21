@@ -16,7 +16,6 @@ struct PathParam {
     wish_id: Uuid,
 }
 
-#[tracing::instrument(skip(db, user))]
 #[get("/{wish_id}/")]
 async fn get_wish_endpoint(
     db: Data<Db>,

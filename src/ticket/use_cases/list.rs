@@ -26,6 +26,16 @@ impl From<TicketServiceError> for ListTicketsError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        params.text_query.is_some = params.text_query.is_some(),
+        params.gift_date_gte.is_some = params.gift_date_gte.is_some(),
+        params.gift_date_lte.is_some = params.gift_date_lte.is_some(),
+        params.is_giving = params.is_giving,
+    ),
+    skip_all
+)]
 pub async fn list_tickets(
     user: users_user::Model,
     ticket_service: TicketService<'_>,

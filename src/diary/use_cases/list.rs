@@ -30,6 +30,15 @@ pub struct ListDiaryQueryParam {
     pub date_lte: Option<NaiveDate>,
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        params.date_gte.is_some = params.date_gte.is_some(),
+        params.date_lte.is_some = params.date_lte.is_some(),
+        text_query.is_some = text_query.is_some(),
+    ),
+    skip_all
+)]
 pub async fn list_diary<'a>(
     user: users_user::Model,
     params: ListDiaryQueryParam,

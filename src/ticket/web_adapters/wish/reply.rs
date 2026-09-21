@@ -22,7 +22,6 @@ struct PathParam {
     wish_id: Uuid,
 }
 
-#[tracing::instrument(skip(db, user, params))]
 #[post("/{wish_id}/reply/")]
 async fn wish_reply_endpoint(
     db: Data<Db>,

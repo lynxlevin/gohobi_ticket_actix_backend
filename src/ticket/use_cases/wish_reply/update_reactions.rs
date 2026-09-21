@@ -24,6 +24,14 @@ impl From<WishReplyServiceError> for WishReplyUpdateReactionsError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        wish_reply_id = wish_reply_id.to_string(),
+        params.reactions.len = params.reactions.len(),
+    ),
+    skip_all
+)]
 pub async fn update_wish_reply_reactions(
     user: users_user::Model,
     wish_reply_id: Uuid,

@@ -25,6 +25,12 @@ impl From<DiaryTagServiceError> for DiaryTagBulkUpdateError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+    ),
+    skip_all
+)]
 pub async fn bulk_update_diary_tags(
     user: users_user::Model,
     params: BulkUpdateDiaryTagRequest,
