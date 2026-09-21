@@ -25,6 +25,16 @@ impl From<DiaryServiceError> for DiaryUpdateError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        diary_id = diary_id.to_string(),
+        req_param.entry.len = req_param.entry.len(),
+        req_param.date = req_param.date.to_string(),
+        req_param.tag_ids.len = req_param.tag_ids.len(),
+    ),
+    skip_all
+)]
 pub async fn update_diary<'a>(
     user: users_user::Model,
     db: &Db,

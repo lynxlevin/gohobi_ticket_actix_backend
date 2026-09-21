@@ -12,7 +12,6 @@ use crate::{
     CreateDiaryRequest,
 };
 
-#[tracing::instrument(skip(db, user, params))]
 #[post("/")]
 async fn create_diary_endpoint(
     db: Data<Db>,

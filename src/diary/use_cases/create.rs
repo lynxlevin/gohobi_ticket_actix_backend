@@ -21,6 +21,16 @@ impl From<DiaryServiceError> for DiaryCreateError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        req_params.user_relation_id = req_params.user_relation_id.to_string(),
+        req_params.entry.len = req_params.entry.len(),
+        req_params.date = req_params.date.to_string(),
+        req_params.tag_ids.len = req_params.tag_ids.len(),
+    ),
+    skip_all
+)]
 pub async fn create_diary<'a>(
     user: users_user::Model,
     db: &Db,

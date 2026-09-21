@@ -23,6 +23,13 @@ impl From<DiaryServiceError> for DiaryMarkReadError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        diary_id = diary_id.to_string(),
+    ),
+    skip_all
+)]
 pub async fn mark_diary_read<'a>(
     user: users_user::Model,
     db: &Db,
