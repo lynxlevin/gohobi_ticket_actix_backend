@@ -12,7 +12,6 @@ use crate::{
     use_cases::list::{list_diary_tags, DiaryTagListError},
 };
 
-#[tracing::instrument(skip(db, user))]
 #[get("/")]
 async fn list_diary_tags_endpoint(
     db: Data<Db>,

@@ -20,6 +20,13 @@ impl From<DiaryTagServiceError> for DiaryTagDeleteError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user_id = user_id.to_string(),
+        diary_tag_id = diary_tag_id.to_string(),
+    ),
+    skip_all
+)]
 pub async fn delete_diary_tag<'a>(
     user_id: UserId,
     db: &Db,

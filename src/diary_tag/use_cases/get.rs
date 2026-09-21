@@ -22,6 +22,13 @@ impl From<DiaryTagServiceError> for DiaryTagGetError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user_id = user_id.to_string(),
+        diary_tag_id = diary_tag_id.to_string(),
+    ),
+    skip_all
+)]
 pub async fn get_diary_tag(
     user_id: UserId,
     db: &Db,
