@@ -32,6 +32,14 @@ impl From<WishReplyServiceError> for WishReplyError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        wish_id = wish_id.to_string(),
+        description.len = description.len(),
+    ),
+    skip_all
+)]
 pub async fn reply(
     user: users_user::Model,
     wish_id: Uuid,

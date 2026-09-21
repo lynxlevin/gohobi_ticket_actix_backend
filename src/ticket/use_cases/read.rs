@@ -23,6 +23,13 @@ impl From<TicketServiceError> for ReadTicketError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        ticket_id = ticket_id.to_string(),
+    ),
+    skip_all
+)]
 pub async fn read_ticket(
     user: users_user::Model,
     ticket_id: TicketId,

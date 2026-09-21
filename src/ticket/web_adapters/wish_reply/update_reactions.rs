@@ -19,7 +19,6 @@ struct PathParam {
     wish_reply_id: Uuid,
 }
 
-#[tracing::instrument(skip(db, user))]
 #[put("/{wish_reply_id}/reactions/")]
 async fn update_wish_reply_reactions_endpoint(
     db: Data<Db>,

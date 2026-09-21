@@ -24,6 +24,15 @@ impl From<TicketServiceError> for CreateTicketError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        params.description.len = params.description.len(),
+        params.is_special = params.is_special,
+        params.is_draft = params.is_draft,
+    ),
+    skip_all
+)]
 pub async fn create_ticket(
     user: users_user::Model,
     params: CreateTicketParams,

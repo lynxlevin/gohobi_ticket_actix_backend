@@ -25,6 +25,13 @@ impl From<TicketServiceError> for DeleteTicketError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        ticket_id = ticket_id.to_string(),
+    ),
+    skip_all
+)]
 pub async fn delete_ticket(
     user: users_user::Model,
     ticket_id: TicketId,

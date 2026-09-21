@@ -25,6 +25,13 @@ impl From<WishServiceError> for GetWishError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        wish_id = wish_id.to_string(),
+    ),
+    skip_all
+)]
 pub async fn get_wish(
     user: users_user::Model,
     wish_id: Uuid,

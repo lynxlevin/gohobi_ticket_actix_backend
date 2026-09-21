@@ -35,6 +35,14 @@ impl From<TicketServiceError> for MakeWishError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        ticket_id = ticket_id.to_string(),
+        params.use_description.len = params.use_description.len(),
+    ),
+    skip_all
+)]
 pub async fn make_wish(
     user: users_user::Model,
     user_relation_query: UserRelationQuery<'_>,

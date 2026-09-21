@@ -16,7 +16,6 @@ struct PathParam {
     ticket_id: TicketId,
 }
 
-#[tracing::instrument(skip(db, user))]
 #[delete("/{ticket_id}/")]
 async fn delete_ticket_endpoint(
     db: Data<Db>,

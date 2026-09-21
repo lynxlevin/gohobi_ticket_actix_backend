@@ -12,7 +12,6 @@ use crate::{
     CreateTicketRequest, UpsertTicketResponse,
 };
 
-#[tracing::instrument(skip(db, user, params))]
 #[post("/")]
 async fn create_ticket_endpoint(
     db: Data<Db>,

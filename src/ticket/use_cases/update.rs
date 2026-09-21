@@ -26,6 +26,16 @@ impl From<TicketServiceError> for UpdateTicketError {
     }
 }
 
+#[tracing::instrument(
+    fields(
+        user.id = user.id.to_string(),
+        ticket_id = ticket_id.to_string(),
+        params.description.len = params.description.len(),
+        params.publish = params.publish,
+        params.is_special = params.is_special,
+    ),
+    skip_all
+)]
 pub async fn update_ticket(
     user: users_user::Model,
     ticket_service: TicketService<'_>,
