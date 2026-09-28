@@ -1,6 +1,6 @@
 use actix_web::{
     get,
-    web::{Data, Path, Query, ReqData},
+    web::{Data, Path, ReqData},
     HttpResponse,
 };
 use common::{
@@ -10,7 +10,7 @@ use common::{
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::{Deserialize, Serialize};
 
-use crate::use_cases::wish::list::{list_wishes, ListWishesError, ListWishesQueryParam};
+use crate::use_cases::wish::list::{list_wishes, ListWishesError};
 
 #[derive(Deserialize, Serialize, Debug)]
 struct PathParam {
@@ -22,25 +22,15 @@ async fn list_wishes_endpoint(
     db: Data<Db>,
     user: Option<ReqData<users_user::Model>>,
     path_param: Path<PathParam>,
-    query_param: Query<ListWishesQueryParam>,
 ) -> HttpResponse {
     match user {
-        Some(user) => {
-            match list_wishes(
-                user.into_inner(),
-                path_param.user_relation_id,
-                &db,
-                query_param.into_inner(),
-            )
-            .await
-            {
-                Ok(wishes) => HttpResponse::Ok().json(wishes),
-                Err(e) => match e {
-                    ListWishesError::UserRelationNotFound() => response_404(e.to_string()),
-                    ListWishesError::InternalServerError(_) => response_500(e),
-                },
-            }
-        }
+        Some(user) => match list_wishes(user.into_inner(), path_param.user_relation_id, &db).await {
+            Ok(wishes) => HttpResponse::Ok().json(wishes),
+            Err(e) => match e {
+                ListWishesError::UserRelationNotFound() => response_404(e.to_string()),
+                ListWishesError::InternalServerError(_) => response_500(e),
+            },
+        },
         None => response_401(),
     }
 }

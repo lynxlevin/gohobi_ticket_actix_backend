@@ -1,8 +1,6 @@
-use chrono::{DateTime, FixedOffset};
 use common::db::Db;
-use domain_services::wish::{ListWishesParam, WishService, WishServiceError, WishServiceQuery};
+use domain_services::wish::{WishService, WishServiceError, WishServiceQuery};
 use entities::{user_relations_userrelation::UserRelationId, users_user};
-use serde::Deserialize;
 use thiserror::Error;
 
 use crate::WishVisible;
@@ -23,20 +21,10 @@ impl From<WishServiceError> for ListWishesError {
     }
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct ListWishesQueryParam {
-    created_at_gte: Option<DateTime<FixedOffset>>,
-    created_at_lte: Option<DateTime<FixedOffset>>,
-    created_at_lt: Option<DateTime<FixedOffset>>,
-}
-
 #[tracing::instrument(
     fields(
         user.id = user.id.to_string(),
         user_relation_id = user_relation_id.to_string(),
-        params.created_at_gte.is_some = params.created_at_gte.is_some(),
-        params.created_at_lte.is_some = params.created_at_lte.is_some(),
-        params.created_at_lt.is_some = params.created_at_lt.is_some(),
     ),
     skip_all
 )]
@@ -44,20 +32,9 @@ pub async fn list_wishes(
     user: users_user::Model,
     user_relation_id: UserRelationId,
     db: &Db,
-    params: ListWishesQueryParam,
 ) -> Result<Vec<WishVisible>, ListWishesError> {
     let wish_service = WishService::init(db);
-    let wishes = wish_service
-        .list_wishes(
-            user.id,
-            user_relation_id,
-            ListWishesParam {
-                created_at_gte: params.created_at_gte,
-                created_at_lte: params.created_at_lte,
-                created_at_lt: params.created_at_lt,
-            },
-        )
-        .await?;
+    let wishes = wish_service.list_wishes(user.id, user_relation_id).await?;
 
     Ok(wishes
         .iter()
