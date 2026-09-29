@@ -8,17 +8,26 @@ use entities::{
     wish_reply,
 };
 use sea_orm::{
-    ColumnTrait, Condition, EntityTrait, JoinType::LeftJoin, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
+    ColumnTrait, Condition, EntityLoaderTrait, EntityTrait, JoinType::LeftJoin, QueryFilter, QueryOrder,
+    QuerySelect, RelationTrait,
 };
+use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::wish::{WishService, WishServiceError};
+
+#[derive(Deserialize, Default, Debug)]
+pub struct ListWishesParam {
+    pub offset: u64,
+    pub limit: u64,
+}
 
 pub trait WishServiceQuery {
     fn list_wishes(
         &self,
         user_id: UserId,
         user_relation_id: UserRelationId,
+        params: Option<ListWishesParam>,
     ) -> impl Future<Output = Result<Vec<(Model, ticket::Model, bool)>, WishServiceError>>;
     fn get_with_ticket_and_replies(
         &self,
@@ -32,6 +41,7 @@ impl WishServiceQuery for WishService<'_> {
         &self,
         user_id: UserId,
         user_relation_id: UserRelationId,
+        params: Option<ListWishesParam>,
     ) -> Result<Vec<(Model, ticket::Model, bool)>, WishServiceError> {
         let user_relation = user_relation::Entity::find_by_id(user_relation_id)
             .filter(
@@ -46,9 +56,15 @@ impl WishServiceQuery for WishService<'_> {
         let query = Entity::load()
             .with(ticket::Entity)
             .with(wish_reply::Entity)
-            .filter(Column::UserRelationId.eq(user_relation.id));
+            .filter(Column::UserRelationId.eq(user_relation.id))
+            .order_by_desc(Column::CreatedAt);
 
-        let wishes = query.order_by_desc(Column::CreatedAt).all(self.db).await?;
+        let wishes = if params.is_some() {
+            let params = params.unwrap();
+            query.paginate(self.db, params.limit).fetch_page(params.offset).await?
+        } else {
+            query.all(self.db).await?
+        };
 
         Ok(wishes
             .into_iter()
