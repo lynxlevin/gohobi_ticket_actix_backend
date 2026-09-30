@@ -4,7 +4,7 @@ use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::WishVisible;
+use crate::{ListWishesResponse, WishVisible};
 
 #[derive(Debug, Error)]
 pub enum ListWishesError {
@@ -24,7 +24,7 @@ impl From<WishServiceError> for ListWishesError {
     }
 }
 
-#[derive(Deserialize, Default, Debug)]
+#[derive(Deserialize)]
 pub struct ListWishesQueryParam {
     offset: Option<u64>,
     limit: Option<u64>,
@@ -44,15 +44,29 @@ pub async fn list_wishes(
     user_relation_id: UserRelationId,
     db: &Db,
     params: ListWishesQueryParam,
-) -> Result<Vec<WishVisible>, ListWishesError> {
+) -> Result<ListWishesResponse, ListWishesError> {
     let params = parse_params(params)?;
     let wish_service = WishService::init(db);
-    let wishes = wish_service.list_wishes(user.id, user_relation_id, params).await?;
+    let (wishes, page_count) = match params {
+        Some(params) => {
+            let res = wish_service
+                .list_wishes_with_total_count(user.id, user_relation_id, params)
+                .await?;
+            (res.wishes, Some(res.page_count))
+        }
+        None => {
+            let res = wish_service.list_wishes(user.id, user_relation_id).await?;
+            (res, None)
+        }
+    };
 
-    Ok(wishes
-        .iter()
-        .map(|(wish, ticket, has_replies)| WishVisible::from((wish, ticket)).has_replies(*has_replies))
-        .collect())
+    Ok(ListWishesResponse {
+        wishes: wishes
+            .iter()
+            .map(|item| WishVisible::from((&item.wish, &item.ticket)).has_replies(item.has_replies))
+            .collect(),
+        page_count,
+    })
 }
 
 fn parse_params(params: ListWishesQueryParam) -> Result<Option<ListWishesParam>, ListWishesError> {

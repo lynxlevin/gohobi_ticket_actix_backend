@@ -219,7 +219,13 @@ pub struct WishReplyRequest {
     pub description: String,
 }
 
-#[derive(Deserialize, Debug, Serialize)]
+#[derive(Deserialize, Serialize)]
+pub struct ListWishesResponse {
+    pub wishes: Vec<WishVisible>,
+    pub page_count: Option<u64>,
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct WishReplyResponse {
     pub web_push_result: WebPushResult,
 }
