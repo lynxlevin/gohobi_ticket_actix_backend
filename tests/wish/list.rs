@@ -14,8 +14,8 @@ use common::factory::{self, *};
 fn get_uri(user_relation_id: UserRelationId) -> String {
     format!("/api/user_relations/{user_relation_id}/wish/")
 }
-fn get_uri_with_query(user_relation_id: UserRelationId, offset: u32, limit: u32) -> String {
-    format!("/api/user_relations/{user_relation_id}/wish/?offset={offset}&limit={limit}")
+fn get_uri_with_query(user_relation_id: UserRelationId, page: u32, limit: u32) -> String {
+    format!("/api/user_relations/{user_relation_id}/wish/?page={page}&limit={limit}")
 }
 fn get_client() -> TestRequest {
     TestRequest::get()
@@ -115,7 +115,7 @@ mod offset_based_pagination {
     }
 
     #[actix_web::test]
-    async fn return_empty_list_if_offset_is_too_large() -> Result<(), DbErr> {
+    async fn return_empty_list_if_page_is_too_large() -> Result<(), DbErr> {
         let Connections { app, db, .. } = init_app().await?;
         let [user_0, user_1, ..] = factory::get_users(&db).await?;
         let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
@@ -159,12 +159,12 @@ mod offset_based_pagination {
     }
 
     #[actix_web::test]
-    async fn bad_request_on_offset_alone() -> Result<(), DbErr> {
+    async fn bad_request_on_page_alone() -> Result<(), DbErr> {
         let Connections { app, db, .. } = init_app().await?;
         let [user_0, ..] = factory::get_users(&db).await?;
 
         let req = get_client()
-            .uri(&format!("{}?offset=1", get_uri(UserRelationId::from(1))))
+            .uri(&format!("{}?page=1", get_uri(UserRelationId::from(1))))
             .to_request();
         req.extensions_mut().insert(user_0.clone());
         let res = test::call_service(&app, req).await;

@@ -26,7 +26,7 @@ impl From<WishServiceError> for ListWishesError {
 
 #[derive(Deserialize)]
 pub struct ListWishesQueryParam {
-    offset: Option<u64>,
+    page: Option<u64>,
     limit: Option<u64>,
 }
 
@@ -34,7 +34,7 @@ pub struct ListWishesQueryParam {
     fields(
         user.id = user.id.to_string(),
         user_relation_id = user_relation_id.to_string(),
-        params.offset = params.offset,
+        params.page = params.page,
         params.limit = params.limit,
     ),
     skip_all
@@ -70,16 +70,16 @@ pub async fn list_wishes(
 }
 
 fn parse_params(params: ListWishesQueryParam) -> Result<Option<ListWishesParam>, ListWishesError> {
-    match (params.offset.is_some(), params.limit.is_some()) {
+    match (params.page.is_some(), params.limit.is_some()) {
         (true, true) => Ok(Some(ListWishesParam {
-            offset: params.offset.unwrap(),
+            page: params.page.unwrap(),
             limit: params.limit.unwrap(),
         })),
         (true, false) => Err(ListWishesError::ValidationError(
-            "limit is necessary when offset is provided.".to_string(),
+            "limit is necessary when page is provided.".to_string(),
         )),
         (false, true) => Err(ListWishesError::ValidationError(
-            "offset is necessary when limit is provided.".to_string(),
+            "page is necessary when limit is provided.".to_string(),
         )),
         (false, false) => Ok(None),
     }

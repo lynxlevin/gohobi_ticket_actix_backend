@@ -16,7 +16,7 @@ use uuid::Uuid;
 use crate::wish::{WishService, WishServiceError};
 
 pub struct ListWishesParam {
-    pub offset: u64,
+    pub page: u64,
     pub limit: u64,
 }
 
@@ -110,7 +110,7 @@ impl WishServiceQuery for WishService<'_> {
             .paginate(self.db, params.limit);
 
         let count = query.num_items_and_pages().await?;
-        let wishes = query.fetch_page(params.offset).await?;
+        let wishes = query.fetch_page(params.page).await?;
 
         Ok(ListWishesResponse {
             wishes: wishes
