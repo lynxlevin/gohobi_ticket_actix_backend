@@ -1,6 +1,5 @@
 use std::future::Future;
 
-use chrono::{DateTime, FixedOffset};
 use entities::{
     tickets_ticket as ticket,
     user_relations_userrelation::{self as user_relation, UserRelationId},
@@ -9,18 +8,28 @@ use entities::{
     wish_reply,
 };
 use sea_orm::{
-    ColumnTrait, Condition, EntityTrait, JoinType::LeftJoin, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
+    ColumnTrait, Condition, EntityLoaderTrait, EntityTrait, JoinType::LeftJoin, QueryFilter, QueryOrder,
+    QuerySelect, RelationTrait,
 };
-use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::wish::{WishService, WishServiceError};
 
-#[derive(Deserialize, Default, Debug)]
 pub struct ListWishesParam {
-    pub created_at_gte: Option<DateTime<FixedOffset>>,
-    pub created_at_lte: Option<DateTime<FixedOffset>>,
-    pub created_at_lt: Option<DateTime<FixedOffset>>,
+    pub page: u64,
+    pub limit: u64,
+}
+
+pub struct ListWishesResponseItem {
+    pub wish: Model,
+    pub ticket: ticket::Model,
+    pub has_replies: bool,
+}
+
+pub struct ListWishesResponse {
+    pub wishes: Vec<ListWishesResponseItem>,
+    pub wish_count: u64,
+    pub page_count: u64,
 }
 
 pub trait WishServiceQuery {
@@ -28,8 +37,13 @@ pub trait WishServiceQuery {
         &self,
         user_id: UserId,
         user_relation_id: UserRelationId,
+    ) -> impl Future<Output = Result<Vec<ListWishesResponseItem>, WishServiceError>>;
+    fn list_wishes_with_total_count(
+        &self,
+        user_id: UserId,
+        user_relation_id: UserRelationId,
         params: ListWishesParam,
-    ) -> impl Future<Output = Result<Vec<(Model, ticket::Model, bool)>, WishServiceError>>;
+    ) -> impl Future<Output = Result<ListWishesResponse, WishServiceError>>;
     fn get_with_ticket_and_replies(
         &self,
         user_id: UserId,
@@ -42,8 +56,7 @@ impl WishServiceQuery for WishService<'_> {
         &self,
         user_id: UserId,
         user_relation_id: UserRelationId,
-        params: ListWishesParam,
-    ) -> Result<Vec<(Model, ticket::Model, bool)>, WishServiceError> {
+    ) -> Result<Vec<ListWishesResponseItem>, WishServiceError> {
         let user_relation = user_relation::Entity::find_by_id(user_relation_id)
             .filter(
                 Condition::any()
@@ -54,32 +67,64 @@ impl WishServiceQuery for WishService<'_> {
             .await?
             .ok_or(WishServiceError::UserRelationNotFound())?;
 
-        let mut query = Entity::load()
+        let wishes = Entity::load()
             .with(ticket::Entity)
             .with(wish_reply::Entity)
-            .filter(Column::UserRelationId.eq(user_relation.id));
-
-        if let Some(created_at_gte) = params.created_at_gte {
-            query = query.filter(Column::CreatedAt.gte(created_at_gte));
-        }
-        if let Some(created_at_lte) = params.created_at_lte {
-            query = query.filter(Column::CreatedAt.lte(created_at_lte));
-        }
-        if let Some(created_at_lt) = params.created_at_lt {
-            query = query.filter(Column::CreatedAt.lt(created_at_lt));
-        }
-
-        let wishes = query.order_by_desc(Column::CreatedAt).all(self.db).await?;
+            .filter(Column::UserRelationId.eq(user_relation.id))
+            .order_by_desc(Column::CreatedAt)
+            .all(self.db)
+            .await?;
 
         Ok(wishes
             .into_iter()
             .filter(|wish| (wish.ticket.is_loaded() && !wish.ticket.is_none()) && wish.replies.is_loaded())
             .map(|wish| {
                 let ticket = wish.clone().ticket.unwrap();
-                let reply_count = wish.replies.iter().count();
-                (wish.into(), ticket.into(), reply_count > 0)
+                let has_replies = wish.replies.iter().count() > 0;
+                ListWishesResponseItem { wish: wish.into(), ticket: ticket.into(), has_replies }
             })
             .collect())
+    }
+
+    async fn list_wishes_with_total_count(
+        &self,
+        user_id: UserId,
+        user_relation_id: UserRelationId,
+        params: ListWishesParam,
+    ) -> Result<ListWishesResponse, WishServiceError> {
+        let user_relation = user_relation::Entity::find_by_id(user_relation_id)
+            .filter(
+                Condition::any()
+                    .add(user_relation::Column::User1Id.eq(user_id))
+                    .add(user_relation::Column::User2Id.eq(user_id)),
+            )
+            .one(self.db)
+            .await?
+            .ok_or(WishServiceError::UserRelationNotFound())?;
+
+        let query = Entity::load()
+            .with(ticket::Entity)
+            .with(wish_reply::Entity)
+            .filter(Column::UserRelationId.eq(user_relation.id))
+            .order_by_desc(Column::CreatedAt)
+            .paginate(self.db, params.limit);
+
+        let count = query.num_items_and_pages().await?;
+        let wishes = query.fetch_page(params.page).await?;
+
+        Ok(ListWishesResponse {
+            wishes: wishes
+                .into_iter()
+                .filter(|wish| (wish.ticket.is_loaded() && !wish.ticket.is_none()) && wish.replies.is_loaded())
+                .map(|wish| {
+                    let ticket = wish.clone().ticket.unwrap();
+                    let has_replies = wish.replies.iter().count() > 0;
+                    ListWishesResponseItem { wish: wish.into(), ticket: ticket.into(), has_replies }
+                })
+                .collect(),
+            wish_count: count.number_of_items,
+            page_count: count.number_of_pages,
+        })
     }
 
     async fn get_with_ticket_and_replies(

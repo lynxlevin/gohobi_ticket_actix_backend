@@ -5,7 +5,7 @@ use actix_web::{
 };
 use common::{
     db::Db,
-    errors::error_responses::{response_401, response_404, response_500},
+    errors::error_responses::{response_400, response_401, response_404, response_500},
 };
 use entities::{user_relations_userrelation::UserRelationId, users_user};
 use serde::{Deserialize, Serialize};
@@ -36,6 +36,7 @@ async fn list_wishes_endpoint(
             {
                 Ok(wishes) => HttpResponse::Ok().json(wishes),
                 Err(e) => match e {
+                    ListWishesError::ValidationError(message) => response_400(&message),
                     ListWishesError::UserRelationNotFound() => response_404(e.to_string()),
                     ListWishesError::InternalServerError(_) => response_500(e),
                 },
