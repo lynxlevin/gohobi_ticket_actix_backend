@@ -24,7 +24,7 @@ pub enum MessageType {
     WishReply,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Message {
     pub title: Option<String>,
     pub body: String,

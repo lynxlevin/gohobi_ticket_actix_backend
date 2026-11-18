@@ -16,6 +16,8 @@ use common::{
 use sea_orm::DbErr;
 use server::{get_preps_for_redis_session_store, get_routes, setup_session_middleware_builder, AuthenticateUser};
 
+pub mod factory_helper;
+
 pub struct Connections<
     S: Service<Request, Response = ServiceResponse<EitherBody<Encoder<BoxBody>>>, Error = Error>,
 > {

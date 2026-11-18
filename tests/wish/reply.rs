@@ -65,12 +65,11 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
 mod web_push_message {
     use actix_http::Uri;
-    use common::{
-        factory::WebPushSubscriptionFactory,
-        web_push::{Message, MessageType},
-    };
+    use common::web_push::{Message, MessageType};
     use ece;
     use ticket::{WebPushResult, WishReplyResponse};
+
+    use crate::utils::factory_helper::register_web_push_subscription;
 
     use super::*;
 
@@ -85,24 +84,17 @@ mod web_push_message {
         let wish = factory::wish(&ticket).insert(&db.db).await?;
 
         let endpoint = format!("{}/message", mock_server.url());
-        let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
-        let private_key = key_pair.raw_components().unwrap();
-        let p256dh_key = key_pair.pub_as_raw().unwrap();
-        let _giving_user_web_push_sub = factory::web_push_subscription(user_1.id)
-            .set_raw_endpoint(&endpoint)
-            .set_raw_p256dh_key(p256dh_key.clone())
-            .set_raw_auth_key(auth_key)
-            .encrypt_and_encode_sensitive_fields(&settings)
-            .insert(&db.db)
-            .await?;
+        let (auth_key, private_key) = register_web_push_subscription(&endpoint, &settings, &db, user_1.id).await?;
 
-        let expected_title = Some(format!("{}からの返事", user_0.username));
-        let expected_body = "もちろんいいよ".to_string();
-        let expected_message_type = MessageType::WishReply;
-        let expected_user_relation_id = Some(user_relation.id);
-        let expected_ticket_id = Some(ticket.id);
-        let expected_wish_id = Some(wish.id);
-        let description = expected_body.clone();
+        let expected_message = Message {
+            title: Some(format!("{}からの返事", user_0.username)),
+            body: "もちろんいいよ".to_string(),
+            message_type: MessageType::WishReply,
+            user_relation_id: Some(user_relation.id),
+            ticket_id: Some(ticket.id),
+            wish_id: Some(wish.id),
+        };
+        let description = expected_message.body.clone();
 
         // NOTE: headers should be tested in unit tests.
         let web_push_request_mock = mock_server
@@ -112,13 +104,7 @@ mod web_push_message {
                     String::from_utf8(ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap())
                         .unwrap();
                 let message: Message = serde_json::from_str(&message_string).unwrap();
-                assert_eq!(message.title, expected_title);
-                assert_eq!(message.body, expected_body);
-                assert_eq!(message.message_type, expected_message_type);
-                assert_eq!(message.user_relation_id, expected_user_relation_id);
-                assert_eq!(message.ticket_id, expected_ticket_id);
-                assert_eq!(message.wish_id, expected_wish_id);
-
+                assert_eq!(message, expected_message);
                 "Request_body is as expected.".into()
             })
             .expect(1)

@@ -3,9 +3,9 @@ use actix_web::{http, test, HttpMessage};
 use sea_orm::{ActiveModelTrait, DbErr};
 use serde::Serialize;
 
-use crate::utils::{init_app, Connections};
+use crate::utils::{factory_helper::register_web_push_subscription, init_app, Connections};
 use common::{
-    factory::{self, *},
+    factory,
     web_push::{Message, MessageType},
 };
 
@@ -26,23 +26,16 @@ async fn happy_path_type_make_wish() -> Result<(), DbErr> {
     let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db.db).await?;
     let wish = factory::wish(&receiving_ticket).insert(&db.db).await?;
     let endpoint = format!("{}/message", mock_server.url());
-    let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
-    let private_key = key_pair.raw_components().unwrap();
-    let p256dh_key = key_pair.pub_as_raw().unwrap();
-    let _web_push_sub = factory::web_push_subscription(user_0.id)
-        .set_raw_endpoint(&endpoint)
-        .set_raw_p256dh_key(p256dh_key.clone())
-        .set_raw_auth_key(auth_key)
-        .encrypt_and_encode_sensitive_fields(&settings)
-        .insert(&db.db)
-        .await?;
+    let (auth_key, private_key) = register_web_push_subscription(&endpoint, &settings, &db, user_0.id).await?;
 
-    let expected_title = Some(format!("{}からのおねがい", user_0.username));
-    let expected_body = wish.description.clone();
-    let expected_message_type = MessageType::MakeWish;
-    let expected_user_relation_id = Some(user_relation.id);
-    let expected_ticket_id = None;
-    let expected_wish_id = Some(wish.id);
+    let expected_message = Message {
+        title: Some(format!("{}からのおねがい", user_0.username)),
+        body: wish.description.clone(),
+        message_type: MessageType::MakeWish,
+        user_relation_id: Some(user_relation.id),
+        ticket_id: None,
+        wish_id: Some(wish.id),
+    };
 
     // NOTE: headers should be tested in unit tests.
     let web_push_request_mock = mock_server
@@ -52,12 +45,7 @@ async fn happy_path_type_make_wish() -> Result<(), DbErr> {
                 String::from_utf8(ece::decrypt(&private_key, &auth_key, request.body().unwrap()).unwrap())
                     .unwrap();
             let message: Message = serde_json::from_str(&message_string).unwrap();
-            assert_eq!(message.title, expected_title);
-            assert_eq!(message.body, expected_body);
-            assert_eq!(message.message_type, expected_message_type);
-            assert_eq!(message.user_relation_id, expected_user_relation_id);
-            assert_eq!(message.ticket_id, expected_ticket_id);
-            assert_eq!(message.wish_id, expected_wish_id);
+            assert_eq!(message, expected_message);
 
             "Request_body is as expected.".into()
         })
@@ -104,15 +92,8 @@ mod not_found {
 
         let [user_0, ..] = factory::get_users(&db).await?;
         let endpoint = format!("{}/message", mock_server.url());
-        let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
-        let p256dh_key = key_pair.pub_as_raw().unwrap();
-        let _web_push_sub = factory::web_push_subscription(user_0.id)
-            .set_raw_endpoint(&endpoint)
-            .set_raw_p256dh_key(p256dh_key.clone())
-            .set_raw_auth_key(auth_key)
-            .encrypt_and_encode_sensitive_fields(&settings)
-            .insert(&db.db)
-            .await?;
+        let (_auth_key, _private_key) =
+            register_web_push_subscription(&endpoint, &settings, &db, user_0.id).await?;
 
         let req = test::TestRequest::post()
             .uri(URI)

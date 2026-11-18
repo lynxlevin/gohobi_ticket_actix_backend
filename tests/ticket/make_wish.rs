@@ -112,6 +112,8 @@ mod web_push_message {
     use common::web_push::{Message, MessageType};
     use ece;
 
+    use crate::utils::factory_helper::register_web_push_subscription;
+
     use super::*;
 
     #[actix_web::test]
@@ -123,16 +125,7 @@ mod web_push_message {
         let user_relation = factory::user_relation(user_0.id, user_1.id).insert(&db.db).await?;
         let receiving_ticket = factory::ticket(user_1.id, user_relation.id).insert(&db.db).await?;
         let endpoint = format!("{}/message", mock_server.url());
-        let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
-        let private_key = key_pair.raw_components().unwrap();
-        let p256dh_key = key_pair.pub_as_raw().unwrap();
-        let _giving_user_web_push_sub = factory::web_push_subscription(user_1.id)
-            .set_raw_endpoint(&endpoint)
-            .set_raw_p256dh_key(p256dh_key.clone())
-            .set_raw_auth_key(auth_key)
-            .encrypt_and_encode_sensitive_fields(&settings)
-            .insert(&db.db)
-            .await?;
+        let (auth_key, private_key) = register_web_push_subscription(&endpoint, &settings, &db, user_1.id).await?;
 
         let expected_title = Some(format!("{}からのおねがい", user_0.username));
         let expected_body = "お願いします。".to_string();
@@ -191,16 +184,7 @@ mod web_push_message {
             .insert(&db.db)
             .await?;
         let endpoint = format!("{}/message", mock_server.url());
-        let (key_pair, auth_key) = ece::generate_keypair_and_auth_secret().unwrap();
-        let p256dh_key = key_pair.pub_as_raw().unwrap();
-        let private_key = key_pair.raw_components().unwrap();
-        let _giving_user_web_push_sub = factory::web_push_subscription(user_1.id)
-            .set_raw_endpoint(&endpoint)
-            .set_raw_p256dh_key(p256dh_key.clone())
-            .set_raw_auth_key(auth_key)
-            .encrypt_and_encode_sensitive_fields(&settings)
-            .insert(&db.db)
-            .await?;
+        let (auth_key, private_key) = register_web_push_subscription(&endpoint, &settings, &db, user_1.id).await?;
 
         let expected_title = Some(format!("⭐️{}からの特別なおねがい⭐️", user_0.username));
         let expected_body = "お願いします。".to_string();
