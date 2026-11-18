@@ -1,6 +1,6 @@
 use actix_web::{
     post,
-    web::{Data, ReqData},
+    web::{Data, Json, ReqData},
     HttpResponse,
 };
 use common::{
@@ -11,26 +11,29 @@ use common::{
     },
     settings::types::Settings,
 };
-use db_adapters::{
-    ticket::WishQuery,
-    web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery},
-};
+use db_adapters::web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery};
+use domain_services::{wish::WishService, wish_reply::WishReplyService};
 use entities::users_user;
 
-use crate::use_cases::send_web_push::send_web_push_use_case;
+use crate::{types::WebPushSendRequest, use_cases::send_web_push::send_web_push_use_case};
 
-#[tracing::instrument(skip(db, settings, user))]
+#[tracing::instrument(skip(
+    db, settings, user
+))]
 #[post("/send/")]
 async fn send_web_push_endpoint(
     db: Data<Db>,
     settings: Data<Settings>,
+    req: Json<WebPushSendRequest>,
     user: Option<ReqData<users_user::Model>>,
 ) -> HttpResponse {
     match user {
         Some(user) => {
             match send_web_push_use_case(
                 user.into_inner(),
-                WishQuery::init_query(&db),
+                req.into_inner(),
+                WishService::init(&db),
+                WishReplyService::init(&db),
                 WebPushSubscriptionQuery::init_query(&db),
                 WebPushSubscriptionMutation { db: &db.db },
                 &settings,

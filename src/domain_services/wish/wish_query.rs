@@ -49,6 +49,10 @@ pub trait WishServiceQuery {
         user_id: UserId,
         wish_id: Uuid,
     ) -> impl Future<Output = Result<(Model, ticket::Model, Vec<wish_reply::Model>), WishServiceError>>;
+    fn get_newest(
+        &self,
+        user_id: UserId,
+    ) -> impl Future<Output = Result<(Model, ticket::Model), WishServiceError>>;
 }
 
 impl WishServiceQuery for WishService<'_> {
@@ -153,5 +157,18 @@ impl WishServiceQuery for WishService<'_> {
             .await?;
 
         Ok((wish, ticket, replies))
+    }
+
+    async fn get_newest(&self, user_id: UserId) -> Result<(Model, ticket::Model), WishServiceError> {
+        let (wish, ticket) = Entity::find()
+            .join(LeftJoin, Relation::TicketsTicket.def())
+            .filter(ticket::Column::GivingUserId.eq(user_id))
+            .order_by_desc(Column::CreatedAt)
+            .select_two_required(ticket::Entity)
+            .one(self.db)
+            .await?
+            .ok_or(WishServiceError::WishNotFound())?;
+
+        Ok((wish, ticket))
     }
 }
