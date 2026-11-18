@@ -91,7 +91,6 @@ mod web_push_message {
             body: "もちろんいいよ".to_string(),
             message_type: MessageType::WishReply,
             user_relation_id: Some(user_relation.id),
-            ticket_id: Some(ticket.id),
             wish_id: Some(wish.id),
         };
         let description = expected_message.body.clone();

@@ -131,7 +131,6 @@ mod web_push_message {
         let expected_body = "お願いします。".to_string();
         let expected_message_type = MessageType::MakeWish;
         let expected_user_relation_id = Some(user_relation.id);
-        let expected_ticket_id = None;
         let use_description = expected_body.clone();
 
         // NOTE: headers should be tested in unit tests.
@@ -146,7 +145,6 @@ mod web_push_message {
                 assert_eq!(message.body, expected_body);
                 assert_eq!(message.message_type, expected_message_type);
                 assert_eq!(message.user_relation_id, expected_user_relation_id);
-                assert_eq!(message.ticket_id, expected_ticket_id);
                 assert!(message.wish_id.is_some());
 
                 "Request_body is as expected.".into()
@@ -190,7 +188,6 @@ mod web_push_message {
         let expected_body = "お願いします。".to_string();
         let expected_message_type = MessageType::MakeWish;
         let expected_user_relation_id = Some(user_relation.id);
-        let expected_ticket_id = None;
         let use_description = expected_body.clone();
 
         // NOTE: headers should be tested in unit tests.
@@ -205,7 +202,6 @@ mod web_push_message {
                 assert_eq!(message.body, expected_body);
                 assert_eq!(message.message_type, expected_message_type);
                 assert_eq!(message.user_relation_id, expected_user_relation_id);
-                assert_eq!(message.ticket_id, expected_ticket_id);
                 assert!(message.wish_id.is_some());
 
                 "Request_body is as expected.".into()

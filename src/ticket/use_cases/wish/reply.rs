@@ -70,7 +70,6 @@ pub async fn reply(
                     body: wish_reply.description,
                     message_type: MessageType::WishReply,
                     user_relation_id: Some(user_relation.id),
-                    ticket_id: Some(wish.ticket_id),
                     wish_id: Some(wish.id),
                 },
                 &sub,

@@ -33,7 +33,6 @@ async fn happy_path_type_make_wish() -> Result<(), DbErr> {
         body: wish.description.clone(),
         message_type: MessageType::MakeWish,
         user_relation_id: Some(user_relation.id),
-        ticket_id: None,
         wish_id: Some(wish.id),
     };
 
