@@ -163,7 +163,7 @@ impl WishServiceQuery for WishService<'_> {
         let (wish, ticket) = Entity::find()
             .join(LeftJoin, Relation::TicketsTicket.def())
             .filter(ticket::Column::GivingUserId.eq(user_id))
-            .order_by_id_desc()
+            .order_by_desc(Column::CreatedAt)
             .select_two_required(ticket::Entity)
             .one(self.db)
             .await?
