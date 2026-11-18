@@ -68,6 +68,7 @@ async fn handle_make_wish_case(
                     message_type: MessageType::MakeWish,
                     user_relation_id: Some(wish.user_relation_id),
                     wish_id: Some(wish.id),
+                    wish_reply_id: None,
                 },
                 &sub,
                 settings,

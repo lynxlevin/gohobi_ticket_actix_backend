@@ -71,6 +71,7 @@ pub async fn reply(
                     message_type: MessageType::WishReply,
                     user_relation_id: Some(user_relation.id),
                     wish_id: Some(wish.id),
+                    wish_reply_id: Some(wish_reply.id),
                 },
                 &sub,
                 settings,

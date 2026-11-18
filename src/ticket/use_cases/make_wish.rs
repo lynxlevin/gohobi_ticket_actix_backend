@@ -109,6 +109,7 @@ pub async fn make_wish(
                     message_type: MessageType::MakeWish,
                     user_relation_id: Some(user_relation.id),
                     wish_id: Some(wish.id),
+                    wish_reply_id: None,
                 },
                 &sub,
                 settings,

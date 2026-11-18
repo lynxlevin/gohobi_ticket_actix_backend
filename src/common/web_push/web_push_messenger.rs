@@ -31,6 +31,7 @@ pub struct Message {
     pub message_type: MessageType,
     pub user_relation_id: Option<UserRelationId>,
     pub wish_id: Option<Uuid>,
+    pub wish_reply_id: Option<Uuid>,
 }
 
 pub enum WebPushMessengerResult {
