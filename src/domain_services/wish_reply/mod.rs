@@ -3,8 +3,10 @@ use sea_orm::{DbConn, TransactionError};
 use thiserror::Error;
 
 mod wish_reply_mutation;
+mod wish_reply_query;
 
 pub use wish_reply_mutation::*;
+pub use wish_reply_query::*;
 
 #[derive(Debug, Error)]
 pub enum WishReplyServiceError {

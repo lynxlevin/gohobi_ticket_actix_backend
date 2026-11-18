@@ -11,6 +11,7 @@ path = "lib.rs"
 entities = { path = "../entities" }
 common = { path = "../common", features = ["errors", "settings", "db"] }
 db_adapters = { path = "../db_adapters" }
+domain_services = { path = "../domain_services" }
 
 actix-web.workspace = true
 sea-orm.workspace = true

@@ -44,7 +44,6 @@ impl WishReplyServiceMutation for WishReplyService<'_> {
         user_id: UserId,
         params: CreateWishReplyParams,
     ) -> Result<(Model, wish::Model, user_relation::Model), WishReplyServiceError> {
-        // MYMEMO: ListWishでreplyのあるやつかないやつかわかるようにしたい。クエリするか、wish.has_repliesみたいなのを加えるか？
         let wish = wish::Entity::load()
             .with(user_relation::Entity)
             .filter_by_id(params.wish_id)
