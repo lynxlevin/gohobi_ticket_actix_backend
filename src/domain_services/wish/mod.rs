@@ -17,6 +17,8 @@ pub enum WishServiceError {
     #[error("")]
     TicketNotFound(),
     #[error("")]
+    GivingTicket(),
+    #[error("")]
     NotWishReceiver(),
     #[error("")]
     UserRelationNotFound(),

@@ -2,7 +2,7 @@ use std::future::Future;
 
 use chrono::{Datelike, NaiveDate};
 use entities::{
-    tickets_ticket::{self, TicketId, TicketStatus},
+    tickets_ticket::{self, TicketStatus},
     user_relations_userrelation::UserRelationId,
     users_user::UserId,
     wish,
@@ -13,9 +13,7 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::ticket::{
-    get_query_ticket_by_id, get_query_tickets_with_access_to_user, TicketService, TicketServiceError,
-};
+use crate::ticket::{get_query_tickets_with_access_to_user, TicketService, TicketServiceError};
 
 #[derive(Deserialize, Debug, Serialize, Clone, Default)]
 pub struct ListTicketsWithWishParams {
@@ -26,11 +24,6 @@ pub struct ListTicketsWithWishParams {
 }
 
 pub trait TicketServiceQuery {
-    fn get_ticket_by_id(
-        &self,
-        user_id: UserId,
-        ticket_id: TicketId,
-    ) -> impl Future<Output = Result<tickets_ticket::Model, TicketServiceError>>;
     fn get_oldest_available_ticket(
         &self,
         receiving_user_id: UserId,
@@ -52,17 +45,6 @@ pub trait TicketServiceQuery {
 }
 
 impl TicketServiceQuery for TicketService<'_> {
-    // MYMEMO: delete after make_wish is refactored
-    async fn get_ticket_by_id(
-        &self,
-        user_id: UserId,
-        ticket_id: TicketId,
-    ) -> Result<tickets_ticket::Model, TicketServiceError> {
-        get_query_ticket_by_id(user_id, ticket_id)
-            .one(self.db)
-            .await?
-            .ok_or(TicketServiceError::TicketNotFound())
-    }
     async fn get_oldest_available_ticket(
         &self,
         receiving_user_id: UserId,

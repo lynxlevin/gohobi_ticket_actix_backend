@@ -1,7 +1,7 @@
 use common::db::Db;
 use entities::{
     prelude::TicketsTicket,
-    tickets_ticket::{Column, Entity, Relation, TicketId},
+    tickets_ticket::{Entity, Relation},
     user_relations_userrelation as user_relation,
     users_user::UserId,
 };
@@ -44,7 +44,7 @@ impl From<TransactionError<TicketServiceError>> for TicketServiceError {
 }
 
 // MYMEMO: refactor TicketService and ticket use_cases like diary
-// MYMEMO: remove this later
+// MYMEMO: remove  later
 #[derive(Clone)]
 pub struct TicketService<'a> {
     pub db: &'a DbConn,
@@ -64,7 +64,4 @@ fn get_query_tickets_with_access_to_user(user_id: UserId) -> Select<TicketsTicke
                 .add(user_relation::Column::User1Id.eq(user_id))
                 .add(user_relation::Column::User2Id.eq(user_id)),
         )
-}
-fn get_query_ticket_by_id(user_id: UserId, ticket_id: TicketId) -> Select<TicketsTicket> {
-    get_query_tickets_with_access_to_user(user_id).filter(Column::Id.eq(ticket_id))
 }

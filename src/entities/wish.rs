@@ -11,7 +11,10 @@ use crate::{tickets_ticket::TicketId, user_relations_userrelation::UserRelationI
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "wish")]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
+    #[sea_orm(
+        primary_key,
+        auto_increment = false
+    )]
     pub id: Uuid,
     #[sea_orm(column_type = "Text")]
     pub description: String,
@@ -23,16 +26,31 @@ pub struct Model {
     pub user_relation_id: UserRelationId,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
-    #[sea_orm(belongs_to, from = "ticket_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
+    #[sea_orm(
+        belongs_to,
+        from = "ticket_id",
+        to = "id",
+        on_update = "NoAction",
+        on_delete = "NoAction"
+    )]
     pub ticket: HasOne<super::tickets_ticket::Entity>,
-    #[sea_orm(belongs_to, from = "user_relation_id", to = "id", on_update = "NoAction", on_delete = "NoAction")]
+    #[sea_orm(
+        belongs_to,
+        from = "user_relation_id",
+        to = "id",
+        on_update = "NoAction",
+        on_delete = "NoAction"
+    )]
     pub user_relation: HasOne<super::user_relations_userrelation::Entity>,
     #[sea_orm(has_many)]
     pub replies: HasMany<super::wish_reply::Entity>,
 }
 
 #[derive(DeriveValueType, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Copy)]
-#[sea_orm(value_type = "String", column_type = "String(StringLen::N(8))")]
+#[sea_orm(
+    value_type = "String",
+    column_type = "String(StringLen::N(8))"
+)]
 pub enum WishStatus {
     Unread,
     Read,
@@ -71,7 +89,7 @@ impl ActiveModelBehavior for ActiveModel {
     fn new() -> Self {
         Self {
             id: Set(Uuid::now_v7()),
-            reactions: Set(String::default()),
+            status: Set(WishStatus::default()),
             created_at: Set(Utc::now().into()),
             updated_at: Set(Utc::now().into()),
             ..ActiveModelTrait::default()
