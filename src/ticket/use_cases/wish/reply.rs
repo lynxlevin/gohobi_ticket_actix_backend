@@ -5,9 +5,7 @@ use common::{
     web_push::{send_web_push, Message, MessageType, SendWebPushResult},
 };
 use domain_services::{
-    web_push_subscription::{
-        WebPushSubscriptionService, WebPushSubscriptionServiceMutation, WebPushSubscriptionServiceQuery,
-    },
+    web_push::{WebPushService, WebPushServiceMutation, WebPushServiceQuery},
     wish_reply::{CreateWishReplyParams, WishReplyService, WishReplyServiceError, WishReplyServiceMutation},
 };
 use entities::users_user;
@@ -48,7 +46,7 @@ pub async fn reply(
     settings: &Settings,
 ) -> Result<WishReplyResponse, WishReplyError> {
     let wish_reply_service = WishReplyService::init(db);
-    let web_push_subscription_service = WebPushSubscriptionService::init(db);
+    let web_push_service = WebPushService::init(db);
 
     let (wish_reply, wish, user_relation) = wish_reply_service
         .create_wish_reply(user.id, CreateWishReplyParams { wish_id, description })
@@ -58,7 +56,7 @@ pub async fn reply(
         true => user_relation.user_2_id,
         false => user_relation.user_1_id,
     };
-    let web_push_subscription = match web_push_subscription_service.get_opt_by_user_id(related_user_id).await {
+    let web_push_subscription = match web_push_service.get_subscription(related_user_id).await {
         Ok(sub) => sub,
         Err(_) => None,
     };
@@ -80,7 +78,7 @@ pub async fn reply(
             match result {
                 SendWebPushResult::Sent => WebPushResult::Sent,
                 SendWebPushResult::Invalid => {
-                    let _ = web_push_subscription_service.delete(sub).await;
+                    let _ = web_push_service.delete_subscription(sub).await;
                     WebPushResult::NotSent
                 }
                 _ => WebPushResult::NotSent,
