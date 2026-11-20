@@ -1,11 +1,10 @@
-use crate::types::{WebPushResult, WishReplyResponse};
+use crate::types::WishReplyResponse;
 use common::{
-    db::Db,
     settings::types::Settings,
-    web_push::{send_web_push, Message, MessageType, SendWebPushResult},
+    web_push::{Message, MessageType},
 };
 use domain_services::{
-    web_push::{WebPushService, WebPushServiceMutation, WebPushServiceQuery},
+    web_push::{WebPushResult, WebPushService},
     wish_reply::{CreateWishReplyParams, WishReplyService, WishReplyServiceError, WishReplyServiceMutation},
 };
 use entities::users_user;
@@ -42,12 +41,10 @@ pub async fn reply(
     user: users_user::Model,
     wish_id: Uuid,
     description: String,
-    db: &Db,
+    wish_reply_service: WishReplyService<'_>,
+    web_push_service: WebPushService<'_>,
     settings: &Settings,
 ) -> Result<WishReplyResponse, WishReplyError> {
-    let wish_reply_service = WishReplyService::init(db);
-    let web_push_service = WebPushService::init(db);
-
     let (wish_reply, wish, user_relation) = wish_reply_service
         .create_wish_reply(user.id, CreateWishReplyParams { wish_id, description })
         .await?;
@@ -56,36 +53,19 @@ pub async fn reply(
         true => user_relation.user_2_id,
         false => user_relation.user_1_id,
     };
-    let web_push_subscription = match web_push_service.get_subscription(related_user_id).await {
-        Ok(sub) => sub,
-        Err(_) => None,
-    };
-    let web_push_result = match web_push_subscription {
-        Some(sub) => {
-            let result = send_web_push(
-                Message {
-                    title: Some(format!("{}からの返事", user.username)),
-                    body: wish_reply.description,
-                    message_type: MessageType::WishReply,
-                    user_relation_id: Some(user_relation.id),
-                    wish_id: Some(wish.id),
-                    wish_reply_id: Some(wish_reply.id),
-                },
-                &sub,
-                settings,
-            )
-            .await;
-            match result {
-                SendWebPushResult::Sent => WebPushResult::Sent,
-                SendWebPushResult::Invalid => {
-                    let _ = web_push_service.delete_subscription(sub).await;
-                    WebPushResult::NotSent
-                }
-                _ => WebPushResult::NotSent,
-            }
-        }
-        None => WebPushResult::NotSent,
+    let message = Message {
+        title: Some(format!("{}からの返事", user.username)),
+        body: wish_reply.description,
+        message_type: MessageType::WishReply,
+        user_relation_id: Some(user_relation.id),
+        wish_id: Some(wish.id),
+        wish_reply_id: Some(wish_reply.id),
     };
 
-    Ok(WishReplyResponse { web_push_result })
+    let web_push_result = web_push_service
+        .send_message(message, related_user_id, settings)
+        .await
+        .unwrap_or(WebPushResult::NotSent);
+
+    Ok(WishReplyResponse { web_push_result: web_push_result.into() })
 }

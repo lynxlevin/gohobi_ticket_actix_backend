@@ -11,8 +11,7 @@ use common::{
     },
     settings::types::Settings,
 };
-use db_adapters::web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery};
-use domain_services::{wish::WishService, wish_reply::WishReplyService};
+use domain_services::{web_push::WebPushService, wish::WishService, wish_reply::WishReplyService};
 use entities::users_user;
 
 use crate::{types::WebPushSendRequest, use_cases::send_web_push::send_web_push_use_case};
@@ -34,8 +33,7 @@ async fn send_web_push_endpoint(
                 req.into_inner(),
                 WishService::init(&db),
                 WishReplyService::init(&db),
-                WebPushSubscriptionQuery::init_query(&db),
-                WebPushSubscriptionMutation { db: &db.db },
+                WebPushService::init(&db),
                 &settings,
             )
             .await

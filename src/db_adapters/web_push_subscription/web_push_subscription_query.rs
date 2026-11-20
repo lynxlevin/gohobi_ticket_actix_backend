@@ -1,6 +1,6 @@
 use common::db::Db;
 use entities::{
-    users_user::{self, UserId},
+    users_user::{self},
     web_push_subscription::{Column, Entity, Model},
 };
 use sea_orm::{ColumnTrait, DbConn, DbErr, EntityTrait, QueryFilter, Select};
@@ -18,9 +18,5 @@ impl<'a> WebPushSubscriptionQuery<'a> {
 
     pub async fn get_by_user(self, user: &users_user::Model) -> Result<Option<Model>, DbErr> {
         self.query.filter(Column::UserId.eq(user.id)).one(self.db).await
-    }
-
-    pub async fn get_by_user_id(self, user_id: UserId) -> Result<Option<Model>, DbErr> {
-        self.query.filter(Column::UserId.eq(user_id)).one(self.db).await
     }
 }

@@ -8,8 +8,7 @@ use common::{
     errors::error_responses::{response_401, response_403, response_404, response_500},
     settings::types::Settings,
 };
-use db_adapters::web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery};
-use domain_services::wish::WishService;
+use domain_services::{web_push::WebPushService, wish::WishService};
 use entities::{tickets_ticket::TicketId, users_user};
 use serde::{Deserialize, Serialize};
 
@@ -36,8 +35,7 @@ async fn make_wish_endpoint(
             match make_wish(
                 user.into_inner(),
                 WishService::init(&db),
-                WebPushSubscriptionQuery::init_query(&db),
-                WebPushSubscriptionMutation { db: &db.db },
+                WebPushService::init(&db),
                 path_param.ticket_id,
                 params.ticket.clone(),
                 &settings,

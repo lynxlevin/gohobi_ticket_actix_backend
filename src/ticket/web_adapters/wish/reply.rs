@@ -8,6 +8,7 @@ use common::{
     errors::error_responses::{response_401, response_404, response_500},
     settings::types::Settings,
 };
+use domain_services::{web_push::WebPushService, wish_reply::WishReplyService};
 use entities::users_user;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -36,7 +37,8 @@ async fn wish_reply_endpoint(
                 user.into_inner(),
                 path_param.wish_id,
                 params.into_inner().description,
-                &db,
+                WishReplyService::init(&db),
+                WebPushService::init(&db),
                 &settings,
             )
             .await

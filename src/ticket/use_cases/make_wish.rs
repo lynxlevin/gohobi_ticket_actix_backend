@@ -1,10 +1,12 @@
-use crate::types::{MakeWishResponse, WebPushResult};
+use crate::types::MakeWishResponse;
 use common::{
     settings::types::Settings,
-    web_push::{send_web_push, Message, MessageType, SendWebPushResult},
+    web_push::{Message, MessageType},
 };
-use db_adapters::web_push_subscription::{WebPushSubscriptionMutation, WebPushSubscriptionQuery};
-use domain_services::wish::{CreateWishResponse, WishService, WishServiceError, WishServiceMutation};
+use domain_services::{
+    web_push::{WebPushResult, WebPushService},
+    wish::{CreateWishResponse, WishService, WishServiceError, WishServiceMutation},
+};
 use entities::{tickets_ticket::TicketId, users_user};
 use thiserror::Error;
 
@@ -42,8 +44,7 @@ impl From<WishServiceError> for MakeWishError {
 pub async fn make_wish(
     user: users_user::Model,
     wish_service: WishService<'_>,
-    web_push_subscription_query: WebPushSubscriptionQuery<'_>,
-    web_push_subscription_mutation: WebPushSubscriptionMutation<'_>,
+    web_push_service: WebPushService<'_>,
     ticket_id: TicketId,
     params: MakeWishParams,
     settings: &Settings,
@@ -55,39 +56,25 @@ pub async fn make_wish(
         true => user_relation.user_2_id,
         false => user_relation.user_1_id,
     };
-    let web_push_subscription = match web_push_subscription_query.get_by_user_id(related_user_id).await {
-        Ok(sub) => sub,
-        Err(_) => None,
-    };
-    let web_push_result = match web_push_subscription {
-        Some(sub) => {
-            let result = send_web_push(
-                Message {
-                    title: match ticket.is_special {
-                        true => Some(format!("⭐️{}からの特別なおねがい⭐️", user.username)),
-                        false => Some(format!("{}からのおねがい", user.username)),
-                    },
-                    body: wish.description.clone(),
-                    message_type: MessageType::MakeWish,
-                    user_relation_id: Some(user_relation.id),
-                    wish_id: Some(wish.id),
-                    wish_reply_id: None,
-                },
-                &sub,
-                settings,
-            )
-            .await;
-            match result {
-                SendWebPushResult::Sent => WebPushResult::Sent,
-                SendWebPushResult::Invalid => {
-                    let _ = web_push_subscription_mutation.delete(sub).await;
-                    WebPushResult::NotSent
-                }
-                _ => WebPushResult::NotSent,
-            }
-        }
-        None => WebPushResult::NotSent,
+    let message = Message {
+        title: match ticket.is_special {
+            true => Some(format!("⭐️{}からの特別なおねがい⭐️", user.username)),
+            false => Some(format!("{}からのおねがい", user.username)),
+        },
+        body: wish.description.clone(),
+        message_type: MessageType::MakeWish,
+        user_relation_id: Some(user_relation.id),
+        wish_id: Some(wish.id),
+        wish_reply_id: None,
     };
 
-    Ok(MakeWishResponse { ticket: TicketVisible::from(ticket).with_wish(&wish), web_push_result })
+    let web_push_result = web_push_service
+        .send_message(message, related_user_id, settings)
+        .await
+        .unwrap_or(WebPushResult::NotSent);
+
+    Ok(MakeWishResponse {
+        ticket: TicketVisible::from(ticket).with_wish(&wish),
+        web_push_result: web_push_result.into(),
+    })
 }
