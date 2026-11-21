@@ -27,7 +27,6 @@ argon2 = { version = "0.5.3", default-features = false, features = [
     "rand",
     "std",
 ] }
-async-std = { version = "1", features = ["attributes", "tokio1"] }
 base64 = { version = "0.22.1", default-features = false }
 chrono = "0.4.41"
 deadpool-redis = "0.20.0"
