@@ -2,12 +2,10 @@ use actix_http::Uri;
 use actix_web::{http, test, HttpMessage};
 use sea_orm::{ActiveModelTrait, DbErr};
 use serde::Serialize;
+use ticket::{Message, MessageType};
 
 use crate::utils::{factory_helper::register_web_push_subscription, init_app, Connections};
-use common::{
-    factory::{self, WishReplyFactory},
-    web_push::{Message, MessageType},
-};
+use common::factory::{self, WishReplyFactory};
 
 const URI: &str = "/api/web_push_subscription/send/";
 

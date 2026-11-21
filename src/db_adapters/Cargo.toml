@@ -13,7 +13,6 @@ entities = { path = "../entities" }
 
 chrono.workspace = true
 sea-orm.workspace = true
-serde.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]

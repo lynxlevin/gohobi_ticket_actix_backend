@@ -109,8 +109,8 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
 mod web_push_message {
     use actix_http::Uri;
-    use common::web_push::{Message, MessageType};
     use ece;
+    use ticket::{Message, MessageType};
 
     use crate::utils::factory_helper::register_web_push_subscription;
 

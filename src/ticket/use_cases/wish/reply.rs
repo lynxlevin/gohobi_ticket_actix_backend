@@ -1,10 +1,7 @@
 use crate::types::WishReplyResponse;
-use common::{
-    settings::types::Settings,
-    web_push::{Message, MessageType},
-};
+use common::settings::types::Settings;
 use domain_services::{
-    web_push::{WebPushResult, WebPushService},
+    web_push::{Message, MessageType, WebPushResult, WebPushService},
     wish_reply::{CreateWishReplyParams, WishReplyService, WishReplyServiceError, WishReplyServiceMutation},
 };
 use entities::users_user;

@@ -1,18 +1,20 @@
-use common::{
-    db::Db,
-    settings::types::Settings,
-    web_push::{send_web_push, Message, SendWebPushResult},
-};
-use entities::users_user::UserId;
-use sea_orm::{DbConn, TransactionError};
-use thiserror::Error;
-
+mod message_sender;
 mod web_push_mutation;
 mod web_push_query;
+
+use common::{db::Db, settings::types::Settings};
+use entities::users_user::UserId;
+use sea_orm::{DbConn, TransactionError};
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 pub use web_push_mutation::*;
 pub use web_push_query::*;
 
+use crate::web_push::message_sender::{send_web_push, SendWebPushError};
+pub use crate::web_push::message_sender::{Message, MessageType};
+
+#[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub enum WebPushResult {
     Sent,
     NotSent,
@@ -53,14 +55,16 @@ impl<'a> WebPushService<'a> {
             Some(sub) => sub,
             None => return Err(WebPushServiceError::NotFound()),
         };
-        let result = send_web_push(message, &web_push_subscription, settings).await;
-        let web_push_result = match result {
-            SendWebPushResult::Sent => WebPushResult::Sent,
-            SendWebPushResult::NotSent => WebPushResult::NotSent,
-            SendWebPushResult::Invalid => {
-                let _ = self.delete_subscription(web_push_subscription).await;
-                WebPushResult::NotSent
-            }
+
+        let web_push_result = match send_web_push(message, &web_push_subscription, settings).await {
+            Ok(_) => WebPushResult::Sent,
+            Err(e) => match e {
+                SendWebPushError::NotSent => WebPushResult::NotSent,
+                SendWebPushError::Invalid => {
+                    let _ = self.delete_subscription(web_push_subscription).await;
+                    WebPushResult::NotSent
+                }
+            },
         };
 
         Ok(web_push_result)

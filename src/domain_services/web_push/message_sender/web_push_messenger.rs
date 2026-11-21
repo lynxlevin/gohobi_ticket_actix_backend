@@ -3,41 +3,19 @@ use http::{
     HeaderMap, HeaderValue, StatusCode,
 };
 use reqwest::Error as ReqwestError;
-use serde::{Deserialize, Serialize};
 use serde_json::json;
 use thiserror::Error;
-use uuid::Uuid;
 
-use crate::{db::decode_and_decrypt, settings::types::Settings};
-use entities::{user_relations_userrelation::UserRelationId, web_push_subscription};
+use common::{db::decode_and_decrypt, settings::types::Settings};
+use entities::web_push_subscription;
 
-use crate::web_push::{
+use crate::web_push::message_sender::{
     web_push_message_encryptor::{MessageEncryptor, MessageEncryptorError},
     web_push_vapid_signature_builder::{VapidSignatureBuilder, VapidSignatureBuilderError},
+    Message,
 };
 
 const TTL_SECONDS: u64 = 60 * 60 * 23;
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-pub enum MessageType {
-    MakeWish,
-    WishReply,
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct Message {
-    pub title: Option<String>,
-    pub body: String,
-    pub message_type: MessageType,
-    pub user_relation_id: Option<UserRelationId>,
-    pub wish_id: Option<Uuid>,
-    pub wish_reply_id: Option<Uuid>,
-}
-
-pub enum WebPushMessengerResult {
-    OK,
-    InvalidSubscription,
-}
 
 #[derive(Debug, Error)]
 pub enum WebPushMessengerError {
@@ -49,6 +27,8 @@ pub enum WebPushMessengerError {
     VapidSignatureBuilderError(VapidSignatureBuilderError),
     #[error("WebPushMessengerError:InvalidHeaderValue:{0}")]
     InvalidHeaderValue(InvalidHeaderValue),
+    #[error("WebPushMessengerError:InvalidSubscription")]
+    InvalidSubscription(),
     #[error("WebPushMessengerError:RequestError:{0}")]
     RequestError(ReqwestError),
 }
@@ -74,7 +54,7 @@ impl WebPushMessenger {
         })
     }
 
-    pub async fn send_message(&self, message: Message) -> Result<WebPushMessengerResult, WebPushMessengerError> {
+    pub async fn send_message(&self, message: Message) -> Result<(), WebPushMessengerError> {
         let encrypted_message = self.encrypt_message(message)?;
 
         // NOTE: Http client cannot be awc because it causes "future is not Send" error in run_cron_processes.
@@ -105,17 +85,17 @@ impl WebPushMessenger {
             "Urgency",
             HeaderValue::from_str("normal").map_err(|e| WebPushMessengerError::InvalidHeaderValue(e))?,
         );
-        client
+        let res = client
             .post(&self.endpoint)
             .headers(headers)
             .body(encrypted_message)
             .send()
             .await
-            .map(|res| match res.status() {
-                StatusCode::NOT_FOUND | StatusCode::GONE => WebPushMessengerResult::InvalidSubscription,
-                _ => WebPushMessengerResult::OK,
-            })
-            .map_err(|e| WebPushMessengerError::RequestError(e))
+            .map_err(|e| WebPushMessengerError::RequestError(e))?;
+        match res.status() {
+            StatusCode::NOT_FOUND | StatusCode::GONE => Err(WebPushMessengerError::InvalidSubscription()),
+            _ => Ok(()),
+        }
     }
 
     pub fn encrypt_message(&self, message: Message) -> Result<Vec<u8>, WebPushMessengerError> {

@@ -4,9 +4,8 @@ pub mod db;
 pub mod errors;
 #[cfg(feature = "factory")]
 pub mod factory;
+// refactor: testとgohobi_ticketから共用できる、server系のcrateに移すのがいいかも
 #[cfg(feature = "redis")]
 pub mod redis;
 #[cfg(feature = "settings")]
 pub mod settings;
-#[cfg(feature = "web_push")]
-pub mod web_push;

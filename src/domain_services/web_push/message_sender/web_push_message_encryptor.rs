@@ -11,7 +11,7 @@ use p256::elliptic_curve::{sec1::ToEncodedPoint, Error as P256Error};
 use sha2::Sha256;
 use thiserror::Error;
 
-use crate::{db::decode_and_decrypt, settings::types::Settings};
+use common::{db::decode_and_decrypt, settings::types::Settings};
 use entities::web_push_subscription;
 
 #[derive(Debug, Error)]
@@ -161,7 +161,7 @@ impl MessageEncryptor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
+    use common::{
         factory::{self, *},
         settings::get_test_settings,
     };

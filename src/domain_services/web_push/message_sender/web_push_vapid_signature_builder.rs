@@ -7,7 +7,7 @@ use jwt_simple::{
 use std::collections::BTreeMap;
 use thiserror::Error;
 
-use crate::settings::types::Settings;
+use common::settings::types::Settings;
 
 #[derive(Debug, Error)]
 pub enum VapidSignatureBuilderError {
@@ -75,8 +75,8 @@ impl VapidSignatureBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::settings::get_test_settings;
     use base64::prelude::BASE64_URL_SAFE_NO_PAD;
+    use common::settings::get_test_settings;
     use jwt_simple::claims::{Audiences, NoCustomClaims};
 
     #[test]

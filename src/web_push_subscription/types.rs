@@ -1,4 +1,4 @@
-use common::web_push::MessageType;
+use domain_services::web_push::MessageType;
 use entities::web_push_subscription;
 use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};

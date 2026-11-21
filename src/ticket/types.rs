@@ -1,6 +1,5 @@
 use chrono::{DateTime, FixedOffset, NaiveDate};
 pub use domain_services::ticket::{CreateTicketParams, UpdateTicketParams};
-use domain_services::web_push::WebPushResult as DomainWebPushResult;
 use entities::{
     tickets_ticket::{self, TicketId, TicketStatus},
     user_relations_userrelation::UserRelationId,
@@ -10,6 +9,8 @@ use entities::{
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+pub use domain_services::web_push::{Message, MessageType, WebPushResult};
 
 #[derive(Deserialize, Debug, Serialize, PartialEq)]
 pub struct ListTicketResponse {
@@ -186,20 +187,6 @@ pub struct UpsertTicketResponse {
 #[derive(Deserialize, Debug, Serialize)]
 pub struct UpdateTicketRequest {
     pub ticket: UpdateTicketParams,
-}
-
-#[derive(Deserialize, Debug, Serialize, PartialEq)]
-pub enum WebPushResult {
-    Sent,
-    NotSent,
-}
-impl From<DomainWebPushResult> for WebPushResult {
-    fn from(value: DomainWebPushResult) -> Self {
-        match value {
-            DomainWebPushResult::Sent => Self::Sent,
-            DomainWebPushResult::NotSent => Self::NotSent,
-        }
-    }
 }
 
 #[derive(Deserialize, Debug, Serialize, Clone)]

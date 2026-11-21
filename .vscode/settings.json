@@ -17,6 +17,7 @@
     "dotenv",
     "dotenvy",
     "ecdh",
+    "ecdsap256",
     "encryptor",
     "gohobi",
     "hkdf",

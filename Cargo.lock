@@ -965,18 +965,9 @@ dependencies = [
  "chrono",
  "deadpool-redis",
  "dotenvy",
- "ece",
  "entities",
- "hkdf 0.12.4",
- "http 1.5.0",
- "jwt-simple",
- "p256",
- "reqwest",
  "sea-orm",
  "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror",
  "tracing",
  "uuid",
 ]
@@ -1246,7 +1237,6 @@ dependencies = [
  "common",
  "entities",
  "sea-orm",
- "serde",
  "uuid",
 ]
 
@@ -1434,11 +1424,21 @@ dependencies = [
 name = "domain_services"
 version = "0.1.0"
 dependencies = [
+ "aes-gcm 0.10.3",
+ "base64 0.22.1",
  "chrono",
  "common",
+ "ece",
  "entities",
+ "hkdf 0.12.4",
+ "http 1.5.0",
+ "jwt-simple",
+ "p256",
+ "reqwest",
  "sea-orm",
  "serde",
+ "serde_json",
+ "sha2 0.10.9",
  "thiserror",
  "uuid",
 ]
@@ -4345,7 +4345,6 @@ dependencies = [
  "actix-web",
  "chrono",
  "common",
- "db_adapters",
  "domain_services",
  "entities",
  "mockito",

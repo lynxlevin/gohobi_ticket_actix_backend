@@ -1,10 +1,6 @@
-use common::{
-    errors::use_case_errors::UseCaseError,
-    settings::types::Settings,
-    web_push::{Message, MessageType},
-};
+use common::{errors::use_case_errors::UseCaseError, settings::types::Settings};
 use domain_services::{
-    web_push::{WebPushService, WebPushServiceError},
+    web_push::{Message, MessageType, WebPushService, WebPushServiceError},
     wish::{WishService, WishServiceError, WishServiceQuery},
     wish_reply::{WishReplyService, WishReplyServiceError, WishReplyServiceQuery},
 };

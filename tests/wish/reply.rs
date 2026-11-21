@@ -65,9 +65,8 @@ async fn unauthorized_if_not_logged_in() -> Result<(), DbErr> {
 
 mod web_push_message {
     use actix_http::Uri;
-    use common::web_push::{Message, MessageType};
     use ece;
-    use ticket::{WebPushResult, WishReplyResponse};
+    use ticket::{Message, MessageType, WebPushResult, WishReplyResponse};
 
     use crate::utils::factory_helper::register_web_push_subscription;
 

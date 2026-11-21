@@ -1,10 +1,7 @@
 use crate::types::MakeWishResponse;
-use common::{
-    settings::types::Settings,
-    web_push::{Message, MessageType},
-};
+use common::settings::types::Settings;
 use domain_services::{
-    web_push::{WebPushResult, WebPushService},
+    web_push::{Message, MessageType, WebPushResult, WebPushService},
     wish::{CreateWishResponse, WishService, WishServiceError, WishServiceMutation},
 };
 use entities::{tickets_ticket::TicketId, users_user};
